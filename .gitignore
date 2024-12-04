@@ -1,7 +1,30 @@
+# Python virtual environment
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# Django-specific
+*.log
+local_settings.py
+db.sqlite3
+*.pot
+*.py[cod]
+
 # Node.js
 node_modules/
 npm-debug.log
 yarn-error.log
+
+# Miscellaneous
+*.swp
+*.swo
+*.bak
+*.tmp
 
 # Logs
 logs/
@@ -11,10 +34,6 @@ logs/
 # Dependency directories
 jspm_packages/
 bower_components/
-
-# Build directories
-dist/
-build/
 
 # Environment variables
 .env
@@ -27,8 +46,33 @@ build/
 .DS_Store
 Thumbs.db
 
-# Miscellaneous
-*.swp
-*.swo
-*.bak
-*.tmp
+# Coverage reports (if using coverage.py or similar tools)
+.coverage
+*.cover
+.coverage.*
+
+# Pytest or other test outputs
+test_reports/
+nosetests.xml
+coverage.xml
+*.coveragerc
+
+# Docker files (if applicable)
+docker-compose.yml
+Dockerfile
+*.dockerignore
+
+# Temporary files from editors
+*.sublime-workspace
+*.sublime-project
+
+# PyCharm specific
+.idea/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# PyInstaller files (if using PyInstaller for packaging)
+dist/
+build/
+*.spec
