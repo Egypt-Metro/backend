@@ -40,10 +40,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # External packages
     'rest_framework',
     'rest_framework_simplejwt',
-    'users',
     'corsheaders',
+    # Custom apps
+    'apps.users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
@@ -90,11 +92,13 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 load_dotenv()
 
 # Print debug (remove or comment out in production)
-print(f"Database: {env('DB_NAME')}")
-print(f"User: {env('DB_USER')}")
-print(f"Password: {env('DB_PASSWORD')}")
-print(f"Host: {env('DB_HOST')}")
-print(f"Port: {env('DB_PORT')}")
+# print(f"Database: {env('DB_NAME')}")
+# print(f"User: {env('DB_USER')}")
+# print(f"Password: {env('DB_PASSWORD')}")
+# print(f"Host: {env('DB_HOST')}")
+# print(f"Port: {env('DB_PORT')}")
+
+AUTH_USER_MODEL = 'users.User'
 
 # Database configuration
 DATABASES = {
