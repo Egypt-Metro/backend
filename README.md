@@ -26,16 +26,14 @@ The **Egypt Metro Backend** provides the API and business logic for the **Egypt 
 
 1. **Clone the repository**:
 
-     ```bash
-
-     git clone https://github.com/egypt-metro/egypt-metro-backend.git
-     
-     ```
+    ```bash
+     git clone https://github.com/Egypt-Metro/backend.git
+    ```bash
 
 2. Navigate to the project directory:
 
     ```bash
-    cd egypt-metro-backend
+    cd backend
     ```
 
 3. Create and activate a virtual environment:

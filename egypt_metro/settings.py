@@ -14,6 +14,7 @@ from pathlib import Path
 import environ
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -88,15 +89,14 @@ WSGI_APPLICATION = 'egypt_metro.wsgi.application'
 env = environ.Env()
 environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
-# Load environment variables using django-environ or dotenv
+# Load environment variables
 load_dotenv()
 
-# Print debug (remove or comment out in production)
-# print(f"Database: {env('DB_NAME')}")
-# print(f"User: {env('DB_USER')}")
-# print(f"Password: {env('DB_PASSWORD')}")
-# print(f"Host: {env('DB_HOST')}")
-# print(f"Port: {env('DB_PORT')}")
+# General settings
+DEBUG = env.bool("DEBUG")
+SECRET_KEY = env("SECRET_KEY")
+BASE_URL = env("BASE_URL", default="http://127.0.0.1:8000")
+JWT_SECRET = env("JWT_SECRET")
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -112,6 +112,12 @@ DATABASES = {
     }
 }
 
+# Print debug (remove or comment out in production)
+# print(f"Database: {env('DB_NAME')}")
+# print(f"User: {env('DB_USER')}")
+# print(f"Password: {env('DB_PASSWORD')}")
+# print(f"Host: {env('DB_HOST')}")
+# print(f"Port: {env('DB_PORT')}")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -138,6 +144,50 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '5/min',  # Allow 5 requests per minute per user
+    }
+}
+
+SIMPLE_JWT = {
+    'SIGNING_KEY': JWT_SECRET,
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',  # File where logs are saved
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        '__main__': {
+            'handlers': ['console', 'file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
 }
 
 

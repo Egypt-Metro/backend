@@ -14,6 +14,7 @@ local_settings.py
 db.sqlite3
 *.pot
 *.py[cod]
+commands.md
 
 # Node.js
 node_modules/

@@ -38,13 +38,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 # 2. Login Serializer
 class LoginSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
+    username = serializers.CharField(required=True)
     password = serializers.CharField(write_only=True, required=True)
 
     def validate(self, data):
-        # Best Practice: Add custom validation to check if the user exists
-        if not User.objects.filter(email=data['email']).exists():
-            raise serializers.ValidationError({"email": "User with this email does not exist."})
+        # Check if the user exists with the provided username
+        if not User.objects.filter(username=data['username']).exists():
+            raise serializers.ValidationError({"username": "User with this username does not exist."})
         return data
 
 # 3. User Serializer
