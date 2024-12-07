@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: egypt-metro
+    env: python
+    region: cairo                # Adjust based on your location
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn egypt_metro.wsgi:application --bind 0.0.0.0:8000"
+    envVars:
+      - key: ENVIRONMENT             # Environment for loading specific config
+        value: prod
+      - key: DATABASE_URL            # Add the database URL environment variable
+        value: postgres://postgres:123@localhost:5432/egypt_metro
+      - fromGroup: egypt-metro-env-group  # Link generic variables from environment group
+      - key: CORS_ALLOW_ALL_ORIGINS   # Set CORS settings
+        value: "True"
+    disk:                            # Persistent storage (optional)
+      name: persistent-data
+      mountPath: /var/lib/egypt-metro
+      sizeGB: 1
+    secretFiles:
+      - path: /etc/secrets/env.prod  # Load sensitive secrets (e.g., SECRET_KEY, JWT_SECRET)
+    healthCheckPath: "/health"       # Optional, ensure health endpoint exists

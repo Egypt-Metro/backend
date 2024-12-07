@@ -19,18 +19,13 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-qyiu%=8(38%^l2@8wfmn^44bt!18fa&q(5(v0d=slb81g0_h#0'
+SECRET_KEY = os.getenv("SECRET_KEY")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = [os.getenv("BASE_URL"), "127.0.0.1", "localhost"]
 
 # Application definition
 
@@ -57,11 +52,13 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'egypt_metro.urls'
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS settings
+CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "False") == "True"
 
 TEMPLATES = [
     {
@@ -81,43 +78,48 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'egypt_metro.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-# Initialize environment variables
-env = environ.Env()
-environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+AUTH_USER_MODEL = 'users.User'
 
-# Load environment variables
-load_dotenv()
+# Load the appropriate .env file based on an environment variable
+ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")  # Default to dev
+dotenv_path = BASE_DIR / f"env/.env.{ENVIRONMENT}"
+load_dotenv(dotenv_path)
+
+# Load secret file if in production
+if ENVIRONMENT == "prod":
+    load_dotenv("/etc/secrets/env.prod")
 
 # General settings
-DEBUG = env.bool("DEBUG")
-SECRET_KEY = env("SECRET_KEY")
-BASE_URL = env("BASE_URL", default="http://127.0.0.1:8000")
-JWT_SECRET = env("JWT_SECRET")
-
-AUTH_USER_MODEL = 'users.User'
+DEBUG = os.getenv("DEBUG", "False") == "True"
+SECRET_KEY = os.getenv("SECRET_KEY")
+BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")
+JWT_SECRET = os.getenv("JWT_SECRET")
 
 # Database configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME'),        # Use environment variable for DB name
-        'USER': env('DB_USER'),        # Use environment variable for DB user
-        'PASSWORD': env('DB_PASSWORD'),# Use environment variable for password
-        'HOST': env('DB_HOST'),        # Use environment variable for host
-        'PORT': env('DB_PORT'),        # Use environment variable for port
+        'CONN_MAX_AGE': 500,
+        'OPTIONS': {
+            'options': '-c search_path=public',
+        },
+        'DISABLE_SERVER_SIDE_CURSORS': True,
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),     
     }
 }
 
-# Print debug (remove or comment out in production)
-# print(f"Database: {env('DB_NAME')}")
-# print(f"User: {env('DB_USER')}")
-# print(f"Password: {env('DB_PASSWORD')}")
-# print(f"Host: {env('DB_HOST')}")
-# print(f"Port: {env('DB_PORT')}")
+REQUIRED_ENV_VARS = ["SECRET_KEY", "DATABASE_URL", "JWT_SECRET", "BASE_URL"]
+
+for var in REQUIRED_ENV_VARS:
+    if not os.getenv(var):
+        raise ValueError(f"{var} is not set in environment variables.")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -172,14 +174,14 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',  # File where logs are saved
+            'filename': BASE_DIR / 'logs/debug.log',  # File where logs are saved
             'formatter': 'verbose',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['console', 'file'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
         },
         '__main__': {
@@ -207,6 +209,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # Folder where static files will be collected
+
+# Media files (optional, if your project uses media uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'mediafiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

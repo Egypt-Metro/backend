@@ -15,6 +15,7 @@ drf-yasg==1.21.8
 executing==2.1.0
 filelock==3.16.1
 git-filter-repo==2.45.0
+gunicorn==23.0.0
 httplib2==0.22.0
 inflection==0.5.1
 ipykernel==6.29.5
