@@ -17,9 +17,18 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from .views import health_check
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),    # Django admin panel
     path('api/users/', include('apps.users.urls')),    # User-related API routes
     path('health/', health_check, name='health_check'),  # Health check endpoint
+    path('api/stations/', include('apps.stations.urls')),
+    path('api/lines/', include('apps.lines.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        path('__debug__/', include('debug_toolbar.urls')),
+    ]

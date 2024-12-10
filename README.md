@@ -28,7 +28,7 @@ The **Egypt Metro Backend** provides the API and business logic for the **Egypt 
 
     ```bash
      git clone https://github.com/Egypt-Metro/backend.git
-    ```bash
+    ```
 
 2. Navigate to the project directory:
 

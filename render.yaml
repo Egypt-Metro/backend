@@ -2,7 +2,8 @@ services:
   - type: web
     name: egypt-metro
     env: python
-    region: cairo                # Adjust based on your location
+    region: frankfurt                 # Adjust based on your location
+    rootDirectory: backend          # Root directory of the project
     buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn egypt_metro.wsgi:application --bind 0.0.0.0:8000"
     envVars:
