@@ -91,3 +91,14 @@ class LineStation(models.Model):
 
     def __str__(self):
         return f"{self.line.name} - {self.station.name} (Order: {self.order})"
+
+
+class ConnectingStation(models.Model):
+    """
+    Model to represent stations that connect multiple lines.
+    """
+    station = models.ForeignKey(Station, on_delete=models.CASCADE)
+    lines = models.ManyToManyField(Line, related_name="connecting_stations")
+
+    def __str__(self):
+        return f"Connecting Station: {self.station.name} between lines {', '.join([line.name for line in self.lines.all()])}"

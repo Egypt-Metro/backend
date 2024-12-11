@@ -7,10 +7,10 @@ class LineStationInline(admin.TabularInline):
     """
     Inline admin for LineStation to manage the relationship between lines and stations.
     """
-    model = LineStation
-    extra = 1
-    fields = ["station", "order"]
-    ordering = ["order"]
+    model = LineStation     # model to display     
+    extra = 1   # number of extra fields to display   
+    fields = ["station", "order"]   # fields to display   
+    ordering = ["order"]    # order by order
 
 
 @admin.register(Line)
@@ -18,9 +18,9 @@ class LineAdmin(admin.ModelAdmin):
     """
     Admin configuration for the Line model.
     """
-    list_display = ("name", "color_code", "total_stations")
-    search_fields = ("name",)
-    inlines = [LineStationInline]
+    list_display = ("name", "color_code", "total_stations")  # fields to display
+    search_fields = ("name",)   # fields to search
+    inlines = [LineStationInline]   # inline to display
 
 
 @admin.register(Station)
@@ -28,12 +28,12 @@ class StationAdmin(admin.ModelAdmin):
     """
     Admin configuration for the Station model.
     """
-    list_display = ("name", "latitude", "longitude", "is_interchange")
-    search_fields = ("name",)
-    inlines = [LineStationInline]  # Use the inline for managing lines
+    list_display = ("name", "latitude", "longitude", "is_interchange")  # fields to display
+    search_fields = ("name",)   # fields to search
+    inlines = [LineStationInline]   # inline to display  
     fieldsets = (
         (None, {
-            "fields": ("name", "latitude", "longitude"),
+            "fields": ("name", "latitude", "longitude"),    # fields to display
         }),
     )
 
@@ -43,6 +43,6 @@ class LineStationAdmin(admin.ModelAdmin):
     """
     Admin configuration for the LineStation model.
     """
-    list_display = ("line", "station", "order")
-    list_filter = ("line",)
-    ordering = ["line", "order"]
+    list_display = ("line", "station", "order")  # fields to display
+    list_filter = ("line",)    # fields to filter
+    ordering = ["line", "order"]    # order by line and order
