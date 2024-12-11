@@ -9,3 +9,7 @@ class UserAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False  # Disable user deletion
+
+admin.site.site_header = "Egypt Metro"
+admin.site.site_title = "Egypt Metro Admin Portal"
+admin.site.index_title = "Welcome to Egypt Metro Admin Portal"

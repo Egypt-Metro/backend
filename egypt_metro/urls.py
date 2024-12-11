@@ -22,10 +22,10 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),    # Django admin panel
+    path('accounts/', include('allauth.urls')),   # Allauth authentication routes
     path('api/users/', include('apps.users.urls')),    # User-related API routes
+    path('api/stations/', include('apps.stations.urls')),    # Station-related API routes
     path('health/', health_check, name='health_check'),  # Health check endpoint
-    path('api/stations/', include('apps.stations.urls')),
-    path('api/lines/', include('apps.lines.urls')),
 ]
 
 if settings.DEBUG:

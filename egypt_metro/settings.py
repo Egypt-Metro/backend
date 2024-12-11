@@ -37,14 +37,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # External packages
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
     'debug_toolbar',
     # Custom apps
     'apps.users.apps.UsersConfig',
-    'apps.stations.apps.UsersConfig',
-    'apps.lines.apps.UsersConfig',
+    'apps.stations.apps.StationsConfig',
 ]
 
 MIDDLEWARE = [
@@ -58,6 +61,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = 'egypt_metro.urls'
@@ -76,6 +80,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request',
             ],
         },
     },
@@ -144,6 +149,21 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # For admin logins
+    'allauth.account.auth_backends.AuthenticationBackend',
+]
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': 'your-client-id',
+            'secret': 'your-secret',
+            'key': ''
+        }
+    }
+}
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -157,7 +177,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'SIGNING_KEY': JWT_SECRET,
+    'SIGNING_KEY': os.getenv("JWT_SECRET"),
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }

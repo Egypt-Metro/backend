@@ -1,11 +1,13 @@
+# apps/stations/views.py
+
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.http import JsonResponse
-from stations.models import Station
+from apps.stations.models import Station
 from .services.route_service import RouteService
-from stations.services.ticket_service import calculate_ticket_price
-from .utils.location_helpers import find_nearest_station
+from apps.stations.services.ticket_service import calculate_ticket_price
+from apps.stations.utils.location_helpers import find_nearest_station
 from geopy.distance import geodesic # type: ignore
 
 # Create your views here.
@@ -42,13 +44,13 @@ class TripDetailsView(APIView):
 
 class NearestStationView(APIView):
     def get(self, request):
-        latitude = request.query_params.get("latitude")
-        longitude = request.query_params.get("longitude")
+        latitude = float(request.query_params.get("latitude"))
+        longitude = float(request.query_params.get("longitude"))
 
         if not latitude or not longitude:
             return Response({"error": "Latitude and Longitude are required"}, status=400)
 
-        nearest_station, distance = find_nearest_station(float(latitude), float(longitude))
+        nearest_station, distance = find_nearest_station(latitude, longitude)
         return Response({
             "nearest_station": nearest_station.name,
             "distance": round(distance, 2),

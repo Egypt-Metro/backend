@@ -1,9 +1,28 @@
 # apps/stations/models.py
+
 from django.db import models
-from lines.models import Line
 from geopy.distance import geodesic # type: ignore
 
 # Create your models here.
+class Line(models.Model):
+    """Represents a metro line with stations connected in order."""
+    name = models.CharField(max_length=255, unique=True, null=False)  # Line name
+    color_code = models.CharField(
+        max_length=10, null=True, blank=True, help_text="Format: #RRGGBB"
+    )  # Optional color code
+
+    def __str__(self):
+        return self.name
+
+    def total_stations(self):
+        """Returns the total number of stations on this line."""
+        return self.line_stations.count()
+    
+    def ordered_stations(self):
+        """Returns all stations in order."""
+        return self.line_stations.order_by("order")
+
+
 class Station(models.Model):
     name = models.CharField(max_length=255, unique=True, null=False)  # Station name
     latitude = models.FloatField(null=True, blank=True)  # GPS latitude
@@ -22,11 +41,12 @@ class Station(models.Model):
         return self.lines.count() > 1
 
     def get_station_order(self, line):
-        """Get the order of this station on a specific line."""
-        try:
-            return self.station_lines.get(line=line).order
-        except LineStation.DoesNotExist:
-            return None
+        """
+        Get the order of this station on a specific line.
+        Returns None if the station is not associated with the given line.
+        """
+        line_station = self.station_lines.filter(line=line).first()
+        return line_station.order if line_station else None
         
     def distance_to(self, other_station):
         """ Calculate distance (in meters) between two stations using lat-long."""

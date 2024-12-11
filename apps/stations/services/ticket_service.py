@@ -1,4 +1,5 @@
 # apps/stations/services/ticket_service.py
+
 def calculate_ticket_price(start_station, end_station):
     """
     Calculate the ticket price based on the number of stations between start and end.
