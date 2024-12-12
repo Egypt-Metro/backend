@@ -28,6 +28,14 @@ class Station(models.Model):
     latitude = models.FloatField(null=True, blank=True)  # GPS latitude
     longitude = models.FloatField(null=True, blank=True)  # GPS longitude
     lines = models.ManyToManyField(Line, through="LineStation", related_name="stations")
+    
+    # Optimized method to get stations by line or name
+    @staticmethod
+    def get_stations_by_query(query):
+        return Station.objects.filter(
+            models.Q(name__icontains=query) |
+            models.Q(lines__name__icontains=query)
+        ).distinct()
 
     def __str__(self):
         return self.name

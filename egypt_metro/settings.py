@@ -17,76 +17,76 @@ from dotenv import load_dotenv
 from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent   # Base directory for the project
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY")    # Secret key for Django
 
 ALLOWED_HOSTS = [os.getenv("BASE_URL"), "127.0.0.1", "localhost", ".herokuapp.com"]
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'django.contrib.admin',   # Admin panel
+    'django.contrib.auth',  # Authentication framework
+    'django.contrib.contenttypes',  # Content types framework
+    'django.contrib.sessions',  # Sessions framework
+    'django.contrib.messages',  # Messages framework
+    'django.contrib.staticfiles',   # Static files
     # External packages
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'corsheaders',
-    'debug_toolbar',
+    'allauth',  # Authentication
+    'allauth.account',  # Account management
+    'allauth.socialaccount',    # Social authentication
+    'allauth.socialaccount.providers.google',   # Google OAuth provider
+    'rest_framework',   # REST framework
+    'rest_framework_simplejwt',   # JWT authentication
+    'corsheaders',  # CORS headers
+    'debug_toolbar',    # Debug toolbar
     # Custom apps
-    'apps.users.apps.UsersConfig',
-    'apps.stations.apps.StationsConfig',
+    'apps.users.apps.UsersConfig',  # Users app
+    'apps.stations.apps.StationsConfig',    # Stations app
 ]
 
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
-    "allauth.account.middleware.AccountMiddleware",
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # WhiteNoise middleware
+    'django.middleware.security.SecurityMiddleware',    # Security middleware
+    'django.contrib.sessions.middleware.SessionMiddleware',   # Session middleware
+    'django.middleware.common.CommonMiddleware',    # Common middleware
+    'django.middleware.csrf.CsrfViewMiddleware',    # CSRF middleware
+    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Authentication middleware
+    'django.contrib.messages.middleware.MessageMiddleware',   # Messages middleware
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',   # Clickjacking middleware
+    'corsheaders.middleware.CorsMiddleware',    # CORS middleware
+    'debug_toolbar.middleware.DebugToolbarMiddleware',  # Debug toolbar middleware
+    "allauth.account.middleware.AccountMiddleware",     # Account middleware
 ]
 
-ROOT_URLCONF = 'egypt_metro.urls'
+ROOT_URLCONF = 'egypt_metro.urls'   # Root URL configuration
 
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "False") == "True"
+CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "False") == "True" # Default to False
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
+        'DIRS': [], # Add template directories here
+        'APP_DIRS': True,   # Enable app templates
         'OPTIONS': {
             'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.request',
+                'django.template.context_processors.debug', # Debug context processor
+                'django.template.context_processors.request',   # Request context processor
+                'django.contrib.auth.context_processors.auth',  # Auth context processor
+                'django.contrib.messages.context_processors.messages',  # Messages context processor
+                'django.template.context_processors.request',   # Request context processor
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'egypt_metro.wsgi.application'
+WSGI_APPLICATION = 'egypt_metro.wsgi.application'   # WSGI application
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -100,32 +100,32 @@ load_dotenv(dotenv_path)
 
 # Load secret file if in production
 if ENVIRONMENT == "prod":
-    load_dotenv("/etc/secrets/env.prod")
+    load_dotenv("/etc/secrets/env.prod")    # Load production secrets
 
 # General settings
-DEBUG = os.getenv("DEBUG", "False") == "True"
-SECRET_KEY = os.getenv("SECRET_KEY")
-BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")
-JWT_SECRET = os.getenv("JWT_SECRET")
+DEBUG = os.getenv("DEBUG", "False") == "True"   # Default to False
+SECRET_KEY = os.getenv("SECRET_KEY")    # Secret key for Django
+BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")   # Base URL for the project
+JWT_SECRET = os.getenv("JWT_SECRET")    # Secret key for JWT tokens
 
 # Database configuration
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'CONN_MAX_AGE': 500,
+        'ENGINE': 'django.db.backends.postgresql',  # Database engine
+        'CONN_MAX_AGE': 500,    # Maximum connection age
         'OPTIONS': {
-            'options': '-c search_path=public',
+            'options': '-c search_path=public', # Set the default schema
         },
-        'DISABLE_SERVER_SIDE_CURSORS': True,
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT"),     
+        'DISABLE_SERVER_SIDE_CURSORS': True,    # Disable server-side cursors
+        "NAME": os.getenv("DB_NAME"),   # Database name
+        "USER": os.getenv("DB_USER"),   # Database user
+        "PASSWORD": os.getenv("DB_PASSWORD"),   # Database password
+        "HOST": os.getenv("DB_HOST"),   # Database host
+        "PORT": os.getenv("DB_PORT"),   # Database port         
     }
 }
 
-REQUIRED_ENV_VARS = ["SECRET_KEY", "DATABASE_URL", "JWT_SECRET", "BASE_URL"]
+REQUIRED_ENV_VARS = ["SECRET_KEY", "DATABASE_URL", "JWT_SECRET", "BASE_URL"]    
 
 for var in REQUIRED_ENV_VARS:
     if not os.getenv(var):
@@ -136,29 +136,29 @@ for var in REQUIRED_ENV_VARS:
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',   # User attribute similarity validator
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',   # Minimum length validator
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',  # Common password validator
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', # Numeric password validator
     },
 ]
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # For admin logins
-    'allauth.account.auth_backends.AuthenticationBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',  # For allauth
 ]
 
 SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'APP': {
-            'client_id': 'your-client-id',
-            'secret': 'your-secret',
+    'google': { 
+        'APP': {    
+            'client_id': 'your-client-id',  
+            'secret': 'your-secret',    
             'key': ''
         }
     }
@@ -166,65 +166,72 @@ SOCIALACCOUNT_PROVIDERS = {
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',    
+        'rest_framework.authentication.TokenAuthentication',    
+        'rest_framework.authentication.SessionAuthentication',  # For session-based authentication  
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.IsAuthenticated',   # Default to authenticated users
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',      
+        'rest_framework.throttling.AnonRateThrottle',       
+    ],
     'DEFAULT_THROTTLE_RATES': {
-        'user': '5/min',  # Allow 5 requests per minute per user
-    }
+        'user': '1000/day', # 1000 requests per day
+        'anon': '100/day',  # 100 requests per day
+    },
 }
 
 SIMPLE_JWT = {
-    'SIGNING_KEY': os.getenv("JWT_SECRET"),
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'SIGNING_KEY': os.getenv("JWT_SECRET"),   # Secret key for JWT tokens
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),   # Access token lifetime
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Refresh token lifetime        
 }
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
+    'version': 1,   # Log version
+    'disable_existing_loggers': False,  # Don't disable existing loggers
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
-            'style': '{',
+            'format': '{levelname} {asctime} {module} {message}',   # Log format
+            'style': '{',   # Use {} for formatting
         },
     },
     'handlers': {
         'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
+            'class': 'logging.StreamHandler',   # Log to console
+            'formatter': 'verbose', # Use the verbose formatter
         },
         'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
+            'level': 'DEBUG',   # Log debug messages
+            'class': 'logging.FileHandler', # Log to file
             'filename': BASE_DIR / 'logs/debug.log',  # File where logs are saved
-            'formatter': 'verbose',
+            'formatter': 'verbose',   # Use the verbose formatter
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
-            'level': 'INFO',
-            'propagate': True,
+            'handlers': ['console', 'file'],    # Log to console and file
+            'level': 'INFO',    # Log info messages
+            'propagate': True,  
         },
         '__main__': {
-            'handlers': ['console', 'file'],
-            'level': 'DEBUG',
-            'propagate': True,
+            'handlers': ['console', 'file'],    # Log to console and file
+            'level': 'DEBUG',   # Log all messages
+            'propagate': True,  
         },
     },
 }
 
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', # In-memory cache
     }
 }
 
 INTERNAL_IPS = [
-    '127.0.0.1',
+    '127.0.0.1',    # Localhost
 ]
 
 # Internationalization
@@ -247,9 +254,9 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'  # Folder where static files will be coll
 
 # Media files (optional, if your project uses media uploads)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'mediafiles'
+MEDIA_ROOT = BASE_DIR / 'mediafiles'    # Folder where media files will be uploaded
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'    # Default primary key field type

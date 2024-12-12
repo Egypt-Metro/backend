@@ -18,7 +18,7 @@ class LineAdmin(admin.ModelAdmin):
     """
     Admin configuration for the Line model.
     """
-    list_display = ("name", "color_code", "total_stations")  # fields to display
+    list_display = ("name", "total_stations")  # fields to display
     search_fields = ("name",)   # fields to search
     inlines = [LineStationInline]   # inline to display
 
@@ -28,7 +28,7 @@ class StationAdmin(admin.ModelAdmin):
     """
     Admin configuration for the Station model.
     """
-    list_display = ("name", "latitude", "longitude", "is_interchange")  # fields to display
+    list_display = ("name", "is_interchange")  # fields to display
     search_fields = ("name",)   # fields to search
     inlines = [LineStationInline]   # inline to display  
     fieldsets = (
