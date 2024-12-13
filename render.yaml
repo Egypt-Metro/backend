@@ -1,3 +1,5 @@
+# Render configuration file for deploying a Django application to Render
+
 services:
   - type: web
     name: egypt-metro
@@ -6,11 +8,12 @@ services:
     rootDirectory: backend          # Root directory of the project
     plan: free
     buildCommand: 
+      - apt-get update && apt-get install -y gcc libpq-dev python3-dev
       - pip install --upgrade pip
       - pip install -r requirements.txt
       - python manage.py collectstatic --noinput
       - python manage.py migrate --noinput
-    startCommand: "gunicorn egypt_metro.wsgi:application --bind 0.0.0.0:8000"
+    startCommand: "uvicorn egypt_metro.wsgi:application --host 0.0.0.0 --port 8000"
     envVars:
       - key: ENVIRONMENT             # Environment for loading specific config
         value: prod

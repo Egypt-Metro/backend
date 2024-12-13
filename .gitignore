@@ -16,6 +16,16 @@ db.sqlite3
 *.py[cod]
 commands.md
 
+# Ignore static files
+/static/
+staticfiles/
+
+# Ignore media files
+/media/
+
+# Ignore compiled python files
+*.pyc
+
 # Node.js
 node_modules/
 npm-debug.log
