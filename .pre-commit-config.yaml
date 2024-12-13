@@ -1,21 +1,21 @@
 # .pre-commit-config.yaml
 
 # Repositories that contain hooks
-repos:
-  # Black: Code formatter for Python
-  - repo: https://github.com/psf/black
-    rev: 23.3.0
-    hooks:
-      - id: black
-        args: ['--line-length=88']  # Customize the line length here if needed
+# repos:
+#   # Black: Code formatter for Python
+#   - repo: https://github.com/psf/black
+#     rev: 23.3.0
+#     hooks:
+#       - id: black
+#         args: ['--line-length=88']  # Customize the line length here if needed
 
-  # Flake8: Linter for Python
-  - repo: https://github.com/PyCQA/flake8
-    rev: 6.0.0
-    hooks:
-      - id: flake8
-        args:
-          - --max-line-length=88  # Customize the max line length if needed
+#   # Flake8: Linter for Python
+#   - repo: https://github.com/PyCQA/flake8
+#     rev: 6.0.0
+#     hooks:
+#       - id: flake8
+#         args:
+#           - --max-line-length=88  # Customize the max line length if needed
         # additional_dependencies:
         #   - flake8-bugbear  # Optional: Adds additional linting checks
         #   - flake8-docstrings  # Optional: Adds docstring linting checks
