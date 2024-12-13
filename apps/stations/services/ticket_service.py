@@ -1,5 +1,6 @@
 # apps/stations/services/ticket_service.py
 
+
 def calculate_ticket_price(start_station, end_station):
     """
     Calculate the ticket price based on the number of stations between start and end.
@@ -19,6 +20,7 @@ def calculate_ticket_price(start_station, end_station):
     except Exception as e:
         # Return a structured error response for better debugging
         return {"error": f"Failed to calculate ticket price: {str(e)}"}
+
 
 def calculate_total_stations(start_station, end_station):
     """
@@ -41,6 +43,7 @@ def calculate_total_stations(start_station, end_station):
     # Case 2: Multi-line (transfer required)
     return calculate_transfer_cost(start_station, end_station)
 
+
 def calculate_transfer_cost(start_station, end_station):
     """
     Calculate the total stations for routes requiring a transfer.
@@ -56,6 +59,7 @@ def calculate_transfer_cost(start_station, end_station):
 
     # Add logic for actual interchange station determination if required
     return abs(end_order - start_order) + 1
+
 
 def calculate_price(station_count):
     """

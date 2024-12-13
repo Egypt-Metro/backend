@@ -4,10 +4,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.throttling import UserRateThrottle
 from django.contrib.auth import authenticate
-from .models import User
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer, UpdateUserSerializer
+from .serializers import (
+    RegisterSerializer,
+    LoginSerializer,
+    UserSerializer,
+    UpdateUserSerializer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +20,7 @@ class RegisterView(APIView):
     """
     Handles user registration. Creates a new user and returns JWT tokens.
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -26,11 +30,14 @@ class RegisterView(APIView):
             user = serializer.save()
             logger.info(f"User registered successfully: {user.email}")
             refresh = RefreshToken.for_user(user)
-            return Response({
-                'message': 'User registered successfully',
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }, status=status.HTTP_201_CREATED)
+            return Response(
+                {
+                    "message": "User registered successfully",
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                },
+                status=status.HTTP_201_CREATED,
+            )
 
         logger.warning(f"Registration failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -41,6 +48,7 @@ class LoginView(APIView):
     """
     Handles user login. Authenticates credentials and returns JWT tokens.
     """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -48,29 +56,38 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = authenticate(
-                username=serializer.validated_data['username'],
-                password=serializer.validated_data['password']
+                username=serializer.validated_data["username"],
+                password=serializer.validated_data["password"],
             )
             if user:
                 logger.info(f"User logged in successfully: {user.username}")
                 refresh = RefreshToken.for_user(user)
-                return Response({
-                    'message': 'Login successful',
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                }, status=status.HTTP_200_OK)
+                return Response(
+                    {
+                        "message": "Login successful",
+                        "refresh": str(refresh),
+                        "access": str(refresh.access_token),
+                    },
+                    status=status.HTTP_200_OK,
+                )
 
-            logger.warning(f"Invalid credentials for username: {request.data.get('username')}")
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+            logger.warning(
+                f"Invalid credentials for username: {request.data.get('username')}"
+            )
+            return Response(
+                {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
         logger.error(f"Validation error during login: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # 3. User Profile View
 class UserProfileView(APIView):
     """
     Retrieves the profile of the authenticated user.
     """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -85,6 +102,7 @@ class UpdateUserView(APIView):
     """
     Updates the profile of the authenticated user.
     """
+
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
@@ -95,5 +113,7 @@ class UpdateUserView(APIView):
             logger.info(f"Profile updated successfully for user: {updated_user.email}")
             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        logger.warning(f"Failed to update profile for user: {user.email} - {serializer.errors}")
+        logger.warning(
+            f"Failed to update profile for user: {user.email} - {serializer.errors}"
+        )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

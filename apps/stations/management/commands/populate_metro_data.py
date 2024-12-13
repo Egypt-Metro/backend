@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.stations.models import Line, Station, LineStation, ConnectingStation
 
+
 class Command(BaseCommand):
     help = "Populate metro lines, stations, and connections data"
 
@@ -41,7 +42,11 @@ class Command(BaseCommand):
                 {"name": "Hammamat El-Qobba", "latitude": 30.090, "longitude": 31.298},
                 {"name": "Saray El-Qobba", "latitude": 30.098, "longitude": 31.303},
                 {"name": "Hadayek El-Zaitoun", "latitude": 30.105, "longitude": 31.310},
-                {"name": "Helmeyet El-Zaitoun", "latitude": 30.115, "longitude": 31.314},
+                {
+                    "name": "Helmeyet El-Zaitoun",
+                    "latitude": 30.115,
+                    "longitude": 31.314,
+                },
                 {"name": "El-Matareyya", "latitude": 30.121, "longitude": 31.315},
                 {"name": "Ain Shams", "latitude": 30.131, "longitude": 31.318},
                 {"name": "Ezbet El-Nakhl", "latitude": 30.139, "longitude": 31.324},
@@ -54,10 +59,18 @@ class Command(BaseCommand):
             "stations": [
                 {"name": "El-Mounib", "latitude": 29.98139, "longitude": 31.21194},
                 {"name": "Sakiat Mekky", "latitude": 29.99556, "longitude": 31.20861},
-                {"name": "Omm El-Masryeen", "latitude": 30.00528, "longitude": 31.20806},
+                {
+                    "name": "Omm El-Masryeen",
+                    "latitude": 30.00528,
+                    "longitude": 31.20806,
+                },
                 {"name": "El Giza", "latitude": 30.01056, "longitude": 31.20722},
                 {"name": "Faisal", "latitude": 30.01722, "longitude": 31.20389},
-                {"name": "Cairo University", "latitude": 30.02611, "longitude": 31.20111},
+                {
+                    "name": "Cairo University",
+                    "latitude": 30.02611,
+                    "longitude": 31.20111,
+                },
                 {"name": "El Bohoth", "latitude": 30.03583, "longitude": 31.20028},
                 {"name": "Dokki", "latitude": 30.03833, "longitude": 31.21194},
                 {"name": "Opera", "latitude": 30.04222, "longitude": 31.22528},
@@ -70,8 +83,16 @@ class Command(BaseCommand):
                 {"name": "St. Teresa", "latitude": 30.08833, "longitude": 31.24556},
                 {"name": "Khalafawy", "latitude": 30.09806, "longitude": 31.24528},
                 {"name": "Mezallat", "latitude": 30.10500, "longitude": 31.24667},
-                {"name": "Kolleyyet El-Zeraa", "latitude": 30.11389, "longitude": 31.24861},
-                {"name": "Shubra El-Kheima", "latitude": 30.12250, "longitude": 31.24472},
+                {
+                    "name": "Kolleyyet El-Zeraa",
+                    "latitude": 30.11389,
+                    "longitude": 31.24861,
+                },
+                {
+                    "name": "Shubra El-Kheima",
+                    "latitude": 30.12250,
+                    "longitude": 31.24472,
+                },
             ],
         },
         {
@@ -79,16 +100,28 @@ class Command(BaseCommand):
             "stations": [
                 {"name": "Adly Mansour", "latitude": 30.14694, "longitude": 31.42139},
                 {"name": "El Haykestep", "latitude": 30.14389, "longitude": 31.40472},
-                {"name": "Omar Ibn El-Khattab", "latitude": 30.14056, "longitude": 31.39417},
+                {
+                    "name": "Omar Ibn El-Khattab",
+                    "latitude": 30.14056,
+                    "longitude": 31.39417,
+                },
                 {"name": "Qobaa", "latitude": 30.13472, "longitude": 31.38389},
                 {"name": "Hesham Barakat", "latitude": 30.13111, "longitude": 31.37389},
                 {"name": "El-Nozha", "latitude": 30.12833, "longitude": 31.36000},
                 {"name": "Nadi El-Shams", "latitude": 30.12222, "longitude": 31.34389},
                 {"name": "Alf Maskan", "latitude": 30.11806, "longitude": 31.33972},
-                {"name": "Heliopolis Square", "latitude": 30.10806, "longitude": 31.33722},
+                {
+                    "name": "Heliopolis Square",
+                    "latitude": 30.10806,
+                    "longitude": 31.33722,
+                },
                 {"name": "Haroun", "latitude": 30.10000, "longitude": 31.33278},
                 {"name": "Al-Ahram", "latitude": 30.09139, "longitude": 31.32639},
-                {"name": "Koleyet El-Banat", "latitude": 30.08361, "longitude": 31.32889},
+                {
+                    "name": "Koleyet El-Banat",
+                    "latitude": 30.08361,
+                    "longitude": 31.32889,
+                },
                 {"name": "Stadium", "latitude": 30.07306, "longitude": 31.31750},
                 {"name": "Fair Zone", "latitude": 30.07333, "longitude": 31.30111},
                 {"name": "Abbassia", "latitude": 30.06972, "longitude": 31.28083},
@@ -103,14 +136,34 @@ class Command(BaseCommand):
                 {"name": "Sudan Street", "latitude": 30.06972, "longitude": 31.20472},
                 {"name": "Imbaba", "latitude": 30.07583, "longitude": 31.20750},
                 {"name": "El-Bohy", "latitude": 30.08222, "longitude": 31.21056},
-                {"name": "Al-Qawmeya Al-Arabiya", "latitude": 30.09333, "longitude": 31.20889},
+                {
+                    "name": "Al-Qawmeya Al-Arabiya",
+                    "latitude": 30.09333,
+                    "longitude": 31.20889,
+                },
                 {"name": "Ring Road", "latitude": 30.09639, "longitude": 31.19972},
-                {"name": "Rod al-Farag Axis", "latitude": 30.10194, "longitude": 31.18417},
+                {
+                    "name": "Rod al-Farag Axis",
+                    "latitude": 30.10194,
+                    "longitude": 31.18417,
+                },
                 {"name": "El-Tawfikeya", "latitude": 30.06528, "longitude": 31.20250},
                 {"name": "Wadi El-Nil", "latitude": 30.05833, "longitude": 31.20000},
-                {"name": "Gamaat El Dowal Al-Arabiya", "latitude": 30.05083, "longitude": 31.19972},
-                {"name": "Bulaq El-Dakroor", "latitude": 30.03611, "longitude": 31.19639},
-                {"name": "Cairo University", "latitude": 30.02611, "longitude": 31.20111},
+                {
+                    "name": "Gamaat El Dowal Al-Arabiya",
+                    "latitude": 30.05083,
+                    "longitude": 31.19972,
+                },
+                {
+                    "name": "Bulaq El-Dakroor",
+                    "latitude": 30.03611,
+                    "longitude": 31.19639,
+                },
+                {
+                    "name": "Cairo University",
+                    "latitude": 30.02611,
+                    "longitude": 31.20111,
+                },
             ],
         },
     ]
@@ -130,7 +183,9 @@ class Command(BaseCommand):
         self.populate_lines_and_stations()
         self.populate_connecting_stations()
 
-        self.stdout.write(self.style.SUCCESS("Metro data population completed successfully."))
+        self.stdout.write(
+            self.style.SUCCESS("Metro data population completed successfully.")
+        )
 
     def clear_existing_data(self):
         """Clear existing LineStation and ConnectingStation data."""
@@ -177,10 +232,15 @@ class Command(BaseCommand):
             lines = Line.objects.filter(name__in=conn_station["lines"])
             for line in lines:
                 # Check if the ConnectingStation already exists
-                if not ConnectingStation.objects.filter(station=station, lines=line).exists():
-                    connecting_station, created = ConnectingStation.objects.get_or_create(
-                        station=station
-                    )
+                if not ConnectingStation.objects.filter(
+                    station=station, lines=line
+                ).exists():
+                    (
+                        connecting_station,
+                        created,
+                    ) = ConnectingStation.objects.get_or_create(station=station)
                     connecting_station.lines.add(line)
                     action = "Created" if created else "Already exists"
-                    self.stdout.write(f"{action} ConnectingStation: {station.name} - {line.name}")
+                    self.stdout.write(
+                        f"{action} ConnectingStation: {station.name} - {line.name}"
+                    )

@@ -1,11 +1,13 @@
 # apps/stations/models.py
 
 from django.db import models
-from geopy.distance import geodesic # type: ignore
+from geopy.distance import geodesic  # type: ignore
+
 
 # Create your models here.
 class Line(models.Model):
     """Represents a metro line with stations connected in order."""
+
     name = models.CharField(max_length=255, unique=True, null=False)  # Line name
     color_code = models.CharField(
         max_length=10, null=True, blank=True, help_text="Format: #RRGGBB"
@@ -17,7 +19,7 @@ class Line(models.Model):
     def total_stations(self):
         """Returns the total number of stations on this line."""
         return self.line_stations.count()
-    
+
     def ordered_stations(self):
         """Returns all stations in order."""
         return self.line_stations.order_by("order")
@@ -28,24 +30,23 @@ class Station(models.Model):
     latitude = models.FloatField(null=True, blank=True)  # GPS latitude
     longitude = models.FloatField(null=True, blank=True)  # GPS longitude
     lines = models.ManyToManyField(Line, through="LineStation", related_name="stations")
-    
+
     # Optimized method to get stations by line or name
     @staticmethod
     def get_stations_by_query(query):
         return Station.objects.filter(
-            models.Q(name__icontains=query) |
-            models.Q(lines__name__icontains=query)
+            models.Q(name__icontains=query) | models.Q(lines__name__icontains=query)
         ).distinct()
 
     def __str__(self):
         return self.name
-    
+
     def connected_lines(self):
         """Returns all lines the station is connected to."""
         return self.lines.all()
-    
+
     def is_interchange(self):
-        """ Checks if the station connects to more than one line. """
+        """Checks if the station connects to more than one line."""
         return self.lines.count() > 1
 
     def get_station_order(self, line):
@@ -55,9 +56,9 @@ class Station(models.Model):
         """
         line_station = self.station_lines.filter(line=line).first()
         return line_station.order if line_station else None
-        
+
     def distance_to(self, other_station):
-        """ Calculate distance (in meters) between two stations using lat-long."""
+        """Calculate distance (in meters) between two stations using lat-long."""
         start = (self.latitude, self.longitude)
         end = (other_station.latitude, other_station.longitude)
         return geodesic(start, end).meters
@@ -71,26 +72,39 @@ class Station(models.Model):
     def get_next_station(self, line):
         """Returns the next station on the same line, based on the order field."""
         current_order = self.get_station_order(line)
-        return Station.objects.filter(
-            station_lines__line=line,
-            station_lines__order__gt=current_order,
-        ).order_by("station_lines__order").first()
+        return (
+            Station.objects.filter(
+                station_lines__line=line,
+                station_lines__order__gt=current_order,
+            )
+            .order_by("station_lines__order")
+            .first()
+        )
 
     def get_previous_station(self, line):
         """Returns the previous station on the same line, based on the order field."""
         current_order = self.get_station_order(line)
-        return Station.objects.filter(
-            station_lines__line=line,
-            station_lines__order__lt=current_order,
-        ).order_by("-station_lines__order").first()
-    
-    
+        return (
+            Station.objects.filter(
+                station_lines__line=line,
+                station_lines__order__lt=current_order,
+            )
+            .order_by("-station_lines__order")
+            .first()
+        )
+
+
 class LineStation(models.Model):
     """
     Through model to handle Line-Station relationship with additional metadata.
     """
-    line = models.ForeignKey(Line, on_delete=models.CASCADE, related_name="line_stations")
-    station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="station_lines")
+
+    line = models.ForeignKey(
+        Line, on_delete=models.CASCADE, related_name="line_stations"
+    )
+    station = models.ForeignKey(
+        Station, on_delete=models.CASCADE, related_name="station_lines"
+    )
     order = models.PositiveIntegerField()  # Order of station on the line
 
     class Meta:
@@ -105,6 +119,7 @@ class ConnectingStation(models.Model):
     """
     Model to represent stations that connect multiple lines.
     """
+
     station = models.ForeignKey(Station, on_delete=models.CASCADE)
     lines = models.ManyToManyField(Line, related_name="connecting_stations")
 

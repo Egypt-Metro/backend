@@ -8,23 +8,42 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.9]
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install Dependencies
+
+    - name: Install Poetry
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install poetry
+
+    - name: Install Dependencies
+      run: |
+        poetry install
+
+    - name: Export requirements.txt for Deployment
+      run: |
+        poetry export --without-hashes -o requirements.txt
+
+    - name: Deploy to Render
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      run: |
+        echo "Starting deployment to Render..."
+        render deploy --service-name egypt-metro
+        echo "Deployment complete!"
+
     - name: Run Tests
       run: |
         python manage.py test

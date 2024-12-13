@@ -5,18 +5,36 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('stations', '0001_initial'),
+        ("stations", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ConnectingStation',
+            name="ConnectingStation",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('lines', models.ManyToManyField(related_name='connecting_stations', to='stations.line')),
-                ('station', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='stations.station')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "lines",
+                    models.ManyToManyField(
+                        related_name="connecting_stations", to="stations.line"
+                    ),
+                ),
+                (
+                    "station",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="stations.station",
+                    ),
+                ),
             ],
         ),
     ]

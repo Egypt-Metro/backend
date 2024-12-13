@@ -19,16 +19,48 @@ from django.urls import path, include
 from .views import health_check
 from django.conf import settings
 from django.conf.urls.static import static
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework.permissions import AllowAny
 
+# OpenAPI schema view
+schema_view = get_schema_view(
+    openapi.Info(
+        title="Your API",
+        default_version="v1",
+        description="API documentation for the Flutter app",
+    ),
+    public=True,
+    permission_classes=(AllowAny,),
+)
+
+# Core URL patterns
 urlpatterns = [
-    path('admin/', admin.site.urls),    # Django admin panel
-    path('accounts/', include('allauth.urls')),   # Allauth authentication routes
-    path('api/users/', include('apps.users.urls')),    # User-related API routes
-    path('api/stations/', include('apps.stations.urls')),    # Station-related API routes
-    path('health/', health_check, name='health_check'),  # Health check endpoint
+    # Admin
+    path("admin/", admin.site.urls),  # Admin panel
+    # Authentication
+    path("accounts/", include("allauth.urls")),  # Allauth authentication
+    # API Routes
+    path("api/users/", include("apps.users.urls")),  # User authentication
+    path("api/stations/", include("apps.stations.urls")),  # Stations and trips
+    # Miscellaneous
+    path("health/", health_check, name="health_check"),  # Health check
+    # Documentation
+    path(
+        "swagger/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),  # Swagger UI
 ]
 
+# Debug Toolbar (only for development)
 if settings.DEBUG:
     urlpatterns += [
-        path('__debug__/', include('debug_toolbar.urls')),
+        path("__debug__/", include("debug_toolbar.urls")),  # Debug toolbar
     ]
+
+# Static and media files (if DEBUG is enabled)
+if settings.DEBUG:
+    urlpatterns += static(
+        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+    )  # Media files

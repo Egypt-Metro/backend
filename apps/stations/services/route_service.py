@@ -3,6 +3,7 @@
 from collections import defaultdict
 import heapq
 
+
 class RouteService:
     def __init__(self, stations):
         self.stations = stations
@@ -22,7 +23,7 @@ class RouteService:
         if (start_station, end_station) in self.cached_routes:
             return self.cached_routes[(start_station, end_station)]
 
-        distances = {station: float('inf') for station in self.graph}
+        distances = {station: float("inf") for station in self.graph}
         previous = {station: None for station in self.graph}
         distances[start_station] = 0
         priority_queue = [(0, start_station)]

@@ -4,14 +4,20 @@ services:
     env: python
     region: frankfurt                 # Adjust based on your location
     rootDirectory: backend          # Root directory of the project
-    buildCommand: "pip install -r requirements.txt"
+    plan: free
+    buildCommand: 
+      - pip install --upgrade pip
+      - pip install -r requirements.txt
+      - python manage.py collectstatic --noinput
+      - python manage.py migrate --noinput
     startCommand: "gunicorn egypt_metro.wsgi:application --bind 0.0.0.0:8000"
     envVars:
       - key: ENVIRONMENT             # Environment for loading specific config
         value: prod
-      - key: DATABASE_URL            # Add the database URL environment variable
-        value: postgres://postgres:123@localhost:5432/egypt_metro
-      - fromGroup: egypt-metro-env-group  # Link generic variables from environment group
+      - key: SECRET_KEY
+        value: ${SECRET_KEY}
+      - key: DATABASE_URL
+        value: ${DATABASE_URL}
       - key: CORS_ALLOW_ALL_ORIGINS   # Set CORS settings
         value: "True"
     disk:                            # Persistent storage (optional)
