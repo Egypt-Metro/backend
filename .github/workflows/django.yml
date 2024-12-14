@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
         python-version: [3.9]
@@ -34,6 +34,11 @@ jobs:
     - name: Export requirements.txt for Deployment
       run: |
         poetry export --without-hashes -o requirements.txt
+
+    - name: Install Render CLI
+      run: |
+        curl -fsSL https://render.com/static/cli/install.sh | bash
+        echo 'export PATH="$HOME/.render:$PATH"' >> $GITHUB_ENV
 
     - name: Deploy to Render
       env:
