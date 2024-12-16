@@ -10,7 +10,6 @@ services:
     buildCommand: 
       - apt-get update && apt-get install -y gcc libpq-dev python3-dev
       - pip install --upgrade pip
-      - pip install gunicorn 
       - pip install -r requirements.txt
       - python manage.py collectstatic --noinput
       - python manage.py migrate --noinput

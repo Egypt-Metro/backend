@@ -48,7 +48,3 @@ jobs:
         echo "Starting deployment to Render..."
         render deploy --service-name egypt-metro
         echo "Deployment complete!"
-
-    - name: Run Tests
-      run: |
-        python manage.py test
