@@ -1,7 +1,11 @@
+# [tool.black]
+# Configuration for the Black code formatter.
 [tool.black]
 line-length = 88
 target-version = ["py38", "py39"]
 
+# [tool.poetry]
+# General settings for Poetry.
 [tool.poetry]
 name = "egypt-metro-backend"
 version = "0.1.0"
@@ -9,32 +13,115 @@ description = "Backend for Egypt Metro project"
 authors = ["Ahmed Nassar <a.moh.nassar00@gmail.com>"]
 package-mode = false  # Disable packaging mode
 
+# [tool.poetry.dependencies]
+# Specifies project dependencies including Python version, Django, FastAPI, etc.
 [tool.poetry.dependencies]
-python = "^3.9"
-django = "^4.2.16"
-fastapi = "^0.68.1"
-uvicorn = "^0.15.0"
-pydantic = "^1.8.2"
-httpx = "^0.21.1"
-starlette = "^0.14.2"
-asyncpg = "^0.30.0"
-gunicorn = "^23.0.0"
-pywin32 = { version = "306", optional = true, markers = "sys_platform == 'win32'" }
-docker = "^7.1.0"
-jinja2 = "^3.1.4"
-python-dotenv = "^1.0.1"
+python = ">=3.10,<4.0"  # Python version constraint
+django = "^4.2.16"  # Django version
+fastapi = "^0.68.1"  # FastAPI version
+uvicorn = "^0.15.0"  # Uvicorn version
+pydantic = "^1.8.2"  # Pydantic version
+httpx = "^0.21.1"  # HTTPX version
+starlette = "^0.14.2"  # Starlette version
+asyncpg = "^0.30.0"  # asyncpg version for PostgreSQL connection
+gunicorn = "^23.0.0"  # Gunicorn version
+pywin32 = { version = "306", optional = true, markers = "sys_platform == 'win32'" }  # Optional dependency for Windows
+docker = "^7.1.0"  # Docker SDK for Python version
+jinja2 = "^3.1.4"  # Jinja2 version
+python-dotenv = "^1.0.1"  # Python dotenv version
+django-cors-headers = "^4.6.0" # Django CORS Headers version
+asttokens = "2.4.1"  # AST Tokens for AST manipulation
+beautifulsoup4 = "4.12.3"  # BeautifulSoup for web scraping
+cachetools = "5.5.0"  # Cachetools for caching strategies
+certifi = "2024.8.30"  # Certifi SSL certificate version
+cffi = "1.17.1"  # CFFI for foreign function interface
+charset-normalizer = "3.4.0"  # Charset Normalizer version
+colorama = "0.4.6"  # Colorama for cross-platform colored terminal text
+comm = "0.2.2"  # Comm for communication protocol
+cryptography = "44.0.0"  # Cryptography package
+debugpy = "1.8.5"  # Debugpy for debugging Python code
+decorator = "5.1.1"  # Decorator library
+distlib = "0.3.9"  # Distlib for distribution utilities
+dj-database-url = "2.3.0"  # Django Database URL parser
+Django = "4.2.16"  # Explicit Django version
+django-allauth = "65.3.0"  # Django Allauth for user authentication
+django-environ = "0.11.2"  # Django Environ for environment variable management
+django-redis = "5.4.0"  # Django Redis for Redis support
+djangorestframework = "3.15.2"  # Django REST framework version
+djangorestframework-simplejwt = "5.3.1"  # Django Simple JWT for JSON Web Token support
+drf-yasg = "1.21.8"  # DRF-YASG for API documentation generation
+executing = "2.1.0"  # Executing for execution context management
+filelock = "3.16.1"  # Filelock for file-based locking
+geographiclib = "2.0"  # Geographiclib for geospatial calculations
+geopy = "2.4.1"  # Geopy for geocoding
+git-filter-repo = "2.45.0"  # Git filter-repo for cleaning up git history
+google-auth = "2.36.0"  # Google Auth library for OAuth 2.0
+google-auth-httplib2 = "0.2.0"  # Google Auth HTTP client
+google-auth-oauthlib = "1.2.1"  # Google Auth OAuthlib support
+httplib2 = "0.22.0"  # HTTP library
+idna = "3.10"  # IDNA for international domain names
+inflection = "0.5.1"  # Inflection for string inflections
+ipykernel = "6.29.5"  # IPython kernel for interactive Python sessions
+ipython = "8.27.0"  # IPython for interactive computing
+jedi = "0.19.1"  # Jedi for Python autocompletion
+jupyter_client = "8.6.3"  # Jupyter client library
+jupyter_core = "5.7.2"  # Jupyter core library
+matplotlib-inline = "0.1.7"  # Inline plotting for Jupyter
+nest-asyncio = "1.6.0"  # Nest Asyncio for nested event loops
+oauthlib = "3.2.2"  # OAuthlib for OAuth 1.0 and 2.0
+packaging = "24.2"  # Packaging library
+parso = "0.8.4"  # Parso for Python parsing
+platformdirs = "4.3.6"  # Platformdirs for platform-specific directories
+prompt_toolkit = "3.0.47"  # Prompt Toolkit for advanced terminal prompts
+psutil = "6.0.0"  # Psutil for system utilities
+psycopg2 = "2.9.10"  # Psycopg2 PostgreSQL adapter
+psycopg2-binary = "2.9.10"  # Binary Psycopg2 for PostgreSQL
+pure_eval = "0.2.3"  # Pure Eval for safe evaluation of expressions
+pyasn1 = "0.6.1"  # PyASN1 for ASN.1 data structures
+pyasn1_modules = "0.4.1"  # PyASN1 modules for ASN.1 encoding/decoding
+pycparser = "2.22"  # Pycparser for parsing C code
+Pygments = "2.18.0"  # Pygments for syntax highlighting
+PyJWT = "2.10.1"  # PyJWT for JSON Web Token
+pyparsing = "3.1.4"  # Pyparsing for parsing expressions
+python-dateutil = "2.9.0.post0"  # Python Dateutil for date/time utilities
+python-decouple = "3.8"  # Python Decouple for configuration settings
+pytz = "2024.2"  # PyTZ for timezone handling
+PyYAML = "6.0.2"  # PyYAML for YAML parsing
+pyzmq = "26.2.0"  # PyZMQ for ZeroMQ
+redis = "5.2.1"  # Redis client for Python
+requests = "2.32.3"  # HTTP requests library
+requests-oauthlib = "2.0.0"  # OAuthlib for requests
+rsa = "4.9"  # RSA for cryptographic functions
+six = "1.16.0"  # Six for compatibility layer
+soupsieve = "2.6"  # SoupSieve for HTML parsing
+sqlparse = "0.5.2"  # SQL parsing library
+stack-data = "0.6.3"  # Stack data structures for Python
+tornado = "6.4.1"  # Tornado for asynchronous web server
+traitlets = "5.14.3"  # Traitlets for configuration system
+typing_extensions = "4.12.2"  # Type checking extensions
+tzdata = "2024.2"  # Timezone data
+uritemplate = "4.1.1"  # URI template parser
+urllib3 = "2.2.3"  # HTTP library
+virtualenv = "20.28.0"  # Virtualenv for virtual environments
+waitress = "3.0.2"  # Waitress for WSGI server
+wcwidth = "0.2.13"  # wcwidth for terminal width calculation
+whitenoise = "6.7.0"  # WhiteNoise for serving static files in Django
 
+# [tool.poetry.dev-dependencies]
+# Development dependencies including testing and development tools.
 [tool.poetry.dev-dependencies]
-pytest = "^6.2.4"
-pytest-asyncio = "^0.15.1"
-httpx = "^0.21.1"
-pytest-mock = "^3.6.1"
+pytest = "^6.2.4"  # Pytest for unit testing
+pytest-asyncio = "^0.15.1"  # Pytest plugin for asyncio tests
+httpx = "^0.21.1"  # HTTPX for HTTP requests in tests
+pytest-mock = "^3.6.1"  # Pytest plugin for mocking in tests
 
+# [build-system]
+# Build system configuration for Poetry.
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 # Add this section to specify the package directory
 packages = [
-    { include = "egypt_metro" },  # Main package
+    { include = "egypt_metro" },  # Main package directory
 ]
