@@ -1,12 +1,11 @@
-# Render configuration file for deploying a Django application to Render
+# render.yaml
 
+# Render configuration file for deploying a Django application to Render
 services:
   - type: web
-    name: egypt-metro
-    dockerfilePath: ./docker/Dockerfile
+    name: django
     runtime: python
-    region: frankfurt                 # Adjust based on your location
-    plan: free
+    dockerfilePath: ./Dockerfile
     buildCommand: >
       apt-get update && apt-get install -y gcc libpq-dev python3-dev &&
       pip install --upgrade pip &&
@@ -26,6 +25,8 @@ services:
         value: https://backend-54v5.onrender.com
       - key: DEBUG
         value: "False"
+      - key: PYTHON_VERSION          # Specify the Python version
+        value: "3.11.10"
     disk:                            # Persistent storage (optional)
       name: persistent-data
       mountPath: /var/lib/egypt-metro
