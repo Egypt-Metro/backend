@@ -3,17 +3,18 @@
 services:
   - type: web
     name: egypt-metro
-    env: python
+    dockerfilePath: ./docker/Dockerfile
+    runtime: python
     region: frankfurt                 # Adjust based on your location
-    rootDirectory: backend          # Root directory of the project
     plan: free
-    buildCommand: 
-      - apt-get update && apt-get install -y gcc libpq-dev python3-dev
-      - pip install --upgrade pip
-      - pip install -r requirements.txt
-      - python manage.py collectstatic --noinput
-      - python manage.py migrate --noinput
-    startCommand: "gunicorn egypt_metro.wsgi:application --bind 0.0.0.0:8000"
+    buildCommand: >
+      apt-get update && apt-get install -y gcc libpq-dev python3-dev &&
+      pip install --upgrade pip &&
+      pip install poetry &&
+      poetry install --no-dev &&  
+      python manage.py collectstatic --noinput &&
+      python manage.py migrate --noinput
+    startCommand: "gunicorn egypt_metro.wsgi:application --bind 0.0.0.0:8000 --workers=3 --threads=2 --timeout=120"
     envVars:
       - key: ENVIRONMENT             # Environment for loading specific config
         value: prod
@@ -21,14 +22,12 @@ services:
         value: ${SECRET_KEY}
       - key: DATABASE_URL
         value: ${DATABASE_URL}
-      - key: CORS_ALLOW_ALL_ORIGINS   # Set CORS settings
-        value: "True"
+      - key: ALLOWED_HOSTS
+        value: https://backend-54v5.onrender.com
+      - key: DEBUG
+        value: "False"
     disk:                            # Persistent storage (optional)
       name: persistent-data
       mountPath: /var/lib/egypt-metro
       sizeGB: 1
-    logging:
-      - path: /var/log/egypt-metro.log
-    secretFiles:
-      - path: /etc/secrets/env.prod  # Load sensitive secrets (e.g., SECRET_KEY, JWT_SECRET)
     healthCheckPath: "/health"       # Optional, ensure health endpoint exists

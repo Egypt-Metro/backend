@@ -69,6 +69,7 @@ coverage.xml
 *.coveragerc
 
 # Docker files (if applicable)
+docker/
 docker-compose.yml
 Dockerfile
 *.dockerignore
