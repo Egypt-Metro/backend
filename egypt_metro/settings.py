@@ -54,7 +54,6 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",  # Security middleware
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise middleware
     "django.contrib.sessions.middleware.SessionMiddleware",  # Session middleware
     "django.middleware.common.CommonMiddleware",  # Common middleware
     "django.middleware.csrf.CsrfViewMiddleware",  # CSRF middleware
@@ -62,6 +61,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",  # Messages middleware
     "django.middleware.clickjacking.XFrameOptionsMiddleware",  # Clickjacking middleware
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise middleware
     "allauth.account.middleware.AccountMiddleware",  # Account middleware
     # "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
 ]
@@ -204,40 +204,40 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Refresh token lifetime
 }
 
-# LOGGING = {
-#     "version": 1,  # Log version
-#     "disable_existing_loggers": False,  # Don't disable existing loggers
-#     "formatters": {
-#         "verbose": {
-#             "format": "{levelname} {asctime} {module} {message}",  # Log format
-#             "style": "{",  # Use {} for formatting
-#         },
-#     },
-#     "handlers": {
-#         "console": {
-#             "class": "logging.StreamHandler",  # Log to console
-#             "formatter": "verbose",  # Use the verbose formatter
-#         },
-#         "file": {
-#             "level": "DEBUG",  # Log debug messages
-#             "class": "logging.FileHandler",  # Log to file
-#             "filename": BASE_DIR / "logs/debug.log",  # File where logs are saved
-#             "formatter": "verbose",  # Use the verbose formatter
-#         },
-#     },
-#     "loggers": {
-#         "django": {
-#             "handlers": ["console", "file"],  # Log to console and file
-#             "level": "INFO",  # Log info messages
-#             "propagate": True,
-#         },
-#         "__main__": {
-#             "handlers": ["console", "file"],  # Log to console and file
-#             "level": "DEBUG",  # Log all messages
-#             "propagate": True,
-#         },
-#     },
-# }
+LOGGING = {
+    "version": 1,  # Log version
+    "disable_existing_loggers": False,  # Don't disable existing loggers
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {message}",  # Log format
+            "style": "{",  # Use {} for formatting
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",  # Log to console
+            "formatter": "verbose",  # Use the verbose formatter
+        },
+        "file": {
+            "level": "DEBUG",  # Log debug messages
+            "class": "logging.FileHandler",  # Log to file
+            "filename": BASE_DIR / "logs/debug.log",  # File where logs are saved
+            "formatter": "verbose",  # Use the verbose formatter
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console", "file"],  # Log to console and file
+            "level": "INFO",  # Log info messages
+            "propagate": True,
+        },
+        "__main__": {
+            "handlers": ["console", "file"],  # Log to console and file
+            "level": "DEBUG",  # Log all messages
+            "propagate": True,
+        },
+    },
+}
 
 CACHES = {
     "default": {
