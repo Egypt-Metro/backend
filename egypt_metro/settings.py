@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "rest_framework",  # REST framework
     "rest_framework_simplejwt",  # JWT authentication
     "corsheaders",  # CORS headers
-    "debug_toolbar",  # Debug toolbar
+    # "debug_toolbar",  # Debug toolbar
     # Custom apps
     "apps.users.apps.UsersConfig",  # Users app
     "apps.stations.apps.StationsConfig",  # Stations app
@@ -62,8 +62,8 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",  # Messages middleware
     "django.middleware.clickjacking.XFrameOptionsMiddleware",  # Clickjacking middleware
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
-    "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
     "allauth.account.middleware.AccountMiddleware",  # Account middleware
+    # "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
 ]
 
 ROOT_URLCONF = "egypt_metro.urls"  # Root URL configuration

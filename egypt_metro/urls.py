@@ -54,10 +54,10 @@ urlpatterns = [
 ]
 
 # Debug Toolbar (only for development)
-if settings.DEBUG:
-    urlpatterns += [
-        path("__debug__/", include("debug_toolbar.urls")),  # Debug toolbar
-    ]
+# if settings.DEBUG:
+#     urlpatterns += [
+#         path("__debug__/", include("debug_toolbar.urls")),  # Debug toolbar
+#     ]
 
 # Static and media files (if DEBUG is enabled)
 if settings.DEBUG:
