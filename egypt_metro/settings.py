@@ -16,7 +16,6 @@ from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory for the project
 
@@ -205,40 +204,40 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Refresh token lifetime
 }
 
-LOGGING = {
-    "version": 1,  # Log version
-    "disable_existing_loggers": False,  # Don't disable existing loggers
-    "formatters": {
-        "verbose": {
-            "format": "{levelname} {asctime} {module} {message}",  # Log format
-            "style": "{",  # Use {} for formatting
-        },
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",  # Log to console
-            "formatter": "verbose",  # Use the verbose formatter
-        },
-        "file": {
-            "level": "DEBUG",  # Log debug messages
-            "class": "logging.FileHandler",  # Log to file
-            "filename": BASE_DIR / "logs/debug.log",  # File where logs are saved
-            "formatter": "verbose",  # Use the verbose formatter
-        },
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["console", "file"],  # Log to console and file
-            "level": "INFO",  # Log info messages
-            "propagate": True,
-        },
-        "__main__": {
-            "handlers": ["console", "file"],  # Log to console and file
-            "level": "DEBUG",  # Log all messages
-            "propagate": True,
-        },
-    },
-}
+# LOGGING = {
+#     "version": 1,  # Log version
+#     "disable_existing_loggers": False,  # Don't disable existing loggers
+#     "formatters": {
+#         "verbose": {
+#             "format": "{levelname} {asctime} {module} {message}",  # Log format
+#             "style": "{",  # Use {} for formatting
+#         },
+#     },
+#     "handlers": {
+#         "console": {
+#             "class": "logging.StreamHandler",  # Log to console
+#             "formatter": "verbose",  # Use the verbose formatter
+#         },
+#         "file": {
+#             "level": "DEBUG",  # Log debug messages
+#             "class": "logging.FileHandler",  # Log to file
+#             "filename": BASE_DIR / "logs/debug.log",  # File where logs are saved
+#             "formatter": "verbose",  # Use the verbose formatter
+#         },
+#     },
+#     "loggers": {
+#         "django": {
+#             "handlers": ["console", "file"],  # Log to console and file
+#             "level": "INFO",  # Log info messages
+#             "propagate": True,
+#         },
+#         "__main__": {
+#             "handlers": ["console", "file"],  # Log to console and file
+#             "level": "DEBUG",  # Log all messages
+#             "propagate": True,
+#         },
+#     },
+# }
 
 CACHES = {
     "default": {
