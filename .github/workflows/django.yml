@@ -38,22 +38,22 @@ jobs:
       run: |
         poetry export --without-hashes -o requirements.txt
 
-    - name: Install Render CLI
-      run: |
-        npm install -g render-cli
-        echo 'export PATH="$PATH:$(npm bin -g)"' >> $GITHUB_ENV
-        echo "Render CLI installation complete."
+    # - name: Install Render CLI
+    #   run: |
+    #     npm install -g render-cli
+    #     echo 'export PATH="$PATH:$(npm bin -g)"' >> $GITHUB_ENV
+    #     echo "Render CLI installation complete."
 
-    - name: Verify Render CLI Installation
-      run: |
-        echo "Verifying Render CLI"
-        render --version  # Check if render command works
+    # - name: Verify Render CLI Installation
+    #   run: |
+    #     echo "Verifying Render CLI"
+    #     render --version  # Check if render command works
 
-    - name: Deploy to Render
-      env:
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      run: |
-        echo "Starting deployment to Render..."
-        render deploy --config render.yaml --service-name egypt-metro
-        echo "Deployment complete!"
+    # - name: Deploy to Render
+    #   env:
+    #     SECRET_KEY: ${{ secrets.SECRET_KEY }}
+    #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    #   run: |
+    #     echo "Starting deployment to Render..."
+    #     render deploy --config render.yaml --service-name egypt-metro
+    #     echo "Deployment complete!"
