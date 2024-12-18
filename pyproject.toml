@@ -21,7 +21,7 @@ django = "^4.2.16"  # Django version
 fastapi = "^0.68.1"  # FastAPI version
 uvicorn = "^0.15.0"  # Uvicorn version
 pydantic = "^1.8.2"  # Pydantic version
-httpx = "^0.21.1"  # HTTPX version
+httpx = "^0.23.0"  # HTTPX version
 starlette = "^0.14.2"  # Starlette version
 asyncpg = "^0.30.0"  # asyncpg version for PostgreSQL connection
 gunicorn = "^23.0.0"  # Gunicorn version
@@ -112,7 +112,7 @@ whitenoise = "6.7.0"  # WhiteNoise for serving static files in Django
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"  # Pytest for unit testing
 pytest-asyncio = "^0.15.1"  # Pytest plugin for asyncio tests
-httpx = "^0.21.1"  # HTTPX for HTTP requests in tests
+httpx = "^0.23.0"  # HTTPX for HTTP requests in tests
 pytest-mock = "^3.6.1"  # Pytest plugin for mocking in tests
 
 # [build-system]
