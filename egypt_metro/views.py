@@ -1,5 +1,8 @@
+import logging
 from django.http import JsonResponse
 from django.db import connection
+
+logger = logging.getLogger(__name__)
 
 
 def health_check(request):
@@ -7,6 +10,7 @@ def health_check(request):
         connection.ensure_connection()  # Check DB connection
         return JsonResponse({"status": "ok"})
     except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
         return JsonResponse({"status": "error", "details": str(e)}, status=500)
 
 

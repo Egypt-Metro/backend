@@ -111,6 +111,7 @@ whitenoise = "6.7.0"  # WhiteNoise for serving static files in Django
 
 # [tool.poetry.dev-dependencies]
 # Development dependencies including testing and development tools.
+django-db-geventpool = "^4.0.7"
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"  # Pytest for unit testing
 pytest-asyncio = "^0.15.1"  # Pytest plugin for asyncio tests

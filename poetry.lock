@@ -625,6 +625,20 @@ asgiref = ">=3.6"
 django = ">=4.2"
 
 [[package]]
+name = "django-db-geventpool"
+version = "4.0.7"
+description = "Add a DB connection pool using gevent to django"
+optional = false
+python-versions = "*"
+files = [
+    {file = "django_db_geventpool-4.0.7-py2.py3-none-any.whl", hash = "sha256:4e93d34df4782dfbe3e92271d70f22f0cde7d0d3baebda72506a13934fcf3761"},
+    {file = "django_db_geventpool-4.0.7.tar.gz", hash = "sha256:face4e9b78aad1b758a6251ad627206924ec6d868b0b6a8ea46356e2b73f48e1"},
+]
+
+[package.dependencies]
+django = ">=3.1"
+
+[[package]]
 name = "django-environ"
 version = "0.11.2"
 description = "A package that allows you to utilize 12factor inspired environment variables to configure your Django application."
@@ -2339,4 +2353,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<4.0"
-content-hash = "c64c6c6070ce4ea2687dc4867dd14610de5aa4d7c709476642a5b17b42aca864"
+content-hash = "89722855bc817e7d8bc71e2e71fa2fe96723821ff122c796cd5ba44b8262023a"

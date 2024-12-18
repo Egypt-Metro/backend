@@ -55,5 +55,5 @@ jobs:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
         echo "Starting deployment to Render..."
-        render deploy --service-name egypt-metro
+        render deploy --config render.yaml --service-name egypt-metro
         echo "Deployment complete!"
