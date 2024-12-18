@@ -1,3 +1,5 @@
+# pyproject.toml file for Poetry project configuration.
+
 # [tool.black]
 # Configuration for the Black code formatter.
 [tool.black]

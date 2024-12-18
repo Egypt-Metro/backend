@@ -38,8 +38,16 @@ jobs:
     - name: Install Render CLI
       run: |
         curl -fsSL https://render.com/static/cli/install.sh | bash
+        # Check if the render CLI is installed correctly
+        echo "Render CLI installed at: $HOME/.render"
+        ls -al $HOME/.render  # List files to confirm the installation
         echo 'export PATH="$HOME/.render:$PATH"' >> $GITHUB_ENV
-        source $GITHUB_ENV  # Ensure that the environment variables are loaded
+        echo "Render CLI installation complete."
+
+    - name: Verify Render CLI Installation
+      run: |
+        echo "Verifying Render CLI"
+        render --version  # Check if render command works
 
     - name: Deploy to Render
       env:
