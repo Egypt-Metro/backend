@@ -6,12 +6,20 @@ logger = logging.getLogger(__name__)
 
 
 def health_check(request):
+    """
+    Health check view to verify the application is running properly.
+    """
     try:
-        connection.ensure_connection()  # Check DB connection
-        return JsonResponse({"status": "ok"})
+        # Check database connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1;")
+
+        # Return a success response
+        return JsonResponse({"status": "ok"}, status=200)
+
     except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
-        return JsonResponse({"status": "error", "details": str(e)}, status=500)
+        logger.error("Health check failed", exc_info=e)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 
 def custom_404(request, exception=None):

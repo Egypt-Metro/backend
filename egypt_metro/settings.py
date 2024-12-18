@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",  # Sessions framework
     "django.contrib.messages",  # Messages framework
     "django.contrib.staticfiles",  # Static files
+
     # External packages
     "allauth",  # Authentication
     "allauth.account",  # Account management
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",  # JWT authentication
     "corsheaders",  # CORS headers
     # "debug_toolbar",  # Debug toolbar
+
     # Custom apps
     "apps.users.apps.UsersConfig",  # Users app
     "apps.stations.apps.StationsConfig",  # Stations app
@@ -105,8 +107,8 @@ dotenv_path = BASE_DIR / f"env/.env.{ENVIRONMENT}"
 load_dotenv(dotenv_path)
 
 # Load secret file if in production
-if ENVIRONMENT == "prod":
-    load_dotenv("/etc/secrets/env.prod")  # Load production secrets
+# if ENVIRONMENT == "prod":
+#     load_dotenv("/etc/secrets/env.prod")  # Load production secrets
 
 # General settings
 DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
@@ -291,7 +293,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "/static/"  # URL for static files
-STATIC_ROOT = BASE_DIR / "staticfiles"  # Folder where static files will be collected
+STATIC_ROOT = "/opt/render/project/src/staticfiles/"  # Folder where static files will be collected
 STATICFILES_STORAGE = (
     "whitenoise.storage.CompressedManifestStaticFilesStorage"  # Static files storage
 )

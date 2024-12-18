@@ -17,8 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from .views import health_check
-from django.conf import settings
-from django.conf.urls.static import static
+# from django.conf import settings
+# from django.conf.urls.static import static
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
@@ -38,19 +38,23 @@ schema_view = get_schema_view(
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),  # Admin panel
+
     # Authentication
     path("accounts/", include("allauth.urls")),  # Allauth authentication
+
     # API Routes
     path("api/users/", include("apps.users.urls")),  # User authentication
     path("api/stations/", include("apps.stations.urls")),  # Stations and trips
+
     # Miscellaneous
     path("health/", health_check, name="health_check"),  # Health check
+
     # Documentation
-    path(
-        "swagger/",
-        schema_view.with_ui("swagger", cache_timeout=0),
-        name="schema-swagger-ui",
-    ),  # Swagger UI
+    # path(
+    #     "swagger/",
+    #     schema_view.with_ui("swagger", cache_timeout=0),
+    #     name="schema-swagger-ui",
+    # ),  # Swagger UI
 ]
 
 # Debug Toolbar (only for development)
@@ -60,7 +64,7 @@ urlpatterns = [
 #     ]
 
 # Static and media files (if DEBUG is enabled)
-if settings.DEBUG:
-    urlpatterns += static(
-        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
-    )  # Media files
+# if settings.DEBUG:
+#     urlpatterns += static(
+#         settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+#     )  # Media files
