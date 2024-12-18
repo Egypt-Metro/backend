@@ -204,36 +204,40 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Refresh token lifetime
 }
 
+# Create logs directory if it doesn't exist
+LOGS_DIR = BASE_DIR / "logs"
+LOGS_DIR.mkdir(exist_ok=True)
+
 LOGGING = {
-    "version": 1,  # Log version
-    "disable_existing_loggers": False,  # Don't disable existing loggers
+    "version": 1,
+    "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "{levelname} {asctime} {module} {message}",  # Log format
-            "style": "{",  # Use {} for formatting
+            "format": "{levelname} {asctime} {module} {message}",
+            "style": "{",
         },
     },
     "handlers": {
         "console": {
-            "class": "logging.StreamHandler",  # Log to console
-            "formatter": "verbose",  # Use the verbose formatter
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
         },
         "file": {
-            "level": "DEBUG",  # Log debug messages
-            "class": "logging.FileHandler",  # Log to file
-            "filename": BASE_DIR / "logs/debug.log",  # File where logs are saved
-            "formatter": "verbose",  # Use the verbose formatter
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": str(LOGS_DIR / "debug.log"),
+            "formatter": "verbose",
         },
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "file"],  # Log to console and file
-            "level": "INFO",  # Log info messages
+            "handlers": ["console"],  # Only console for production
+            "level": "INFO",
             "propagate": True,
         },
         "__main__": {
-            "handlers": ["console", "file"],  # Log to console and file
-            "level": "DEBUG",  # Log all messages
+            "handlers": ["console"],  # Only console for production
+            "level": "DEBUG",
             "propagate": True,
         },
     },

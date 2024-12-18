@@ -1,19 +1,20 @@
 # render.yaml
-
 # Render configuration file for deploying a Django application to Render
+# https://render.com/docs/deploy-django
+
 services:
   - type: web
     name: django
     runtime: python
     dockerfilePath: ./Dockerfile
-    buildCommand: >
-      apt-get update && apt-get install -y gcc libpq-dev python3-dev &&
-      pip install --upgrade pip &&
-      pip install poetry &&
-      poetry install --no-dev &&  
-      python manage.py collectstatic --noinput &&
+    buildCommand: |
+      apt-get update && apt-get install -y gcc libpq-dev python3-dev && \
+      pip install --upgrade pip && \
+      pip install poetry && \
+      poetry install --no-dev && \
+      python manage.py collectstatic --noinput && \
       python manage.py migrate --noinput
-    startCommand: "gunicorn egypt_metro.wsgi:application --bind 0.0.0.0:8000 --workers=3 --threads=2 --timeout=120"
+    startCommand: gunicorn egypt_metro.wsgi:application --bind 0.0.0.0:$PORT --workers=3 --threads=2 --timeout=120
     envVars:
       - key: ENVIRONMENT             # Environment for loading specific config
         value: prod
@@ -32,3 +33,4 @@ services:
       mountPath: /var/lib/egypt-metro
       sizeGB: 1
     healthCheckPath: "/health"       # Optional, ensure health endpoint exists
+    autoDeploy: true                  # Optional, auto-deploy when code is pushed to Git
