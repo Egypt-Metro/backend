@@ -23,7 +23,7 @@ services:
       - key: DATABASE_URL
         value: ${DATABASE_URL}
       - key: ALLOWED_HOSTS
-        value: backend-54v5.onrender.com,127.0.0.1,localhost
+        value: backend-54v5.onrender.com
       - key: DEBUG
         value: "False"
       - key: PYTHON_VERSION          # Specify the Python version
@@ -32,5 +32,5 @@ services:
       name: persistent-data
       mountPath: /var/lib/egypt-metro
       sizeGB: 1
-    # healthCheckPath: "/health"       # Optional, ensure health endpoint exists
+    healthCheckPath: "/health/"       # Optional, ensure health endpoint exists
     autoDeploy: true                  # Optional, auto-deploy when code is pushed to Git

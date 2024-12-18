@@ -49,11 +49,11 @@ jobs:
         echo "Verifying Render CLI"
         render --version  # Check if render command works
 
-    - name: Deploy to Render
-      env:
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      run: |
-        echo "Starting deployment to Render..."
-        render deploy --config render.yaml --service-name egypt-metro
-        echo "Deployment complete!"
+    # - name: Deploy to Render
+    #   env:
+    #     SECRET_KEY: ${{ secrets.SECRET_KEY }}
+    #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    #   run: |
+    #     echo "Starting deployment to Render..."
+    #     render deploy --config render.yaml --service-name egypt-metro
+    #     echo "Deployment complete!"

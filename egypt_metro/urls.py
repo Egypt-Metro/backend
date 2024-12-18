@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import health_check
+from .views import health_check, home
 # from django.conf import settings
 # from django.conf.urls.static import static
 from drf_yasg.views import get_schema_view
@@ -38,6 +38,9 @@ schema_view = get_schema_view(
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),  # Admin panel
+
+    # Home
+    path("", home, name="home"),    # Home view
 
     # Authentication
     path("accounts/", include("allauth.urls")),  # Allauth authentication

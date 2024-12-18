@@ -5,6 +5,16 @@ from django.db import connection
 logger = logging.getLogger(__name__)
 
 
+def home(request):
+    data = {
+        "message": "Welcome to Egypt Metro Backend",
+        "admin_panel": "/admin/",
+        "api_documentation": "/docs/",
+        "health_check": "/health/",
+    }
+    return JsonResponse(data)
+
+
 def health_check(request):
     """
     Health check view to verify the application is running properly.
