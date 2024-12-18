@@ -114,7 +114,7 @@ if ENVIRONMENT == "prod":
 # General settings
 DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
-BASE_URL = os.getenv("BASE_URL", "http://127.0.0.1:8000")  # Base URL for the project
+BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
 
 # Database configuration
