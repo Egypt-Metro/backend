@@ -32,5 +32,5 @@ services:
       name: persistent-data
       mountPath: /var/lib/egypt-metro
       sizeGB: 1
-    healthCheckPath: "/health"       # Optional, ensure health endpoint exists
+    # healthCheckPath: "/health"       # Optional, ensure health endpoint exists
     autoDeploy: true                  # Optional, auto-deploy when code is pushed to Git

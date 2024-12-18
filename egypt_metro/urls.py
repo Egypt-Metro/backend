@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import health_check
+# from .views import health_check
 # from django.conf import settings
 # from django.conf.urls.static import static
 from drf_yasg.views import get_schema_view
@@ -47,7 +47,7 @@ urlpatterns = [
     path("api/stations/", include("apps.stations.urls")),  # Stations and trips
 
     # Miscellaneous
-    path("health/", health_check, name="health_check"),  # Health check
+    # path("health/", health_check, name="health_check"),  # Health check
 
     # Documentation
     # path(

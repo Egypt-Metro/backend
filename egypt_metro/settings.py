@@ -293,7 +293,12 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "/static/"  # URL for static files
-STATIC_ROOT = "/opt/render/project/src/staticfiles/"  # Folder where static files will be collected
+
+if os.getenv("RENDER"):
+    STATIC_ROOT = "/opt/render/project/src/staticfiles/"
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Folder where static files will be collected
+
 STATICFILES_STORAGE = (
     "whitenoise.storage.CompressedManifestStaticFilesStorage"  # Static files storage
 )
