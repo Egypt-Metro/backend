@@ -39,6 +39,7 @@ jobs:
       run: |
         curl -fsSL https://render.com/static/cli/install.sh | bash
         echo 'export PATH="$HOME/.render:$PATH"' >> $GITHUB_ENV
+        source $GITHUB_ENV  # Ensure that the environment variables are loaded
 
     - name: Deploy to Render
       env:
