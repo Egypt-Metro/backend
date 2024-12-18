@@ -15,6 +15,7 @@ import os  # Operating system dependent functionality
 from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory for the project
@@ -22,12 +23,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory for the proj
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 
-ALLOWED_HOSTS = [
-    os.getenv("BASE_URL"),
-    "127.0.0.1",
-    "localhost",
-    "https://backend-54v5.onrender.com",
-]
+# SECURITY WARNING: don't run with debug turned on in production!
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 
 # Application definition
 
@@ -170,14 +167,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  # For admin logins
-    "allauth.account.auth_backends.AuthenticationBackend",  # For allauth
+    # "allauth.account.auth_backends.AuthenticationBackend",  # For allauth
 ]
 
-SOCIALACCOUNT_PROVIDERS = {
-    "google": {
-        "APP": {"client_id": "your-client-id", "secret": "your-secret", "key": ""}
-    }
-}
+# SOCIALACCOUNT_PROVIDERS = {
+#     "google": {
+#         "APP": {"client_id": "your-client-id", "secret": "your-secret", "key": ""}
+#     }
+# }
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (

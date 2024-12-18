@@ -23,7 +23,7 @@ services:
       - key: DATABASE_URL
         value: ${DATABASE_URL}
       - key: ALLOWED_HOSTS
-        value: https://backend-54v5.onrender.com
+        value: backend-54v5.onrender.com,127.0.0.1,localhost
       - key: DEBUG
         value: "False"
       - key: PYTHON_VERSION          # Specify the Python version

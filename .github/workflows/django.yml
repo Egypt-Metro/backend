@@ -1,3 +1,6 @@
+# This is a GitHub Actions workflow file that deploys a Django app to Render.
+#  .github/workflows/django.yaml
+
 name: Django CI
 
 on:
@@ -37,11 +40,8 @@ jobs:
 
     - name: Install Render CLI
       run: |
-        curl -fsSL https://render.com/static/cli/install.sh | bash
-        # Check if the render CLI is installed correctly
-        echo "Render CLI installed at: $HOME/.render"
-        ls -al $HOME/.render  # List files to confirm the installation
-        echo 'export PATH="$HOME/.render:$PATH"' >> $GITHUB_ENV
+        npm install -g render-cli
+        echo 'export PATH="$PATH:$(npm bin -g)"' >> $GITHUB_ENV
         echo "Render CLI installation complete."
 
     - name: Verify Render CLI Installation
