@@ -14,14 +14,19 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import logging
 from django.contrib import admin
 from django.urls import path, include
+from egypt_metro import settings
 from .views import health_check, home
-# from django.conf import settings
 # from django.conf.urls.static import static
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # OpenAPI schema view
 schema_view = get_schema_view(
@@ -30,12 +35,15 @@ schema_view = get_schema_view(
         default_version="v1",
         description="API documentation for Metro application",
         terms_of_service="https://www.google.com/policies/terms/",
-        # contact=openapi.Contact(email="support@egyptmetro.com"),
-        # license=openapi.License(name="MIT License"),
+        contact=openapi.Contact(email="a.moh.nassar00@gmail.com"),
+        license=openapi.License(name="MIT License", url="https://opensource.org/licenses/MIT"),
     ),
     public=True,
     permission_classes=(AllowAny,),
 )
+
+# Log schema_view after it is defined
+# logger.debug(schema_view)
 
 # Core URL patterns
 urlpatterns = [
@@ -56,20 +64,25 @@ urlpatterns = [
     path("health/", health_check, name="health_check"),  # Health check
 
     # Documentation
+    path("swagger.json", schema_view.without_ui(cache_timeout=0), name="schema-json"),  # Swagger JSON
+
     path(
         "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),  # Swagger UI
 
-    # path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+    path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),  # ReDoc
 ]
 
+# Debug the URL loading process
+# logger.debug('URL patterns: %s', [path.pattern for path in urlpatterns])
+
 # Debug Toolbar (only for development)
-# if settings.DEBUG:
-#     urlpatterns += [
-#         path("__debug__/", include("debug_toolbar.urls")),  # Debug toolbar
-#     ]
+if settings.DEBUG:
+    urlpatterns += [
+        path("__debug__/", include("debug_toolbar.urls")),  # Debug toolbar
+    ]
 
 # Static and media files (if DEBUG is enabled)
 # if settings.DEBUG:

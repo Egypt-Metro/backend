@@ -31,8 +31,8 @@ SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 
-# Define the API's start time globally using an environment variable or default to `now`
-API_START_TIME = os.getenv("API_START_TIME", datetime.now().isoformat())
+# Set API start time to the application's boot time
+API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
 # Application definition
 
@@ -110,6 +110,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",  # Auth context processor
                 "django.contrib.messages.context_processors.messages",  # Messages context processor
                 "django.template.context_processors.request",  # Request context processor
+                'django.template.context_processors.static',  # Static context processor
             ],
         },
     },
@@ -152,6 +153,14 @@ REQUIRED_ENV_VARS = ["SECRET_KEY", "DATABASE_URL", "JWT_SECRET", "BASE_URL"]
 for var in REQUIRED_ENV_VARS:
     if not os.getenv(var):
         raise ValueError(f"{var} is not set in environment variables.")
+
+if ENVIRONMENT == "prod":
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_PRELOAD = True
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
 
 # if not DEBUG:  # Enable only in production
 #     SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True") == "True"
@@ -197,17 +206,28 @@ REST_FRAMEWORK = {
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",  # For session-based authentication
+        'rest_framework.authentication.BasicAuthentication',
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",  # Default to authenticated users
+        'rest_framework.permissions.AllowAny',  # Allow any user
     ),
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',    # Default renderer
+        'rest_framework.renderers.BrowsableAPIRenderer',    # Browsable API renderer
+        # 'drf_yasg.renderers.SwaggerJSONRenderer',   # Swagger JSON renderer
+        # 'drf_yasg.renderers.OpenAPIRenderer',   # OpenAPI renderer
+    ],
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.UserRateThrottle",
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "user": "1000/day",  # 1000 requests per day
-        "anon": "100/day",  # 100 requests per day
+        'anon': '60/minute',  # Anonymous users can make 60 requests per minute
+        'user': '120/minute',  # Authenticated users can make 120 requests per minute
+        'station_lookup': '10/second',  # For specific station lookup endpoints
+        'route_planning': '30/minute',  # For route and trip planning APIs
+        'ticket_booking': '15/minute',  # For ticket booking and QR code generation
     },
 }
 
@@ -284,6 +304,17 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Swagger settings
+SWAGGER_SETTINGS = {
+    "USE_SESSION_AUTH": False,  # Disable session-based authentication for Swagger
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+        },
+    },
+}
 
 # Initialize Sentry for Error Tracking
 # SENTRY_DSN = os.getenv("SENTRY_DSN")  # Use environment variable

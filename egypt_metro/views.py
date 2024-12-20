@@ -1,16 +1,15 @@
 import logging
 from django.http import JsonResponse
 from django.db import connection
-from django.utils.timezone import now
-from datetime import timedelta
+# from django.utils.timezone import now
+from datetime import datetime
 from django.http import HttpResponse
-
 from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
 
 # Define the API's start time globally (when the server starts)
-API_START_TIME = now()
+API_START_TIME = datetime.utcnow()
 
 
 @csrf_exempt
@@ -20,10 +19,20 @@ def home(request):
     Includes links to key features like admin panel, documentation, health checks, and API routes.
     """
 
+    # Get the current time
+    current_time = datetime.utcnow()
+
+    # Format the current time with minutes and seconds
+    current_date_time = current_time.strftime("%d/%m/%Y %I:%M:%S %p")
+
     # Calculate uptime dynamically
-    current_time = now()
     uptime_delta = current_time - API_START_TIME
-    uptime = str(timedelta(seconds=uptime_delta.total_seconds()))
+    days, remainder = divmod(uptime_delta.total_seconds(), 86400)  # 86400 seconds in a day
+    hours, remainder = divmod(remainder, 3600)  # 3600 seconds in an hour
+    minutes, seconds = divmod(remainder, 60)  # 60 seconds in a minute
+
+    # Format uptime
+    uptime = f"{int(days)} days, {int(hours)} hours, {int(minutes)} minutes, {int(seconds)} seconds"
 
     # Data to return as JSON response
     data = {
@@ -36,6 +45,7 @@ def home(request):
         "redoc": "/redoc/",     # Redoc API documentation
         "version": "1.0.0",  # Backend version
         "uptime": uptime,  # Dynamically calculated uptime
+        "current_date_time": current_date_time,  # Current date and time with minutes and seconds
         "api_routes": {
             "users": "/api/users/",  # User-related routes
             "register": "/api/users/register/",  # User registration
@@ -62,6 +72,7 @@ def home(request):
                 <p>Status: {data['status']}</p>
                 <p>Version: {data['version']}</p>
                 <p>Uptime: {data['uptime']}</p>
+                <p>Current Date & Time: {data['current_date_time']}</p>
                 <h2>Quick Links</h2>
                 <ul>
                     <li><a href="{data['admin_panel']}">Admin Panel</a></li>
