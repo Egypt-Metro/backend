@@ -138,6 +138,8 @@ DATABASES = {
         "CONN_MAX_AGE": 500,  # Maximum connection age
         "OPTIONS": {
             "options": "-c search_path=public",  # Set the default schema
+            # "sslmode": "require",  # Enforce SSL mode
+            # "ssl_require": True,  # Enforce SSL in production
         },
         "DISABLE_SERVER_SIDE_CURSORS": True,  # Disable server-side cursors
         "NAME": os.getenv("DB_NAME"),  # Database name
