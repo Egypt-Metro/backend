@@ -16,15 +16,23 @@ from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
 from decouple import config
+from datetime import datetime
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory for the project
 
+# Load the appropriate .env file based on an environment variable
+ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")  # Default to dev
+dotenv_path = BASE_DIR / f"env/.env.{ENVIRONMENT}"
+load_dotenv(dotenv_path)
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
-
-# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+
+# Define the API's start time globally using an environment variable or default to `now`
+API_START_TIME = os.getenv("API_START_TIME", datetime.now().isoformat())
 
 # Application definition
 
@@ -44,6 +52,7 @@ INSTALLED_APPS = [
     "rest_framework",  # REST framework
     "rest_framework_simplejwt",  # JWT authentication
     "corsheaders",  # CORS headers
+    'drf_yasg',     # Swagger
     # "debug_toolbar",  # Debug toolbar
 
     # Custom apps
@@ -66,21 +75,33 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "egypt_metro.urls"  # Root URL configuration
+WSGI_APPLICATION = "egypt_metro.wsgi.application"  # WSGI application
 
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = (
     os.getenv("CORS_ALLOW_ALL_ORIGINS", "False") == "True"
 )  # Default to False
+
+if not CORS_ALLOW_ALL_ORIGINS:
+    CORS_ALLOWED_ORIGINS = [
+        "https://backend-54v5.onrender.com",
+        "http://localhost:8000",
+    ]
+
 CORS_ALLOW_HEADERS = list(default_headers) + [  # Default headers + custom headers
     "Authorization",  # Authorization header
     "Content-Type",  # Content type header
 ]
+
 CORS_ALLOW_CREDENTIALS = True  # Allow credentials
+
+if ENVIRONMENT == "dev":
+    CORS_ALLOW_ALL_ORIGINS = True
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],  # Add template directories here
+        "DIRS": [os.path.join(BASE_DIR, 'templates')],  # Add template directories here
         "APP_DIRS": True,  # Enable app templates
         "OPTIONS": {
             "context_processors": [
@@ -94,24 +115,17 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "egypt_metro.wsgi.application"  # WSGI application
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# Custom User Model
 AUTH_USER_MODEL = "users.User"
-
-# Load the appropriate .env file based on an environment variable
-ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")  # Default to dev
-dotenv_path = BASE_DIR / f"env/.env.{ENVIRONMENT}"
-load_dotenv(dotenv_path)
 
 # Load secret file if in production
 # if ENVIRONMENT == "prod":
 #     load_dotenv("/etc/secrets/env.prod")  # Load production secrets
 
 # General settings
-DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
@@ -302,6 +316,10 @@ else:
 STATICFILES_STORAGE = (
     "whitenoise.storage.CompressedManifestStaticFilesStorage"  # Static files storage
 )
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 # Media files (optional, if your project uses media uploads)
 MEDIA_URL = "/media/"

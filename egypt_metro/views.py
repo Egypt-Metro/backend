@@ -1,18 +1,86 @@
 import logging
 from django.http import JsonResponse
 from django.db import connection
+from django.utils.timezone import now
+from datetime import timedelta
+from django.http import HttpResponse
+
+from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
 
+# Define the API's start time globally (when the server starts)
+API_START_TIME = now()
 
+
+@csrf_exempt
 def home(request):
+    """
+    Home endpoint that provides an overview of the API.
+    Includes links to key features like admin panel, documentation, health checks, and API routes.
+    """
+
+    # Calculate uptime dynamically
+    current_time = now()
+    uptime_delta = current_time - API_START_TIME
+    uptime = str(timedelta(seconds=uptime_delta.total_seconds()))
+
+    # Data to return as JSON response
     data = {
         "message": "Welcome to Egypt Metro Backend",
-        "admin_panel": "/admin/",
-        "api_documentation": "/docs/",
-        "health_check": "/health/",
+        "status": "OK",  # Status indicating the API is operational
+        "admin_panel": "/admin/",  # Link to Django admin panel
+        "api_documentation": "/docs/",  # Link to API documentation
+        "health_check": "/health/",  # Health check endpoint
+        "swagger": "/swagger/",     # Swagger API documentation
+        "redoc": "/redoc/",     # Redoc API documentation
+        "version": "1.0.0",  # Backend version
+        "uptime": uptime,  # Dynamically calculated uptime
+        "api_routes": {
+            "users": "/api/users/",  # User-related routes
+            "register": "/api/users/register/",  # User registration
+            "login": "/api/users/login/",  # User login
+            "profile": "/api/users/profile/",  # User profile
+            "update_profile": "/api/users/profile/update/",  # Update profile
+            "token_refresh": "/api/users/token/refresh/",  # Refresh token
+            "stations": "/api/stations/",  # Stations-related routes
+            "stations_list": "/api/stations/list/",  # List stations
+            "trip_details": "/api/stations/trip/<start_station_id>/<end_station_id>/",  # Trip details
+            "nearest_station": "/api/stations/nearest/",  # Nearest station
+        },
     }
-    return JsonResponse(data)
+
+    # Check if browser or API client
+    if "text/html" in request.META.get("HTTP_ACCEPT", ""):
+        html_content = f"""
+        <html>
+            <head>
+                <title>Egypt Metro API</title>
+            </head>
+            <body>
+                <h1>Welcome to Egypt Metro Backend</h1>
+                <p>Status: {data['status']}</p>
+                <p>Version: {data['version']}</p>
+                <p>Uptime: {data['uptime']}</p>
+                <h2>Quick Links</h2>
+                <ul>
+                    <li><a href="{data['admin_panel']}">Admin Panel</a></li>
+                    <li><a href="{data['api_documentation']}">API Documentation</a></li>
+                    <li><a href="{data['health_check']}">Health Check</a></li>
+                    <li><a href="{data['swagger']}">Swagger API Documentation</a></li>
+                    <li><a href="{data['redoc']}">Redoc API Documentation</a></li>
+                </ul>
+                <h2>API Routes</h2>
+                <ul>
+        """
+        for name, path in data["api_routes"].items():
+            html_content += f"<li><a href='{path}'>{name}</a></li>"
+        html_content += "</ul></body></html>"
+
+        return HttpResponse(html_content)
+
+    # Return the JSON response with status code 200
+    return JsonResponse(data, status=200)
 
 
 def health_check(request):

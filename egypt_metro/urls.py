@@ -26,9 +26,12 @@ from rest_framework.permissions import AllowAny
 # OpenAPI schema view
 schema_view = get_schema_view(
     openapi.Info(
-        title="Your API",
+        title="Metro API",
         default_version="v1",
-        description="API documentation for the Flutter app",
+        description="API documentation for Metro application",
+        terms_of_service="https://www.google.com/policies/terms/",
+        # contact=openapi.Contact(email="support@egyptmetro.com"),
+        # license=openapi.License(name="MIT License"),
     ),
     public=True,
     permission_classes=(AllowAny,),
@@ -53,11 +56,13 @@ urlpatterns = [
     path("health/", health_check, name="health_check"),  # Health check
 
     # Documentation
-    # path(
-    #     "swagger/",
-    #     schema_view.with_ui("swagger", cache_timeout=0),
-    #     name="schema-swagger-ui",
-    # ),  # Swagger UI
+    path(
+        "swagger/",
+        schema_view.with_ui("swagger", cache_timeout=0),
+        name="schema-swagger-ui",
+    ),  # Swagger UI
+
+    # path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
 
 # Debug Toolbar (only for development)
