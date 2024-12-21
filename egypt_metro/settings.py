@@ -43,6 +43,10 @@ ALLOWED_HOSTS = ["*"]  # Temporary for debugging purposes
 # Set API start time to the application's boot time
 API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
+SESSION_COOKIE_AGE = 3600  # Session lasts for 1 hour
+SESSION_SAVE_EVERY_REQUEST = True  # Extend session each request
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session persists after closing the browser
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -55,9 +59,9 @@ INSTALLED_APPS = [
 
     # External packages
     "allauth",  # Authentication
-    "allauth.account",  # Account management
-    "allauth.socialaccount",  # Social authentication
-    "allauth.socialaccount.providers.google",  # Google OAuth provider
+    # "allauth.account",  # Account management
+    # "allauth.socialaccount",  # Social authentication
+    # "allauth.socialaccount.providers.google",  # Google OAuth provider
     "rest_framework",  # REST framework
     "rest_framework_simplejwt",  # JWT authentication
     "corsheaders",  # CORS headers
@@ -79,7 +83,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",  # Clickjacking middleware
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
     "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise middleware
-    "allauth.account.middleware.AccountMiddleware",  # Account middleware
+    # "allauth.account.middleware.AccountMiddleware",  # Account middleware
     # "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
 ]
 

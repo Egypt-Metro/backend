@@ -1,3 +1,5 @@
+# apps/users/serializers.py
+
 from rest_framework import serializers
 from .models import User
 
@@ -14,6 +16,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             "username",
             "password",
             "confirm_password",
+            "first_name",
+            "last_name",
             "national_id",
             "phone_number",
         ]
@@ -45,6 +49,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             username=validated_data["username"],
             email=validated_data["email"],
             password=validated_data["password"],
+            first_name=validated_data["first_name"],
+            last_name=validated_data["last_name"],
             national_id=validated_data["national_id"],
             phone_number=validated_data.get("phone_number", None),
         )

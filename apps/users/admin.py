@@ -5,6 +5,7 @@ from .models import User
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     list_display = (    # fields to display
+        "id",
         "username",
         "email",
         "first_name",
@@ -15,7 +16,7 @@ class UserAdmin(admin.ModelAdmin):
         "balance",
     )
     search_fields = ("username", "email", "first_name", "last_name", "phone_number", 'national_id')    # fields to search
-    ordering = ("-date_joined",)    # order by username
+    ordering = ("date_joined",)    # Ascending order by join date
 
     # Fields to make editable directly in the list view
     list_editable = (
