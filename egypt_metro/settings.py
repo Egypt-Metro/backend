@@ -28,10 +28,10 @@ dotenv_path = BASE_DIR / f"env/.env.{ENVIRONMENT}"
 load_dotenv(dotenv_path)
 
 # Check if the .env file exists and load it
-if dotenv_path.is_file():
-    load_dotenv(dotenv_path)
-else:
-    raise FileNotFoundError(f"Environment file not found: {dotenv_path}")
+# if dotenv_path.is_file():
+#     load_dotenv(dotenv_path)
+# else:
+#     raise FileNotFoundError(f"Environment file not found: {dotenv_path}")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
