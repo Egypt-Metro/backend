@@ -16,7 +16,7 @@ import dj_database_url    # type: ignore # Parse database URLs
 from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
-from decouple import config
+# from decouple import config
 from datetime import datetime
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -35,8 +35,10 @@ load_dotenv(dotenv_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
-DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+# DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
+# ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+DEBUG = True
+ALLOWED_HOSTS = ["*"]  # Temporary for debugging purposes
 
 # Set API start time to the application's boot time
 API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
