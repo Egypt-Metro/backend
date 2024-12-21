@@ -110,6 +110,7 @@ class LineStation(models.Model):
     class Meta:
         unique_together = ("line", "station")  # Ensures unique line-station pairs
         ordering = ["order"]  # Default ordering by sequence in the line
+        # indexes = [models.Index(fields=["order"])]  # Index for order field
 
     def __str__(self):
         return f"{self.line.name} - {self.station.name} (Order: {self.order})"

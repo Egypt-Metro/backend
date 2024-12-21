@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path  # File path helper
 import os  # Operating system dependent functionality
+import dj_database_url    # type: ignore # Parse database URLs
 from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
@@ -25,6 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory for the proj
 ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")  # Default to dev
 dotenv_path = BASE_DIR / f"env/.env.{ENVIRONMENT}"
 load_dotenv(dotenv_path)
+
+# Check if the .env file exists and load it
+if dotenv_path.is_file():
+    load_dotenv(dotenv_path)
+else:
+    raise FileNotFoundError(f"Environment file not found: {dotenv_path}")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
@@ -131,24 +138,37 @@ SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
 
-# Database configuration
+# Parse the DATABASE_URL environment variable
+default_db_config = dj_database_url.config(
+    default=os.getenv("DATABASE_URL"),  # Load from .env file or environment
+    conn_max_age=600,  # Reuse connections for up to 600 seconds
+    ssl_require=ENVIRONMENT == "prod",  # Enforce SSL in production
+)
+
+# Database configuration with explicit overrides
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",  # Database engine
-        "CONN_MAX_AGE": 500,  # Maximum connection age
+        **default_db_config,  # Base configuration parsed by dj_database_url
+        "ENGINE": default_db_config.get("ENGINE", "django.db.backends.postgresql"),
+        "NAME": default_db_config.get("NAME", os.getenv("DB_NAME")),
+        "USER": default_db_config.get("USER", os.getenv("DB_USER")),
+        "PASSWORD": default_db_config.get("PASSWORD", os.getenv("DB_PASSWORD")),
+        "HOST": default_db_config.get("HOST", os.getenv("DB_HOST")),
+        "PORT": default_db_config.get("PORT", os.getenv("DB_PORT")),
+        "CONN_MAX_AGE": default_db_config.get("CONN_MAX_AGE", 600),
         "OPTIONS": {
-            "options": "-c search_path=public",  # Set the default schema
-            # "sslmode": "require",  # Enforce SSL mode
-            # "ssl_require": True,  # Enforce SSL in production
+            **default_db_config.get("OPTIONS", {}),  # Merge existing options
+            "options": "-c search_path=public",  # Specify the default schema
         },
-        "DISABLE_SERVER_SIDE_CURSORS": True,  # Disable server-side cursors
-        "NAME": os.getenv("DB_NAME"),  # Database name
-        "USER": os.getenv("DB_USER"),  # Database user
-        "PASSWORD": os.getenv("DB_PASSWORD"),  # Database password
-        "HOST": os.getenv("DB_HOST"),  # Database host
-        "PORT": os.getenv("DB_PORT"),  # Database port
+        "DISABLE_SERVER_SIDE_CURSORS": True,  # Optimize for specific queries
     }
 }
+
+# Enforce additional production-specific settings
+if ENVIRONMENT == "prod":
+    DATABASES["default"]["OPTIONS"].update({
+        "sslmode": "require",  # Enforce SSL for secure connections
+    })
 
 REQUIRED_ENV_VARS = ["SECRET_KEY", "DATABASE_URL", "JWT_SECRET", "BASE_URL"]
 
