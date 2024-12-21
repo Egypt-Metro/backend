@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",  # JWT authentication
     "corsheaders",  # CORS headers
     'drf_yasg',     # Swagger
-    # "debug_toolbar",  # Debug toolbar
+    "debug_toolbar",  # Debug toolbar
 
     # Custom apps
     "apps.users.apps.UsersConfig",  # Users app
@@ -80,7 +80,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
     "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise middleware
     "allauth.account.middleware.AccountMiddleware",  # Account middleware
-    # "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
+    "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
 ]
 
 ROOT_URLCONF = "egypt_metro.urls"  # Root URL configuration
