@@ -17,7 +17,7 @@ Including another URLconf
 import logging
 from django.contrib import admin
 from django.urls import path, include
-from egypt_metro import settings
+# from egypt_metro import settings
 from .views import health_check, home
 # from django.conf.urls.static import static
 from drf_yasg.views import get_schema_view
@@ -79,10 +79,10 @@ urlpatterns = [
 # logger.debug('URL patterns: %s', [path.pattern for path in urlpatterns])
 
 # Debug Toolbar (only for development)
-if settings.DEBUG:
-    urlpatterns += [
-        path("__debug__/", include("debug_toolbar.urls")),  # Debug toolbar
-    ]
+# if settings.DEBUG:
+#     urlpatterns += [
+#         path("__debug__/", include("debug_toolbar.urls")),  # Debug toolbar
+#     ]
 
 # Static and media files (if DEBUG is enabled)
 # if settings.DEBUG:
