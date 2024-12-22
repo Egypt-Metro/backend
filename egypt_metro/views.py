@@ -1,4 +1,7 @@
+# egypt_metro/views.py
+
 import logging
+import os
 from django.http import JsonResponse
 from django.db import connection
 # from django.utils.timezone import now
@@ -39,21 +42,20 @@ def home(request):
     hours, remainder = divmod(remainder, 3600)  # 3600 seconds in an hour
     minutes, seconds = divmod(remainder, 60)  # 60 seconds in a minute
 
-    # Format uptime
-    uptime = f"{int(days)} days, {int(hours)} hours, {int(minutes)} minutes, {int(seconds)} seconds"
+    # Get the current environment (dev or prod)
+    environment = os.getenv("ENVIRONMENT", "dev")  # Default to dev if not set
+    logger.debug(f"Current environment: {environment}")
 
     # Data to return as JSON response
     data = {
-        "message": "Welcome to Egypt Metro Backend",
-        "status": "OK",  # Status indicating the API is operational
         "admin_panel": "/admin/",  # Link to Django admin panel
         "api_documentation": "/docs/",  # Link to API documentation
         "health_check": "/health/",  # Health check endpoint
         "swagger": "/swagger/",     # Swagger API documentation
         "redoc": "/redoc/",     # Redoc API documentation
         "version": "1.0.0",  # Backend version
-        "uptime": uptime,  # Dynamically calculated uptime
         "current_date_time": current_date_time,  # Current date and time with minutes and seconds
+        "environment": environment,  # Current environment (dev or prod)
         "api_routes": {
             "users": "/api/users/",  # User-related routes
             "register": "/api/users/register/",  # User registration
@@ -77,10 +79,9 @@ def home(request):
             </head>
             <body>
                 <h1>Welcome to Egypt Metro Backend</h1>
-                <p>Status: {data['status']}</p>
                 <p>Version: {data['version']}</p>
-                <p>Uptime: {data['uptime']}</p>
-                <p>Current Date & Time: {data['current_date_time']}</p>
+                <p>Date & Time: {data['current_date_time']}</p>
+                <p>Environment: {data['environment']}</p>
                 <h2>Quick Links</h2>
                 <ul>
                     <li><a href="{data['admin_panel']}">Admin Panel</a></li>
@@ -115,8 +116,8 @@ def health_check(request):
         return JsonResponse({"status": "ok"}, status=200)
 
     except Exception as e:
-        logger.error("Health check failed", exc_info=e)
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
+        logger.error(f"Health check failed: {str(e)}", exc_info=True)
+        return JsonResponse({"status": "error", "message": "Database connectivity issue"}, status=500)
 
 
 def custom_404(request, exception=None):
@@ -125,3 +126,30 @@ def custom_404(request, exception=None):
 
 def custom_500(request):
     return JsonResponse({"error": "Internal server error"}, status=500)
+
+
+# def check_environment(request):
+#     """
+#     View to check the current environment (dev or prod).
+#     """
+#     try:
+#         # Get the environment (default to 'dev' if not set)
+#         environment = os.getenv("ENVIRONMENT", "dev")  # Default to dev if not set
+#         logger.debug(f"Current environment: {environment}")
+
+#         # Respond with JSON, which is a standard format for APIs
+#         response_data = {
+#             "environment": environment,
+#             "status": "success",
+#         }
+#         return JsonResponse(response_data)
+
+#     except Exception as e:
+#         # Log the error for debugging purposes
+#         logger.error(f"Error in check_environment view: {str(e)}")
+
+#         # Return an error response in case of failure
+#         return JsonResponse(
+#             {"error": "Unable to determine the environment", "status": "fail"},
+#             status=500,
+#         )

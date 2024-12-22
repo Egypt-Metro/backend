@@ -14,10 +14,12 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+# egypt_metro/urls.py
+
 import logging
 from django.contrib import admin
 from django.urls import path, include
-# from egypt_metro import settings
+from egypt_metro import settings
 from .views import health_check, home
 # from django.conf.urls.static import static
 from drf_yasg.views import get_schema_view
@@ -31,7 +33,7 @@ logger = logging.getLogger(__name__)
 # OpenAPI schema view
 schema_view = get_schema_view(
     openapi.Info(
-        title="Metro API",
+        title=f"{settings.PROJECT_NAME} API",
         default_version="v1",
         description="API documentation for Metro application",
         terms_of_service="https://www.google.com/policies/terms/",
@@ -53,6 +55,9 @@ urlpatterns = [
     # Home
     path("", home, name="home"),    # Home view
 
+    # Check environment
+    # path('check-environment/', check_environment, name='check_environment'),
+
     # Authentication
     path("accounts/", include("allauth.urls")),  # Allauth authentication
 
@@ -73,6 +78,9 @@ urlpatterns = [
     ),  # Swagger UI
 
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),  # ReDoc
+
+    # Silk Profiling
+    path("silk/", include("silk.urls", namespace="silk")) if settings.ENVIRONMENT == "dev" else None,
 ]
 
 # Debug the URL loading process

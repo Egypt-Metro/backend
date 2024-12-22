@@ -10,35 +10,29 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+# import logging
 from pathlib import Path  # File path helper
 import os  # Operating system dependent functionality
 import dj_database_url    # type: ignore # Parse database URLs
 from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
-# from decouple import config
+from decouple import config
 from datetime import datetime
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory for the project
+PROJECT_NAME = "Egypt Metro"
 
 # Load the appropriate .env file based on an environment variable
 ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")  # Default to dev
 dotenv_path = BASE_DIR / f"env/.env.{ENVIRONMENT}"
 load_dotenv(dotenv_path)
 
-# Check if the .env file exists and load it
-# if dotenv_path.is_file():
-#     load_dotenv(dotenv_path)
-# else:
-#     raise FileNotFoundError(f"Environment file not found: {dotenv_path}")
-
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
-# DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
-# ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
-DEBUG = True
-ALLOWED_HOSTS = ["*"]  # Temporary for debugging purposes
+DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 
 # Set API start time to the application's boot time
 API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -47,8 +41,11 @@ SESSION_COOKIE_AGE = 3600  # Session lasts for 1 hour
 SESSION_SAVE_EVERY_REQUEST = True  # Extend session each request
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session persists after closing the browser
 
-# Application definition
+# Debugging: Log the environment
+# logger = logging.getLogger(__name__)
+# logger.debug(f"Current environment: {ENVIRONMENT}")
 
+# Application definition
 INSTALLED_APPS = [
     "django.contrib.admin",  # Admin panel
     "django.contrib.auth",  # Authentication framework
@@ -73,6 +70,7 @@ INSTALLED_APPS = [
     "apps.stations.apps.StationsConfig",  # Stations app
 ]
 
+# Middleware configuration
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",  # Security middleware
     "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise middleware
@@ -109,7 +107,13 @@ CORS_ALLOW_HEADERS = list(default_headers) + [  # Default headers + custom heade
 CORS_ALLOW_CREDENTIALS = True  # Allow credentials
 
 if ENVIRONMENT == "dev":
-    CORS_ALLOW_ALL_ORIGINS = True
+    INSTALLED_APPS += ["silk"]
+    MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
+
+    SILKY_PYTHON_PROFILER = True  # Enables Python code profiling
+    SILKY_MAX_REQUESTS = 1000     # Limit the number of requests to profile
+    SILKY_RECORD_SQL = True       # Records SQL queries
+    SILKY_AUTHENTICATION = True   # Protect Silk interface with authentication
 
 TEMPLATES = [
     {
@@ -122,8 +126,8 @@ TEMPLATES = [
                 "django.template.context_processors.request",  # Request context processor
                 "django.contrib.auth.context_processors.auth",  # Auth context processor
                 "django.contrib.messages.context_processors.messages",  # Messages context processor
-                "django.template.context_processors.request",  # Request context processor
                 'django.template.context_processors.static',  # Static context processor
+                'egypt_metro.context_processors.project_name',
             ],
         },
     },
@@ -134,10 +138,6 @@ TEMPLATES = [
 
 # Custom User Model
 AUTH_USER_MODEL = "users.User"
-
-# Load secret file if in production
-# if ENVIRONMENT == "prod":
-#     load_dotenv("/etc/secrets/env.prod")  # Load production secrets
 
 # General settings
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
@@ -176,42 +176,38 @@ if ENVIRONMENT == "prod":
         "sslmode": "require",  # Enforce SSL for secure connections
     })
 
+    SESSION_COOKIE_SECURE = True  # Ensures cookies are only sent over HTTPS
+    CSRF_COOKIE_SECURE = True  # CSRF cookie should also be secure
+    SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep sessions open until explicitly logged out
+    SESSION_COOKIE_HTTPONLY = True  # Avoid client-side access to session cookie
+    SESSION_SAVE_EVERY_REQUEST = True  # Save the session on every request to ensure data consistency
+    CSRF_COOKIE_HTTPONLY = True  # Make sure CSRF cookie can't be accessed via JavaScript
+    CSRF_TRUSTED_ORIGINS = [
+        'https://backend-54v5.onrender.com/',  # Replace with your actual domain
+    ]
+
+    # For secure connections over HTTPS (especially for production)
+    SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
+    SECURE_HSTS_SECONDS = 3600  # HTTP Strict Transport Security (HSTS) in seconds
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 REQUIRED_ENV_VARS = ["SECRET_KEY", "DATABASE_URL", "JWT_SECRET", "BASE_URL"]
 
 for var in REQUIRED_ENV_VARS:
     if not os.getenv(var):
         raise ValueError(f"{var} is not set in environment variables.")
 
-if ENVIRONMENT == "prod":
-    CACHES = {
-        "default": {
-            "BACKEND": "django.core.cache.backends.redis.RedisCache",
-            "LOCATION": "redis://127.0.0.1:6379/1",
-        }
-    }
-    SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_PRELOAD = True
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
-else:
-    SECURE_SSL_REDIRECT = False
-    SECURE_HSTS_PRELOAD = False
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    CSRF_COOKIE_SECURE = False
-    SESSION_COOKIE_SECURE = False
-
-
-# if not DEBUG:  # Enable only in production
-#     SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True") == "True"
-#     SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000"))
-#     SECURE_HSTS_PRELOAD = os.getenv("SECURE_HSTS_PRELOAD", "True") == "True"
-#     SECURE_HSTS_INCLUDE_SUBDOMAINS = (
-#         os.getenv("SECURE_HSTS_INCLUDE_SUBDOMAINS", "True") == "True"
-#     )
-#     CSRF_COOKIE_SECURE = True
-#     SESSION_COOKIE_SECURE = True
+# if ENVIRONMENT == "prod":
+#     CACHES = {
+#         "default": {
+#             "BACKEND": "django.core.cache.backends.redis.RedisCache",
+#             "LOCATION": "redis://127.0.0.1:6379/1",
+#             'OPTIONS': {
+#                 'CLIENT_CLASS': 'django_redis.client.DefaultClient'
+#             }
+#         }
+#     }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -235,12 +231,6 @@ AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  # For admin logins
     # "allauth.account.auth_backends.AuthenticationBackend",  # For allauth
 ]
-
-# SOCIALACCOUNT_PROVIDERS = {
-#     "google": {
-#         "APP": {"client_id": "your-client-id", "secret": "your-secret", "key": ""}
-#     }
-# }
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
@@ -317,15 +307,17 @@ LOGGING = {
     },
 }
 
+# Cache configuration
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",  # Local memory cache
-        "LOCATION": "unique-snowflake",
+        "LOCATION": "unique-snowflake",     # Unique identifier for the cache
     }
 }
 
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-SESSION_CACHE_ALIAS = "default"
+# Session engine configuration
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"   # Session engine
+SESSION_CACHE_ALIAS = "default"  # Cache alias for sessions
 
 INTERNAL_IPS = [
     "127.0.0.1",  # Localhost
@@ -356,21 +348,6 @@ SWAGGER_SETTINGS = {
         },
     },
 }
-
-# Initialize Sentry for Error Tracking
-# SENTRY_DSN = os.getenv("SENTRY_DSN")  # Use environment variable
-
-# if SENTRY_DSN:
-#     import sentry_sdk # type: ignore
-#     from sentry_sdk.integrations.django import DjangoIntegration # type: ignore
-
-#     sentry_sdk.init(
-#         dsn=SENTRY_DSN,
-#         integrations=[DjangoIntegration()],
-#         send_default_pii=True,
-#     )
-# else:
-#     print("Sentry DSN not configured. Skipping Sentry initialization.")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
