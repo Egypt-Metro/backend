@@ -59,7 +59,7 @@ INSTALLED_APPS = [
 
     # External packages
     "allauth",  # Authentication
-    # "allauth.account",  # Account management
+    "allauth.account",  # Account management
     # "allauth.socialaccount",  # Social authentication
     # "allauth.socialaccount.providers.google",  # Google OAuth provider
     "rest_framework",  # REST framework
@@ -75,6 +75,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",  # Security middleware
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise middleware
     "django.contrib.sessions.middleware.SessionMiddleware",  # Session middleware
     "django.middleware.common.CommonMiddleware",  # Common middleware
     "django.middleware.csrf.CsrfViewMiddleware",  # CSRF middleware
@@ -82,8 +83,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",  # Messages middleware
     "django.middleware.clickjacking.XFrameOptionsMiddleware",  # Clickjacking middleware
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
-    "whitenoise.middleware.WhiteNoiseMiddleware",  # WhiteNoise middleware
-    # "allauth.account.middleware.AccountMiddleware",  # Account middleware
+    "allauth.account.middleware.AccountMiddleware",  # Account middleware
     # "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
 ]
 
@@ -183,12 +183,25 @@ for var in REQUIRED_ENV_VARS:
         raise ValueError(f"{var} is not set in environment variables.")
 
 if ENVIRONMENT == "prod":
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": "redis://127.0.0.1:6379/1",
+        }
+    }
     SECURE_SSL_REDIRECT = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_PRELOAD = True
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
+else:
+    SECURE_SSL_REDIRECT = False
+    SECURE_HSTS_PRELOAD = False
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+
 
 # if not DEBUG:  # Enable only in production
 #     SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "True") == "True"

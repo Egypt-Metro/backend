@@ -38,7 +38,7 @@ class UserAdmin(admin.ModelAdmin):
         ('Permissions', {
             'fields': ('is_active', 'is_staff', 'is_superuser')
         }),
-        ('Audit Information', {
+        ('Account Information', {
             'fields': ('last_login', 'date_joined')
         }),
         ('Subscription Information', {

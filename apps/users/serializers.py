@@ -23,20 +23,23 @@ class RegisterSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, data):
-        # Ensure passwords match
+        # Password match validation
         if data["password"] != data["confirm_password"]:
             raise serializers.ValidationError({"password": "Passwords do not match."})
-        # Best Practice: Check that email is unique as well
+
+        # Unique email check
         if User.objects.filter(email=data["email"]).exists():
             raise serializers.ValidationError(
                 {"email": "This email is already registered."}
             )
-        # Ensure username is unique
+
+        # Unique username check
         if User.objects.filter(username=data["username"]).exists():
             raise serializers.ValidationError(
                 {"username": "This username is already taken."}
             )
-        # Best Practice: Validate phone number format (example: phone number should be 10 digits)
+
+        # Phone number format validation
         if data.get("phone_number") and len(data["phone_number"]) != 11:
             raise serializers.ValidationError(
                 {"phone_number": "Phone number must be 11 digits."}
