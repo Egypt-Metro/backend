@@ -12,6 +12,14 @@ logger = logging.getLogger(__name__)
 API_START_TIME = datetime.utcnow()
 
 
+def log_session_data(request):
+    if request.user.is_authenticated:
+        logger.debug(f"Session ID: {request.session.session_key}")
+        logger.debug(f"Session Data: {request.session.items()}")
+    else:
+        logger.debug("User is not authenticated")
+
+
 @csrf_exempt
 def home(request):
     """

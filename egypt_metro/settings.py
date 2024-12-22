@@ -311,7 +311,7 @@ LOGGING = {
         },
         "__main__": {
             "handlers": ["console"],  # Only console for production
-            "level": "DEBUG",
+            "level": "INFO",
             "propagate": True,
         },
     },
