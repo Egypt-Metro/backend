@@ -17,8 +17,8 @@ import dj_database_url    # type: ignore # Parse database URLs
 from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
-# from decouple import config
-from datetime import datetime
+from decouple import config  # Configuration helper
+from datetime import datetime   # Date and time utilities
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent  # Base directory for the project
@@ -31,12 +31,10 @@ load_dotenv(dotenv_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
-# DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
-# ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
-DEBUG = True    # Debug mode
-ALLOWED_HOSTS = ['*']  # Allowed hosts for the project
 
 # Set API start time to the application's boot time
 API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -59,8 +57,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",  # JWT authentication
     "corsheaders",  # CORS headers
     'drf_yasg',     # Swagger
-    "constance",    # Dynamic settings
-    "constance.backends.database",  # Database backend for Constance
+    # "constance",    # Dynamic settings
+    # "constance.backends.database",  # Database backend for Constance
     # "debug_toolbar",  # Debug toolbar
 
     # Custom apps
@@ -80,7 +78,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",  # Clickjacking middleware
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
     "allauth.account.middleware.AccountMiddleware",  # Account middleware
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",   # Clickjacking middleware
+    # "django.middleware.clickjacking.XFrameOptionsMiddleware",   # Clickjacking middleware
     # "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
 ]
 
