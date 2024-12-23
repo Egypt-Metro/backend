@@ -17,7 +17,7 @@ import dj_database_url    # type: ignore # Parse database URLs
 from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
-from decouple import config
+# from decouple import config
 from datetime import datetime
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -31,10 +31,12 @@ load_dotenv(dotenv_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
-DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+# DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
+# ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
+DEBUG = True    # Debug mode
+ALLOWED_HOSTS = ['*']  # Allowed hosts for the project
 
 # Set API start time to the application's boot time
 API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -161,12 +163,12 @@ DATABASES = {
 
 # Security Settings General
 SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookies
-CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF cookies
-# SESSION_COOKIE_SAMESITE = "Lax"  # Set SameSite cookie attribute
+# CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF cookies
+SESSION_COOKIE_SAMESITE = "Lax"  # Set SameSite cookie attribute
 # CSRF_COOKIE_SAMESITE = "Lax"  # Set SameSite cookie attribute
 # CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN", None)
-CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN", None)
+# CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN", None)
 
 # Enforce additional production-specific settings
 if ENVIRONMENT == "prod":
@@ -174,18 +176,17 @@ if ENVIRONMENT == "prod":
         "sslmode": "require",  # Enforce SSL for secure connections
     })
     # Security settings Production
-    CSRF_COOKIE_SECURE = True   # Ensure CSRF cookies are only sent over HTTPS
-    SESSION_COOKIE_SECURE = True    # Ensure session cookies are only sent over HTTPS
-    SECURE_BROWSER_XSS_FILTER = True    # Enable XSS protection for browsers
-    SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent content type sniffing
-    SECURE_HSTS_SECONDS = 31536000  # 1 year in seconds
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True   # Include subdomains for HSTS
-    SECURE_HSTS_PRELOAD = True  # Enable HSTS preload list
-    SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
-    # Proxy Settings
-    USE_X_FORWARDED_HOST = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
+    # CSRF_COOKIE_SECURE = True   # Ensure CSRF cookies are only sent over HTTPS
+    # SESSION_COOKIE_SECURE = True    # Ensure session cookies are only sent over HTTPS
+    # SECURE_BROWSER_XSS_FILTER = True    # Enable XSS protection for browsers
+    # SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent content type sniffing
+    # SECURE_HSTS_SECONDS = 31536000  # 1 year in seconds
+    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True   # Include subdomains for HSTS
+    # SECURE_HSTS_PRELOAD = True  # Enable HSTS preload list
+    # SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
+    # # Proxy Settings
+    # USE_X_FORWARDED_HOST = True
+    # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     # SECURE_REFERRER_POLICY = "same-origin"  # Referrer policy
     # X_FRAME_OPTIONS = "DENY"    # Prevent framing of site content
 
@@ -250,8 +251,8 @@ REST_FRAMEWORK = {
 
 SIMPLE_JWT = {
     "SIGNING_KEY": os.getenv("JWT_SECRET"),  # Secret key for JWT tokens
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),  # Access token lifetime
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Refresh token lifetime
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),  # Access token lifetime   # 1 hour
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Refresh token lifetime  # 7 days
 }
 
 # Create logs directory if it doesn't exist
