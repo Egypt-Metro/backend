@@ -33,17 +33,11 @@ load_dotenv(dotenv_path)
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
+JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
 
 # Set API start time to the application's boot time
 API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
-SESSION_COOKIE_AGE = 3600  # Session lasts for 1 hour
-SESSION_SAVE_EVERY_REQUEST = True  # Extend session each request
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Session persists after closing the browser
-
-# Debugging: Log the environment
-# logger = logging.getLogger(__name__)
-# logger.debug(f"Current environment: {ENVIRONMENT}")
 
 # Application definition
 INSTALLED_APPS = [
@@ -63,6 +57,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",  # JWT authentication
     "corsheaders",  # CORS headers
     'drf_yasg',     # Swagger
+    "constance",    # Dynamic settings
+    "constance.backends.database",  # Database backend for Constance
     # "debug_toolbar",  # Debug toolbar
 
     # Custom apps
@@ -82,6 +78,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",  # Clickjacking middleware
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
     "allauth.account.middleware.AccountMiddleware",  # Account middleware
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",   # Clickjacking middleware
     # "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
 ]
 
@@ -91,19 +88,16 @@ WSGI_APPLICATION = "egypt_metro.wsgi.application"  # WSGI application
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = (
     os.getenv("CORS_ALLOW_ALL_ORIGINS", "False") == "True"
-)  # Default to False
-
+)
 if not CORS_ALLOW_ALL_ORIGINS:
     CORS_ALLOWED_ORIGINS = [
         "https://backend-54v5.onrender.com",
         "http://localhost:8000",
     ]
-
-CORS_ALLOW_HEADERS = list(default_headers) + [  # Default headers + custom headers
+CORS_ALLOW_HEADERS = list(default_headers) + [
     "Authorization",  # Authorization header
     "Content-Type",  # Content type header
 ]
-
 CORS_ALLOW_CREDENTIALS = True  # Allow credentials
 
 if ENVIRONMENT == "dev":
@@ -139,11 +133,6 @@ TEMPLATES = [
 # Custom User Model
 AUTH_USER_MODEL = "users.User"
 
-# General settings
-SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
-BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
-JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
-
 # Parse the DATABASE_URL environment variable
 default_db_config = dj_database_url.config(
     default=os.getenv("DATABASE_URL"),  # Load from .env file or environment
@@ -170,44 +159,41 @@ DATABASES = {
     }
 }
 
+# Security Settings General
+SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookies
+CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF cookies
+# SESSION_COOKIE_SAMESITE = "Lax"  # Set SameSite cookie attribute
+# CSRF_COOKIE_SAMESITE = "Lax"  # Set SameSite cookie attribute
+# CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN", None)
+CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN", None)
+
 # Enforce additional production-specific settings
 if ENVIRONMENT == "prod":
     DATABASES["default"]["OPTIONS"].update({
         "sslmode": "require",  # Enforce SSL for secure connections
     })
-
-    SESSION_COOKIE_SECURE = True  # Ensures cookies are only sent over HTTPS
-    CSRF_COOKIE_SECURE = True  # CSRF cookie should also be secure
-    SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep sessions open until explicitly logged out
-    SESSION_COOKIE_HTTPONLY = True  # Avoid client-side access to session cookie
-    SESSION_SAVE_EVERY_REQUEST = True  # Save the session on every request to ensure data consistency
-    CSRF_COOKIE_HTTPONLY = True  # Make sure CSRF cookie can't be accessed via JavaScript
-    CSRF_TRUSTED_ORIGINS = [
-        'https://backend-54v5.onrender.com/',  # Replace with your actual domain
-    ]
-
-    # For secure connections over HTTPS (especially for production)
+    # Security settings Production
+    CSRF_COOKIE_SECURE = True   # Ensure CSRF cookies are only sent over HTTPS
+    SESSION_COOKIE_SECURE = True    # Ensure session cookies are only sent over HTTPS
+    SECURE_BROWSER_XSS_FILTER = True    # Enable XSS protection for browsers
+    SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent content type sniffing
+    SECURE_HSTS_SECONDS = 31536000  # 1 year in seconds
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True   # Include subdomains for HSTS
+    SECURE_HSTS_PRELOAD = True  # Enable HSTS preload list
     SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
-    SECURE_HSTS_SECONDS = 3600  # HTTP Strict Transport Security (HSTS) in seconds
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    # Proxy Settings
+    USE_X_FORWARDED_HOST = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    # SECURE_REFERRER_POLICY = "same-origin"  # Referrer policy
+    # X_FRAME_OPTIONS = "DENY"    # Prevent framing of site content
 
 REQUIRED_ENV_VARS = ["SECRET_KEY", "DATABASE_URL", "JWT_SECRET", "BASE_URL"]
 
 for var in REQUIRED_ENV_VARS:
     if not os.getenv(var):
         raise ValueError(f"{var} is not set in environment variables.")
-
-# if ENVIRONMENT == "prod":
-#     CACHES = {
-#         "default": {
-#             "BACKEND": "django.core.cache.backends.redis.RedisCache",
-#             "LOCATION": "redis://127.0.0.1:6379/1",
-#             'OPTIONS': {
-#                 'CLIENT_CLASS': 'django_redis.client.DefaultClient'
-#             }
-#         }
-#     }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -308,16 +294,37 @@ LOGGING = {
 }
 
 # Cache configuration
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",  # Local memory cache
-        "LOCATION": "unique-snowflake",     # Unique identifier for the cache
+if ENVIRONMENT == "prod":
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.db.DatabaseCache",
+            "LOCATION": os.getenv("CACHE_LOCATION", "my_cache_table"),
+        }
     }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": os.getenv(
+                "CACHE_BACKEND",
+                "django.core.cache.backends.locmem.LocMemCache"
+            ),
+            "LOCATION": os.getenv("CACHE_LOCATION", "unique-snowflake"),
+        }
+    }
+
+# Constance Settings
+CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
+CONSTANCE_CONFIG = {
+    "SITE_TITLE": ("Egypt Metro", "Site title displayed in the admin panel."),
+    "DEFAULT_TIMEOUT": (30, "Default timeout for user actions."),
 }
 
-# Session engine configuration
-SESSION_ENGINE = "django.contrib.sessions.backends.cache"   # Session engine
+# Session Settings
+SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"  # Cached database session engine
 SESSION_CACHE_ALIAS = "default"  # Cache alias for sessions
+SESSION_COOKIE_AGE = 3600   # Session cookie age in seconds (1 hour)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = ENVIRONMENT == "dev"  # True for development, False for production
+SESSION_SAVE_EVERY_REQUEST = True  # Save session data on every request
 
 INTERNAL_IPS = [
     "127.0.0.1",  # Localhost
@@ -338,16 +345,16 @@ USE_I18N = True
 USE_TZ = True
 
 # Swagger settings
-SWAGGER_SETTINGS = {
-    "USE_SESSION_AUTH": False,  # Disable session-based authentication for Swagger
-    "SECURITY_DEFINITIONS": {
-        "Bearer": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header",
-        },
-    },
-}
+# SWAGGER_SETTINGS = {
+#     "USE_SESSION_AUTH": False,  # Disable session-based authentication for Swagger
+#     "SECURITY_DEFINITIONS": {
+#         "Bearer": {
+#             "type": "apiKey",
+#             "name": "Authorization",
+#             "in": "header",
+#         },
+#     },
+# }
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
