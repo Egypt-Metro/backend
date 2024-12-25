@@ -78,9 +78,6 @@ urlpatterns = [
     ),  # Swagger UI
 
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),  # ReDoc
-
-    # Silk Profiling
-    path("silk/", include("silk.urls", namespace="silk")) if settings.ENVIRONMENT == "dev" else None,
 ]
 
 # Debug the URL loading process
@@ -88,8 +85,12 @@ urlpatterns = [
 
 # Debug Toolbar (only for development)
 # if settings.DEBUG:
+#     import debug_toolbar  # type: ignore
+
 #     urlpatterns += [
-#         path("__debug__/", include("debug_toolbar.urls")),  # Debug toolbar
+#         path('__debug__/', include(debug_toolbar.urls)),  # Debug toolbar
+#         static(settings.STATIC_URL, document_root=settings.STATIC_ROOT),
+#         path("silk/", include("silk.urls", namespace="silk"))
 #     ]
 
 # Static and media files (if DEBUG is enabled)

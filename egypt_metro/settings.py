@@ -100,14 +100,26 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 ]
 CORS_ALLOW_CREDENTIALS = True  # Allow credentials
 
-if ENVIRONMENT == "dev":
-    INSTALLED_APPS += ["silk"]
-    MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
+# if ENVIRONMENT == "dev":
+#     INSTALLED_APPS += [
+#         "silk",
+#         "debug_toolbar",
+#     ]
+#     MIDDLEWARE += [
+#         "silk.middleware.SilkyMiddleware",
+#         "debug_toolbar.middleware.DebugToolbarMiddleware",
+#     ]
 
-    SILKY_PYTHON_PROFILER = True  # Enables Python code profiling
-    SILKY_MAX_REQUESTS = 1000     # Limit the number of requests to profile
-    SILKY_RECORD_SQL = True       # Records SQL queries
-    SILKY_AUTHENTICATION = True   # Protect Silk interface with authentication
+#     INTERNAL_IPS = [
+#         "127.0.0.1",  # Localhost
+#         "localhost",   # Localhost
+#         "0.0.0.0",     # Docker/Container or VM access
+#     ]
+
+#     SILKY_PYTHON_PROFILER = True  # Enables Python code profiling
+#     SILKY_MAX_REQUESTS = 1000     # Limit the number of requests to profile
+#     SILKY_RECORD_SQL = True       # Records SQL queries
+#     SILKY_AUTHENTICATION = True   # Protect Silk interface with authentication
 
 TEMPLATES = [
     {
@@ -324,10 +336,6 @@ SESSION_CACHE_ALIAS = "default"  # Cache alias for sessions
 SESSION_COOKIE_AGE = 3600   # Session cookie age in seconds (1 hour)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = ENVIRONMENT == "dev"  # True for development, False for production
 SESSION_SAVE_EVERY_REQUEST = True  # Save session data on every request
-
-INTERNAL_IPS = [
-    "127.0.0.1",  # Localhost
-]
 
 HANDLER404 = "egypt_metro.views.custom_404"  # Custom 404 handler
 HANDLER500 = "egypt_metro.views.custom_500"  # Custom 500 handler
