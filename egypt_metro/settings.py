@@ -17,7 +17,7 @@ import dj_database_url    # type: ignore # Parse database URLs
 from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
-# from decouple import config  # Configuration helper
+from decouple import config  # Configuration helper
 from datetime import datetime   # Date and time utilities
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -32,8 +32,8 @@ load_dotenv(dotenv_path)
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
-# ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+DEBUG = True
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
 CSRF_TRUSTED_ORIGINS = ["https://backend-54v5.onrender.com"]
