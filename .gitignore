@@ -17,7 +17,7 @@ db.sqlite3
 commands.md
 
 # Ignore static files
-/static/
+static/
 staticfiles/
 
 # Ignore media files
