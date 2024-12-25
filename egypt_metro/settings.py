@@ -57,8 +57,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",  # JWT authentication
     "corsheaders",  # CORS headers
     'drf_yasg',     # Swagger
-    # "constance",    # Dynamic settings
-    # "constance.backends.database",  # Database backend for Constance
+    "constance",    # Dynamic settings
+    "constance.backends.database",  # Database backend for Constance
     # "debug_toolbar",  # Debug toolbar
 
     # Custom apps
@@ -78,7 +78,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",  # Clickjacking middleware
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
     "allauth.account.middleware.AccountMiddleware",  # Account middleware
-    # "django.middleware.clickjacking.XFrameOptionsMiddleware",   # Clickjacking middleware
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",   # Clickjacking middleware
     # "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
 ]
 
@@ -160,12 +160,12 @@ DATABASES = {
 }
 
 # Security Settings General
-SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookies
+# SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookies
 # CSRF_COOKIE_HTTPONLY = True  # Prevent JavaScript access to CSRF cookies
-SESSION_COOKIE_SAMESITE = "Lax"  # Set SameSite cookie attribute
+# SESSION_COOKIE_SAMESITE = "Lax"  # Set SameSite cookie attribute
 # CSRF_COOKIE_SAMESITE = "Lax"  # Set SameSite cookie attribute
 # CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
-SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN", None)
+# SESSION_COOKIE_DOMAIN = os.getenv("SESSION_COOKIE_DOMAIN", None)
 # CSRF_COOKIE_DOMAIN = os.getenv("CSRF_COOKIE_DOMAIN", None)
 
 # Enforce additional production-specific settings
@@ -343,17 +343,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-# Swagger settings
-# SWAGGER_SETTINGS = {
-#     "USE_SESSION_AUTH": False,  # Disable session-based authentication for Swagger
-#     "SECURITY_DEFINITIONS": {
-#         "Bearer": {
-#             "type": "apiKey",
-#             "name": "Authorization",
-#             "in": "header",
-#         },
-#     },
-# }
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/

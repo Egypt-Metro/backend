@@ -1,4 +1,5 @@
-# users/urls.py
+# apps/users/urls.py
+
 from django.urls import path
 from .views import RegisterView, LoginView, UserProfileView, UpdateUserView
 from rest_framework_simplejwt.views import TokenRefreshView

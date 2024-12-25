@@ -1,94 +1,210 @@
-# Egypt Metro Backend (Django)
+# Egypt Metro Backend API (Django)
+
+![License](https://img.shields.io/badge/license-MIT-green)
+![Python](https://img.shields.io/badge/python-3.12-blue)
+![Django](https://img.shields.io/badge/django-5.1.3-brightgreen)
 
 ## Overview
 
-The **Egypt Metro Backend** provides the API and business logic for the **Egypt Metro** project. Built using **Django** and **Django REST Framework**, this backend handles user authentication, data storage, and real-time train schedules. It also serves APIs for the frontend (Flutter) and integrates with AI models for route optimization and crowd management.
+The **Egypt Metro Backend** is a robust API, bussiness logic, metro administration for managing and operating the Egypt Metro platform. Built with **Django** and **Django REST Framework (DRF)**, it provides seamless user authentication, metro station data, real-time train schedules, and AI-powered features such as crowd prediction and route optimization. The backend integrates with Flutter (frontend) and AI models, delivering a scalable and efficient solution.
+
+---
 
 ## Features
 
-- **User Authentication**: Secure login and registration with JWT.
-- **API Endpoints**: Exposes endpoints for train schedules, routes, user profiles, and ticketing.
-- **Real-Time Updates**: Provides real-time data on train locations, crowd levels, and schedules.
-- **Payment Integration**: Handles secure payments for subscriptions and tickets.
-- **Fault Reporting**: Allows users to report issues, with real-time admin updates.
-- **Admin Dashboard**: Provides insights into ticket sales, user data, and performance.
+### Passenger Features
+
+- **User Authentication**: Registration, login, profile management, and JWT support.
+- **Station Management**: Nearest station lookup, station list, and trip details.
+- **Route and Trip Planning**: Manage metro routes, count number of stations, and calculate ticket prices.
+- **Train Schedules**: Provide real-time schedule data, including arrival times and GPS-tracked train locations.
+- **Crowd Management**: Use AI to predict crowd levels on trains and provide recommendations for less crowded options.
+- **User Profiles**: Manage user accounts, including registration, login, subscription types, and payment options.
+- **Ticketing**: Generate tickets based on selected routes.
+- **Subscription Management**: Users can subscribe to different metro plans.
+- **Real-Time Updates**: Supports extensions for real-time data (e.g., train locations, crowd levels).
+- **Extensible Design**: Modular architecture for scalable development.
+- **API Documentation**: Interactive docs with Swagger and ReDoc.
+- **Health Check**: Ensure the backend service is operational.
+
+### Admin Features
+
+- **Admin Dashboard**: Track revenue, sales, and station performance in real-time.
+- **Fault Reporting**: Allow admins to view, respond to, and track the status of user-reported issues.
+- **Revenue and Sales Tracking**: Monitor ticket sales and subscription renewals for each metro line and station.
+
+---
+
+## Technologies Used
+
+- **Backend Framework**: Django
+- **API**: Django REST Framework
+- **Database**: PostgreSQL (hosted on Render)
+- **Authentication**: JWT (JSON Web Token), Django Allauth
+- **Documentation**: Swagger (DRF-YASG), ReDoc
+- **Profiling**: Silk (development only)
+- **Real-time Features**: WebSockets (optional, for live updates like train location or crowds)
+
+---
 
 ## Installation
 
 ### Prerequisites
 
-- Python 3.9+
-- Django 3.x+
-- PostgreSQL (or SQLite for local development)
-- Django REST Framework
+- **Python**: Version 3.9+
+- **Django**: Version 4.x+
+- **PostgreSQL** (recommended for production)
+- **Swagger & ReDoc**: For API documentation
+- **Docker**: For containerized deployment (optional)
+- **Poetry** or **Pip**: For managing dependencies
+- **Channels**: for real-time updates
 
-### Setup
+### Steps
 
-1. **Clone the repository**:
+1. **Clone the Repository**
 
-    ```bash
-     git clone https://github.com/Egypt-Metro/backend.git
-    ```
+   ```bash
+   git clone https://github.com/Egypt-Metro/backend.git
+   cd backend
+   ```
 
-2. Navigate to the project directory:
+2. **Set Up Virtual Environment**
 
-    ```bash
-    cd backend
-    ```
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-3. Create and activate a virtual environment:
+3. **Install Dependencies**
 
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows use: venv\Scripts\activate
-    ```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4. Install dependencies:
+4. **Configure Environment Variables**
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+   Create a `.env` file in the root directory and add the following:
 
-5. Set up the database:
+   ```env
+   SECRET_KEY=<your-secret-key>
+   DEBUG=True  # Set to False in production
+   DB_NAME=<your-db-name>
+   DB_USER=<your-db-user>
+   DB_PASSWORD=<your-db-password>
+   DB_HOST=<your-db-host>
+   DB_PORT=5432
+   ````
 
-   - Modify the database settings in settings.py if using PostgreSQL. For SQLite (default), no changes are needed.
-   - Run migrations:
+5. **Apply Migrations**
 
-    ```bash
-    python manage.py migrate
-    ```
+   ```bash
+   python manage.py migrate
+   ```
 
-6. Create a superuser for the admin panel:
+6. **Create Superuser**
 
-    ```bash
-    python manage.py createsuperuser
-    ```
+   ```bash
+   python manage.py createsuperuser
+   ```
 
-7. Run the server:
+7. **Run the Server**
 
-    ```bash
-    python manage.py runserver
-    ```
+   ```bash
+   python manage.py runserver
+   ```
 
-8. Access the API at `http://localhost:8000/` and the admin panel at `http://localhost:8000/admin/`.
+8. **Access the API**:
+   - API Base URL: `http://127.0.0.1:8000`
+   - Admin Panel: `http://127.0.0.1:8000/admin/`
 
-### API Endpoints
+---
 
-- Authentication:
-  - `POST /api/auth/register/`: User registration.
-  - `POST /api/auth/login/`: User login (JWT token).
-- Routes and Schedules:
-  - `GET /api/routes/`: List available metro routes.
-  - `GET /api/schedules/`: Get real-time train schedules.
-- Tickets:
-  - `POST /api/tickets/`: Create and view tickets.
-- User Profiles:
-  - `GET /api/profile/`: View the user profile.
-  - `PUT /api/profile/`: Update user profile.
-- Fault Reporting:
-  - `POST /api/faults/`: Report a fault or issue.
-  - `GET /api/faults/`: View reported faults.
+## API Endpoints
 
-### License
+### Authentication Endpoints
 
-- This project is licensed under the MIT License - see the LICENSE file for details.
+| Method | Endpoint              | Description                 |
+|--------|-----------------------|-----------------------------|
+| POST   | `/api/users/register/` | Register a new user.         |
+| POST   | `/api/users/login/`    | Login to get JWT tokens.     |
+| POST   | `/api/users/token/refresh/` | Refresh access token.      |
+| GET    | `/api/users/profile/`  | Retrieve user profile.       |
+| PATCH  | `/api/users/profile/update/` | Update user profile.       |
+
+### Metro Stations Endpoints
+
+| Method | Endpoint                                         | Description                         |
+|--------|--------------------------------------------------|-------------------------------------|
+| GET    | `/api/stations/list/`                            | List all metro stations.            |
+| GET    | `/api/stations/trip/<start_station_id>/<end_station_id>/` | Get trip details between two stations. |
+| GET    | `/api/stations/nearest/`                         | Get the nearest metro station.      |
+
+### Route and Trip Planning
+
+| Method | Endpoint                                 | Description                                                        |
+|--------|------------------------------------------|--------------------------------------------------------------------|
+| GET    | `/api/routes/`                           | Get available routes and their respective details (stations, trip duration, price). |
+| GET    | `/api/routes/{start_station}/{end_station}/` | Get a route between two stations, including trip details and fare. |
+
+### Train Schedules
+
+| Method | Endpoint                                 | Description                                                        |
+|--------|------------------------------------------|--------------------------------------------------------------------|
+| GET    | `/api/schedules/`                        | Get the current train schedules.                                   |
+| GET    | `/api/schedules/{train_id}/`             | Get schedule details for a specific train.                         |
+
+### User Management
+
+| Method | Endpoint                                 | Description                                                        |
+|--------|------------------------------------------|--------------------------------------------------------------------|
+| POST   | `/api/users/register/`                  | Register a new user.                                               |
+| POST   | `/api/users/login/`                     | Login a user.                                                      |
+| GET    | `/api/users/{user_id}/`                  | Get user profile information.                                      |
+
+### Ticketing
+
+| Method | Endpoint                                 | Description                                                        |
+|--------|------------------------------------------|--------------------------------------------------------------------|
+| POST   | `/api/tickets/`                          | Create a new ticket based on the route selected.                    |
+| GET    | `/api/tickets/{ticket_id}/`              | Get ticket details.                                                |
+
+### Miscellaneous Endpoints
+
+| Method | Endpoint      | Description                  |
+|--------|---------------|------------------------------|
+| GET    | `/health/`    | Health check for the API.    |
+
+---
+
+## API Documentation
+
+Interactive API documentation is available:
+
+- **Swagger UI**: [https://backend-54v5.onrender.com/swagger/](https://backend-54v5.onrender.com/swagger/)
+- **ReDoc**: [https://backend-54v5.onrender.com/redoc/](https://backend-54v5.onrender.com/redoc/)
+- **Swagger JSON**: [https://backend-54v5.onrender.com/swagger.json](https://backend-54v5.onrender.com/swagger.json)
+
+---
+
+## Deployment
+
+The project is deployed using **Render**. To deploy:
+
+1. **Configure Environment Variables** on Render.
+2. Use the provided PostgreSQL database settings.
+3. Deploy the Django app with the necessary build and start commands.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## Contact
+
+For inquiries, please reach out to **Ahmed Nassar**:
+
+- Email: [a.moh.nassar00@gmail.com](mailto:a.moh.nassar00@gmail.com)
+- GitHub: [AhmedNassar7](https://github.com/AhmedNassar7)
