@@ -17,7 +17,7 @@ import dj_database_url    # type: ignore # Parse database URLs
 from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
-from decouple import config  # Configuration helper
+# from decouple import config  # Configuration helper
 from datetime import datetime   # Date and time utilities
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -32,9 +32,11 @@ load_dotenv(dotenv_path)
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+# ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+ALLOWED_HOSTS = ['backend-54v5.onrender.com', '127.0.0.1', 'localhost']
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
+CSRF_TRUSTED_ORIGINS = ["https://backend-54v5.onrender.com"]
 
 # Set API start time to the application's boot time
 API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -77,7 +79,6 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",  # Clickjacking middleware
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
     "allauth.account.middleware.AccountMiddleware",  # Account middleware
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",   # Clickjacking middleware
 ]
 
 ROOT_URLCONF = "egypt_metro.urls"  # Root URL configuration
@@ -184,17 +185,17 @@ if ENVIRONMENT == "prod":
         "sslmode": "require",  # Enforce SSL for secure connections
     })
     # Security settings Production
-    # CSRF_COOKIE_SECURE = True   # Ensure CSRF cookies are only sent over HTTPS
-    # SESSION_COOKIE_SECURE = True    # Ensure session cookies are only sent over HTTPS
+    CSRF_COOKIE_SECURE = True   # Ensure CSRF cookies are only sent over HTTPS
+    SESSION_COOKIE_SECURE = True    # Ensure session cookies are only sent over HTTPS
     # SECURE_BROWSER_XSS_FILTER = True    # Enable XSS protection for browsers
     # SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent content type sniffing
     # SECURE_HSTS_SECONDS = 31536000  # 1 year in seconds
     # SECURE_HSTS_INCLUDE_SUBDOMAINS = True   # Include subdomains for HSTS
     # SECURE_HSTS_PRELOAD = True  # Enable HSTS preload list
-    # SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
+    SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
     # # Proxy Settings
     # USE_X_FORWARDED_HOST = True
-    # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     # SECURE_REFERRER_POLICY = "same-origin"  # Referrer policy
     # X_FRAME_OPTIONS = "DENY"    # Prevent framing of site content
 
@@ -356,7 +357,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"  # URL for static files
+STATIC_URL = "/static"  # URL for static files
 
 if os.getenv("RENDER"):
     STATIC_ROOT = "/opt/render/project/src/staticfiles/"
