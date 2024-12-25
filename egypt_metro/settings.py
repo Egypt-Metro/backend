@@ -357,7 +357,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "/static"  # URL for static files
+STATIC_URL = "/static/"  # URL for static files
 
 if os.getenv("RENDER"):
     STATIC_ROOT = "/opt/render/project/src/staticfiles/"
