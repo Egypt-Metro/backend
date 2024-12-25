@@ -59,7 +59,6 @@ INSTALLED_APPS = [
     'drf_yasg',     # Swagger
     "constance",    # Dynamic settings
     "constance.backends.database",  # Database backend for Constance
-    # "debug_toolbar",  # Debug toolbar
 
     # Custom apps
     "apps.users.apps.UsersConfig",  # Users app
@@ -79,7 +78,6 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
     "allauth.account.middleware.AccountMiddleware",  # Account middleware
     "django.middleware.clickjacking.XFrameOptionsMiddleware",   # Clickjacking middleware
-    # "debug_toolbar.middleware.DebugToolbarMiddleware",  # Debug toolbar middleware
 ]
 
 ROOT_URLCONF = "egypt_metro.urls"  # Root URL configuration

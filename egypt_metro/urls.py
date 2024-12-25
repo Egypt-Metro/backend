@@ -22,6 +22,7 @@ from django.urls import path, include
 from egypt_metro import settings
 from .views import health_check, home
 # from django.conf.urls.static import static
+from django.views.generic import RedirectView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
@@ -54,6 +55,8 @@ urlpatterns = [
 
     # Home
     path("", home, name="home"),    # Home view
+
+    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'favicon.ico')),  # Favicon
 
     # Check environment
     # path('check-environment/', check_environment, name='check_environment'),
