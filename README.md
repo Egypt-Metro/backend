@@ -6,7 +6,7 @@
 
 ## Overview
 
-The **Egypt Metro Backend** is a robust API, bussiness logic, metro administration for managing and operating the Egypt Metro platform. Built with **Django** and **Django REST Framework (DRF)**, it provides seamless user authentication, metro station data, real-time train schedules, and AI-powered features such as crowd prediction and route optimization. The backend integrates with Flutter (frontend) and AI models, delivering a scalable and efficient solution.
+The **Egypt Metro Backend** is a robust API, business logic, and metro administration for managing and operating the Egypt Metro platform. Built with **Django**, it provides seamless user authentication, station & lines management, trip details, route planning, real-time train schedules, online tickets & subscription management, and AI-powered features such as crowd prediction, route optimization, and Chatbot Support. The system efficiently handles approximately **4 million passengers daily**, ensuring scalability and reliability. The backend integrates with Flutter (frontend) and AI models, delivering a scalable and efficient solution.
 
 ---
 
@@ -16,22 +16,22 @@ The **Egypt Metro Backend** is a robust API, bussiness logic, metro administrati
 
 - **User Authentication**: Registration, login, profile management, and JWT support.
 - **Station Management**: Nearest station lookup, station list, and trip details.
-- **Route and Trip Planning**: Manage metro routes, count number of stations, and calculate ticket prices.
+- **Route and Trip Planning**: Manage metro routes, count the number of stations, and calculate ticket prices.
 - **Train Schedules**: Provide real-time schedule data, including arrival times and GPS-tracked train locations.
-- **Crowd Management**: Use AI to predict crowd levels on trains and provide recommendations for less crowded options.
+- **Real-Time Crowd Management**: Use AI to predict train crowd levels and recommend less crowded options.
 - **User Profiles**: Manage user accounts, including registration, login, subscription types, and payment options.
-- **Ticketing**: Generate tickets based on selected routes.
-- **Subscription Management**: Users can subscribe to different metro plans.
+- **Online Ticketing**: Buy and generate tickets online with QR codes for easy scanning at metro gates
+- **Online Subscription**: Subscribe to or renew metro plans online.
+- **Payment Options**: Users can pay via credit/debit cards, e-wallets, or other payment gateways.
+- **Chatbot Support**: 24/7 AI-powered chatbot to answer questions, guide users, and connect with customer service.
 - **Real-Time Updates**: Supports extensions for real-time data (e.g., train locations, crowd levels).
-- **Extensible Design**: Modular architecture for scalable development.
-- **API Documentation**: Interactive docs with Swagger and ReDoc.
-- **Health Check**: Ensure the backend service is operational.
 
 ### Admin Features
 
 - **Admin Dashboard**: Track revenue, sales, and station performance in real-time.
 - **Fault Reporting**: Allow admins to view, respond to, and track the status of user-reported issues.
 - **Revenue and Sales Tracking**: Monitor ticket sales and subscription renewals for each metro line and station.
+- **Train Monitoring**: Track train locations and details in real-time.
 
 ---
 
