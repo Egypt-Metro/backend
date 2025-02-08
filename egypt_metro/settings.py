@@ -17,7 +17,7 @@ import dj_database_url    # type: ignore # Parse database URLs
 from dotenv import load_dotenv  # Load environment variables from .env file
 from datetime import timedelta  # Time delta for JWT tokens
 from corsheaders.defaults import default_headers  # Default headers for CORS
-from decouple import config  # Configuration helper
+# from decouple import config  # Configuration helper
 from datetime import datetime   # Date and time utilities
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -32,11 +32,20 @@ load_dotenv(dotenv_path)
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+# ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'backend-54v5.onrender.com',  # Your production domain
+]
 DEBUG = True
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
-CSRF_TRUSTED_ORIGINS = ["https://backend-54v5.onrender.com"]
+CSRF_TRUSTED_ORIGINS = [
+    'https://backend-54v5.onrender.com',
+    'http://127.0.0.1:8000',
+    'http://localhost:8000',
+]
 
 # Set API start time to the application's boot time
 API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -65,6 +74,7 @@ INSTALLED_APPS = [
     # Custom apps
     "apps.users.apps.UsersConfig",  # Users app
     "apps.stations.apps.StationsConfig",  # Stations app
+    "apps.routes.apps.RoutesConfig",  # Routes app
 ]
 
 # Middleware configuration
@@ -152,23 +162,32 @@ default_db_config = dj_database_url.config(
 )
 
 # Database configuration with explicit overrides
-DATABASES = {
-    "default": {
-        **default_db_config,  # Base configuration parsed by dj_database_url
-        "ENGINE": default_db_config.get("ENGINE", "django.db.backends.postgresql"),
-        "NAME": default_db_config.get("NAME", os.getenv("DB_NAME")),
-        "USER": default_db_config.get("USER", os.getenv("DB_USER")),
-        "PASSWORD": default_db_config.get("PASSWORD", os.getenv("DB_PASSWORD")),
-        "HOST": default_db_config.get("HOST", os.getenv("DB_HOST")),
-        "PORT": default_db_config.get("PORT", os.getenv("DB_PORT")),
-        "CONN_MAX_AGE": default_db_config.get("CONN_MAX_AGE", 600),
-        "OPTIONS": {
-            **default_db_config.get("OPTIONS", {}),  # Merge existing options
-            "options": "-c search_path=public",  # Specify the default schema
-        },
-        "DISABLE_SERVER_SIDE_CURSORS": True,  # Optimize for specific queries
+if os.getenv("ENVIRONMENT") == "prod":
+    DATABASES = {
+        "default": {
+            **default_db_config,  # Base configuration parsed by dj_database_url
+            "ENGINE": default_db_config.get("ENGINE", "django.db.backends.postgresql"),
+            "NAME": default_db_config.get("NAME", os.getenv("DB_NAME")),
+            "USER": default_db_config.get("USER", os.getenv("DB_USER")),
+            "PASSWORD": default_db_config.get("PASSWORD", os.getenv("DB_PASSWORD")),
+            "HOST": default_db_config.get("HOST", os.getenv("DB_HOST")),
+            "PORT": default_db_config.get("PORT", os.getenv("DB_PORT")),
+            "CONN_MAX_AGE": default_db_config.get("CONN_MAX_AGE", 600),
+            "OPTIONS": {
+                **default_db_config.get("OPTIONS", {}),  # Merge existing options
+                "options": "-c search_path=public",  # Specify the default schema
+            },
+            "DISABLE_SERVER_SIDE_CURSORS": True,  # Optimize for specific queries
+        }
     }
-}
+else:  # Use SQLite for local development
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        }
+    }
+
 
 # Security Settings General
 # SESSION_COOKIE_HTTPONLY = True  # Prevent JavaScript access to session cookies

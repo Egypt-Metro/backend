@@ -81,7 +81,7 @@ python-dateutil==2.9.0.post0 ; python_version >= "3.10" and python_version < "4.
 python-decouple==3.8 ; python_version >= "3.10" and python_version < "4.0"
 python-dotenv==1.0.1 ; python_version >= "3.10" and python_version < "4.0"
 pytz==2024.2 ; python_version >= "3.10" and python_version < "4.0"
-pywin32==306 ; python_version >= "3.10" and python_version < "4.0" and sys_platform == "win32"
+pywin32>=307 ; python_version >= "3.10" and python_version < "4.0" and sys_platform == "win32"
 pyyaml==6.0.2 ; python_version >= "3.10" and python_version < "4.0"
 pyzmq==26.2.0 ; python_version >= "3.10" and python_version < "4.0"
 redis==5.2.1 ; python_version >= "3.10" and python_version < "4.0"
