@@ -14,24 +14,24 @@ The **Egypt Metro Backend** is a robust API, business logic, and metro administr
 
 ### Passenger Features
 
-- **User Authentication**: Registration, login, profile management, and JWT support.
-- **Station Management**: Nearest station lookup, station list, and trip details.
-- **Route and Trip Planning**: Manage metro routes, count the number of stations, and calculate ticket prices.
-- **Train Schedules**: Provide real-time schedule data, including arrival times and GPS-tracked train locations.
-- **Real-Time Crowd Management**: Use AI to predict train crowd levels and recommend less crowded options.
-- **User Profiles**: Manage user accounts, including registration, login, subscription types, and payment options.
-- **Online Ticketing**: Buy and generate tickets online with QR codes for easy scanning at metro gates
-- **Online Subscription**: Subscribe to or renew metro plans online.
-- **Payment Options**: Users can pay via credit/debit cards, e-wallets, or other payment gateways.
-- **Chatbot Support**: 24/7 AI-powered chatbot to answer questions, guide users, and connect with customer service.
-- **Real-Time Updates**: Supports extensions for real-time data (e.g., train locations, crowd levels).
+- `User Authentication`: Registration, login, profile management, and JWT support.
+- `Station Management`: Nearest station lookup, station list, and trip details.
+- `Route and Trip Planning`: Manage metro routes, count the number of stations, and calculate ticket prices.
+- `Train Schedules`: Provide real-time schedule data, including arrival times and GPS-tracked train locations.
+- `Real-Time Crowd Management`: Use AI to predict train crowd levels and recommend less crowded options.
+- `User Profiles`: Manage user accounts, including registration, login, subscription types, and payment options.
+- `Online Ticketing`: Buy and generate tickets online with QR codes for easy scanning at metro gates
+- `Online Subscription`: Subscribe to or renew metro plans online.
+- `Payment Options`: Users can pay via credit/debit cards, e-wallets, or other payment gateways.
+- `Chatbot Support`: 24/7 AI-powered chatbot to answer questions, guide users, and connect with customer service.
+- `Real-Time Updates`: Supports extensions for real-time data (e.g., train locations, crowd levels).
 
 ### Admin Features
 
-- **Admin Dashboard**: Track revenue, sales, and station performance in real-time.
-- **Fault Reporting**: Allow admins to view, respond to, and track the status of user-reported issues.
-- **Revenue and Sales Tracking**: Monitor ticket sales and subscription renewals for each metro line and station.
-- **Train Monitoring**: Track train locations and details in real-time.
+- `Admin Dashboard`: Track revenue, sales, and station performance in real-time.
+- `Fault Reporting`: Allow admins to view, respond to, and track the status of user-reported issues.
+- `Revenue and Sales Tracking`: Monitor ticket sales and subscription renewals for each metro line and station.
+- `Train Monitoring`: Track train locations and details in real-time.
 
 ---
 

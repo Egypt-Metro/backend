@@ -4,7 +4,7 @@
 # Configuration for the Black code formatter.
 [tool.black]
 line-length = 88
-target-version = ["py38", "py39"]
+target-version = ["py310", "py311"]
 
 # [tool.poetry]
 # General settings for Poetry.
@@ -23,11 +23,10 @@ django = "^4.2.18"  # Django version
 fastapi = "^0.68.1"  # FastAPI version
 uvicorn = "^0.15.0"  # Uvicorn version
 pydantic = "^1.8.2"  # Pydantic version
-httpx = "^0.23.0"  # HTTPX version
 starlette = "^0.14.2"  # Starlette version
 asyncpg = "^0.30.0"  # asyncpg version for PostgreSQL connection
 gunicorn = "^23.0.0"  # Gunicorn version
-pywin32 = { version = "306", optional = true, markers = "sys_platform == 'win32'" }  # Optional dependency for Windows
+pywin32 = "^308"  # Optional dependency for Windows
 docker = "^7.1.0"  # Docker SDK for Python version
 jinja2 = "^3.1.4"  # Jinja2 version
 python-dotenv = "^1.0.1"  # Python dotenv version
@@ -45,7 +44,6 @@ debugpy = "1.8.5"  # Debugpy for debugging Python code
 decorator = "5.1.1"  # Decorator library
 distlib = "0.3.9"  # Distlib for distribution utilities
 dj-database-url = "2.3.0"  # Django Database URL parser
-Django = "4.2.16"  # Explicit Django version
 django-allauth = "65.3.0"  # Django Allauth for user authentication
 django-environ = "0.11.2"  # Django Environ for environment variable management
 django-redis = "5.4.0"  # Django Redis for Redis support
@@ -77,7 +75,7 @@ platformdirs = "4.3.6"  # Platformdirs for platform-specific directories
 prompt_toolkit = "3.0.47"  # Prompt Toolkit for advanced terminal prompts
 psutil = "6.0.0"  # Psutil for system utilities
 psycopg2 = "2.9.10"  # Psycopg2 PostgreSQL adapter
-psycopg2-binary = "2.9.10"  # Binary Psycopg2 for PostgreSQL
+# psycopg2-binary = "2.9.10"  # Binary Psycopg2 for PostgreSQL
 pure_eval = "0.2.3"  # Pure Eval for safe evaluation of expressions
 pyasn1 = "0.6.1"  # PyASN1 for ASN.1 data structures
 pyasn1_modules = "0.4.1"  # PyASN1 modules for ASN.1 encoding/decoding
@@ -108,22 +106,23 @@ virtualenv = "20.28.0"  # Virtualenv for virtual environments
 waitress = "3.0.2"  # Waitress for WSGI server
 wcwidth = "0.2.13"  # wcwidth for terminal width calculation
 whitenoise = "6.7.0"  # WhiteNoise for serving static files in Django
-
-# [tool.poetry.dev-dependencies]
-# Development dependencies including testing and development tools.
-django-db-geventpool = "^4.0.7"
-django-silk = "^5.3.2"
-django-constance = "^4.1.3"
 simplejwt = "^2.0.1"
-django-debug-toolbar = "^4.4.6"
-[tool.poetry.dev-dependencies]
+
+
+# Development dependencies including testing and development tools.
+[tool.poetry.group.dev.dependencies]
 pytest = "^6.2.4"  # Pytest for unit testing
 pytest-asyncio = "^0.15.1"  # Pytest plugin for asyncio tests
 httpx = "^0.23.0"  # HTTPX for HTTP requests in tests
 pytest-mock = "^3.6.1"  # Pytest plugin for mocking in tests
+django-debug-toolbar = "^4.4.6"
+django-silk = "^5.3.2"
+django-db-geventpool = "^4.0.7"
+django-constance = "^4.1.3"
 
-# [build-system]
+
 # Build system configuration for Poetry.
+# [build-system]
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
