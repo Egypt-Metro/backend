@@ -36,7 +36,7 @@ jobs:
 
     - name: Export requirements.txt for Deployment
       run: |
-        poetry export --without-hashes -o requirements.txt
+        poetry run pip freeze > requirements.txt
 
     - name: Install Render CLI
       run: |
