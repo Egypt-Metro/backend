@@ -162,31 +162,31 @@ default_db_config = dj_database_url.config(
 )
 
 # Database configuration with explicit overrides
-if os.getenv("ENVIRONMENT") == "prod":
-    DATABASES = {
-        "default": {
-            **default_db_config,  # Base configuration parsed by dj_database_url
-            "ENGINE": default_db_config.get("ENGINE", "django.db.backends.postgresql"),
-            "NAME": default_db_config.get("NAME", os.getenv("DB_NAME")),
-            "USER": default_db_config.get("USER", os.getenv("DB_USER")),
-            "PASSWORD": default_db_config.get("PASSWORD", os.getenv("DB_PASSWORD")),
-            "HOST": default_db_config.get("HOST", os.getenv("DB_HOST")),
-            "PORT": default_db_config.get("PORT", os.getenv("DB_PORT")),
-            "CONN_MAX_AGE": default_db_config.get("CONN_MAX_AGE", 600),
-            "OPTIONS": {
-                **default_db_config.get("OPTIONS", {}),  # Merge existing options
-                "options": "-c search_path=public",  # Specify the default schema
-            },
-            "DISABLE_SERVER_SIDE_CURSORS": True,  # Optimize for specific queries
-        }
+# if os.getenv("ENVIRONMENT") == "prod":
+DATABASES = {
+    "default": {
+        **default_db_config,  # Base configuration parsed by dj_database_url
+        "ENGINE": default_db_config.get("ENGINE", "django.db.backends.postgresql"),
+        "NAME": default_db_config.get("NAME", os.getenv("DB_NAME")),
+        "USER": default_db_config.get("USER", os.getenv("DB_USER")),
+        "PASSWORD": default_db_config.get("PASSWORD", os.getenv("DB_PASSWORD")),
+        "HOST": default_db_config.get("HOST", os.getenv("DB_HOST")),
+        "PORT": default_db_config.get("PORT", os.getenv("DB_PORT")),
+        "CONN_MAX_AGE": default_db_config.get("CONN_MAX_AGE", 600),
+        "OPTIONS": {
+            **default_db_config.get("OPTIONS", {}),  # Merge existing options
+            "options": "-c search_path=public",  # Specify the default schema
+        },
+        "DISABLE_SERVER_SIDE_CURSORS": True,  # Optimize for specific queries
     }
-else:  # Use SQLite for local development
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
-        }
-    }
+}
+# else:  # Use SQLite for local development
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.sqlite3",
+#             "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+#         }
+#     }
 
 
 # Security Settings General
