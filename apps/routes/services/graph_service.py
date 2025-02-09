@@ -1,7 +1,6 @@
-# apps/routes/services/graph_service.py
-
 from collections import defaultdict
-from apps.stations.models import LineStation
+from venv import logger
+from apps.stations.models import LineStation, Interchange
 
 
 class GraphService:
@@ -16,18 +15,36 @@ class GraphService:
         """
         Builds a graph representation of the metro system where:
         - Nodes are stations
-        - Edges are distances between adjacent stations
+        - Edges are connections between adjacent stations in the same line or through interchanges.
         """
         if cls._graph is None:
             cls._graph = defaultdict(list)
-            line_stations = LineStation.objects.select_related("station", "line")
+            line_stations = LineStation.objects.select_related("station", "line").order_by("order")
 
+            # Group stations by line
+            line_to_stations = defaultdict(list)
             for line_station in line_stations:
-                station = line_station.station
-                next_station = line_station.line.stations.exclude(id=station.id).first()
-                if next_station:
-                    distance = station.distance_to(next_station)
-                    cls._graph[station.id].append((next_station.id, distance))
-                    cls._graph[next_station.id].append((station.id, distance))  # Bidirectional
+                line_to_stations[line_station.line.id].append(line_station.station.id)
+
+            # Build graph with connections between adjacent stations in the same line
+            for line_id, station_ids in line_to_stations.items():
+                for i in range(len(station_ids) - 1):
+                    current_station = station_ids[i]
+                    next_station = station_ids[i + 1]
+                    cls._graph[current_station].append((next_station, 1))  # Default weight of 1
+                    cls._graph[next_station].append((current_station, 1))  # Bidirectional
+
+            # Add connections between stations that share the same interchange
+            interchanges = Interchange.objects.select_related("station").prefetch_related("connected_stations")
+            for interchange in interchanges:
+                station_id = interchange.station.id
+                for connected_station in interchange.connected_stations.all():
+                    cls._graph[station_id].append((connected_station.id, 1))  # Default weight of 1
+                    cls._graph[connected_station.id].append((station_id, 1))  # Bidirectional
+
+            # Log the graph structure for debugging
+            logger.info("Graph structure:")
+            for station_id, neighbors in cls._graph.items():
+                logger.info(f"Station {station_id} -> {neighbors}")
 
         return cls._graph

@@ -67,32 +67,63 @@ def home(request):
             "stations_list": "/api/stations/list/",  # List stations
             "trip_details": "/api/stations/trip/<start_station_id>/<end_station_id>/",  # Trip details
             "nearest_station": "/api/stations/nearest/",  # Nearest station
+            "precomputed_route": "/api/routes/route/<start_station_id>/<end_station_id>/",  # Precomputed route
+            "shortest_route": "/api/routes/shortest/",  # Shortest route
         },
     }
 
     # Check if browser or API client
     if "text/html" in request.META.get("HTTP_ACCEPT", ""):
         html_content = f"""
-        <html>
-            <head>
-                <title>Egypt Metro API</title>
-            </head>
-            <body>
-                <h1>Welcome to Egypt Metro Backend</h1>
-                <p>Version: {data['version']}</p>
-                <p>Date & Time: {data['current_date_time']}</p>
-                <p>Environment: {data['environment']}</p>
-                <h2>Quick Links</h2>
-                <ul>
-                    <li><a href="{data['admin_panel']}">Admin Panel</a></li>
-                    <li><a href="{data['api_documentation']}">API Documentation</a></li>
-                    <li><a href="{data['health_check']}">Health Check</a></li>
-                    <li><a href="{data['swagger']}">Swagger API Documentation</a></li>
-                    <li><a href="{data['redoc']}">Redoc API Documentation</a></li>
-                </ul>
-                <h2>API Routes</h2>
-                <ul>
-        """
+            <html>
+                <head>
+                    <title>Egypt Metro API</title>
+                    <style>
+                        body {{
+                            font-family: Arial, sans-serif;
+                            margin: 20px;
+                            padding: 0;
+                            background-color: #f4f4f4;
+                            color: #333;
+                        }}
+                        h1 {{
+                            color: #2c3e50;
+                        }}
+                        h2 {{
+                            color: #34495e;
+                        }}
+                        ul {{
+                            list-style-type: none;
+                            padding: 0;
+                        }}
+                        li {{
+                            margin: 10px 0;
+                        }}
+                        a {{
+                            color: #3498db;
+                            text-decoration: none;
+                        }}
+                        a:hover {{
+                            text-decoration: underline;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <h1>Welcome to Egypt Metro Backend</h1>
+                    <p>Version: {data['version']}</p>
+                    <p>Date & Time: {data['current_date_time']}</p>
+                    <p>Environment: {data['environment']}</p>
+                    <h2>Quick Links</h2>
+                    <ul>
+                        <li><a href="{data['admin_panel']}">Admin Panel</a></li>
+                        <li><a href="{data['api_documentation']}">API Documentation</a></li>
+                        <li><a href="{data['health_check']}">Health Check</a></li>
+                        <li><a href="{data['swagger']}">Swagger API Documentation</a></li>
+                        <li><a href="{data['redoc']}">Redoc API Documentation</a></li>
+                    </ul>
+                    <h2>API Routes</h2>
+                    <ul>
+            """
         for name, path in data["api_routes"].items():
             html_content += f"<li><a href='{path}'>{name}</a></li>"
         html_content += "</ul></body></html>"

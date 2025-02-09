@@ -126,3 +126,27 @@ class ConnectingStation(models.Model):
 
     def __str__(self):
         return f"Connecting Station: {self.station.name} between lines {', '.join([line.name for line in self.lines.all()])}"
+
+
+class Interchange(models.Model):
+    """
+    Represents a station that serves as an interchange between multiple lines.
+    """
+    station = models.ForeignKey(
+        "Station",
+        on_delete=models.CASCADE,
+        related_name="interchanges",
+        help_text="The station that serves as an interchange."
+    )
+    connected_stations = models.ManyToManyField(
+        "Station",
+        related_name="connected_interchanges",
+        help_text="Stations that are connected through this interchange."
+    )
+
+    def __str__(self):
+        return f"Interchange at {self.station.name}"
+
+    class Meta:
+        verbose_name = "Interchange"
+        verbose_name_plural = "Interchanges"

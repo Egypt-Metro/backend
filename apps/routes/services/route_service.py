@@ -1,7 +1,7 @@
 import heapq
 import logging
-from collections import deque
 from apps.routes.services.graph_service import GraphService
+from apps.stations.models import Station
 
 logger = logging.getLogger(__name__)
 
@@ -14,77 +14,27 @@ class RouteService:
     def __init__(self):
         self.graph = GraphService.build_graph()
 
-    def _bfs_connected_component(self, start_station):
+    def find_shortest_path(self, start_station_id, end_station_id, line_id=None):
         """
-        Performs BFS to find all stations connected to the given start station.
-        """
-        visited = set()
-        queue = deque([start_station])
-
-        while queue:
-            station = queue.popleft()
-            if station not in visited:
-                visited.add(station)
-                queue.extend(neighbor for neighbor, _ in self.graph.get(station, []))
-
-        return visited
-
-    def ensure_all_stations_connected(self):
-        """
-        Ensures all stations are part of a single connected component.
-        If not, adds the minimum number of edges to connect them.
-        """
-        stations = set(self.graph.keys())
-        if not stations:
-            return  # No stations in the graph
-
-        # Find all connected components
-        components = []
-        visited = set()
-
-        for station in stations:
-            if station not in visited:
-                component = self._bfs_connected_component(station)
-                components.append(component)
-                visited.update(component)
-
-        if len(components) == 1:
-            logger.info("All stations are already connected.")
-            return  # The graph is already fully connected
-
-        # Add minimum edges to connect components
-        logger.warning(f"Graph is disconnected! Found {len(components)} separate groups.")
-
-        new_connections = []
-        for i in range(len(components) - 1):
-            # Pick any station from the current component and connect it to another component
-            station1 = next(iter(components[i]))
-            station2 = next(iter(components[i + 1]))
-
-            # Add a bidirectional edge with weight 1 (default)
-            self.graph[station1].append((station2, 1))
-            self.graph[station2].append((station1, 1))
-            new_connections.append((station1, station2))
-
-        logger.info(f"Added {len(new_connections)} new connections to merge all components.")
-        return new_connections
-
-    def find_shortest_path(self, start_station_id, end_station_id):
-        """
-        Implements Dijkstra's algorithm to find the shortest path between two stations.
+        Finds the shortest path between two stations, respecting the order of stations within each line.
         """
         if start_station_id not in self.graph or end_station_id not in self.graph:
             logger.error(f"Invalid station IDs: {start_station_id}, {end_station_id}")
             raise ValueError("One or both station IDs are invalid.")
 
         if start_station_id == end_station_id:
-            return {"distance": 0, "path": [start_station_id]}
+            return {
+                "path": [{"station_id": start_station_id, "station_name": "Same Station", "line_name": "N/A"}],
+                "interchanges": []
+            }
 
         # Initialize distances and priority queue
         distances = {station_id: float("inf") for station_id in self.graph}
         previous_stations = {station_id: None for station_id in self.graph}
         distances[start_station_id] = 0
         priority_queue = [(0, start_station_id)]
+
+        logger.info(f"Finding shortest path from {start_station_id} to {end_station_id}")
 
         while priority_queue:
             current_distance, current_station = heapq.heappop(priority_queue)
@@ -113,38 +63,76 @@ class RouteService:
             logger.error(f"No valid path found from {start_station_id} to {end_station_id}")
             return None
 
+        # Log the computed path
+        logger.info(f"Computed path: {path}")
+
+        # Get station and line details for the path
+        detailed_path = self._get_detailed_path(path)
+
+        # Track interchanges
+        interchanges = self._find_interchanges(path)
+
         return {
-            "distance": distances[end_station_id] if distances[end_station_id] != float("inf") else None,
-            "path": path
+            "path": detailed_path,
+            "interchanges": interchanges
         }
 
-    def bfs_shortest_path(self, start_station_id, end_station_id):
+    def _find_interchanges(self, path):
         """
-        Implements BFS to find the shortest path in an unweighted graph.
+        Identifies interchanges (line changes) along the path.
+        Returns a list of dictionaries with interchange details.
         """
-        if start_station_id not in self.graph or end_station_id not in self.graph:
-            logger.error(f"Invalid station IDs: {start_station_id}, {end_station_id}")
-            raise ValueError("One or both station IDs are invalid.")
+        interchanges = []
+        for i in range(1, len(path)):
+            current_station = path[i]
+            previous_station = path[i - 1]
+            current_lines = set(self._get_lines_for_station(current_station))
+            previous_lines = set(self._get_lines_for_station(previous_station))
 
-        if start_station_id == end_station_id:
-            return [start_station_id]
+            # Check for line changes
+            if current_lines != previous_lines:
+                interchange_station = current_station
+                from_line = list(previous_lines)[0]  # Get the first line
+                to_line = list(current_lines)[0]  # Get the first line
 
-        queue = deque([(start_station_id, [])])
-        visited = set()
+                # Convert Line objects to dictionaries
+                interchanges.append({
+                    "station_id": interchange_station,
+                    "station_name": Station.objects.get(id=interchange_station).name,
+                    "from_line": {"id": from_line.id, "name": from_line.name},
+                    "to_line": {"id": to_line.id, "name": to_line.name}
+                })
 
-        while queue:
-            current_station, path = queue.popleft()
+        return interchanges
 
-            if current_station in visited:
+    def _get_detailed_path(self, path):
+        """
+        Returns a detailed path with station names and line names.
+        """
+        # Fetch all stations and their line details in a single query
+        stations = Station.objects.filter(id__in=path).prefetch_related('lines')
+        station_map = {station.id: station for station in stations}
+
+        detailed_path = []
+        for station_id in path:
+            station = station_map.get(station_id)
+            if not station:
+                logger.warning(f"Station with ID {station_id} not found.")
                 continue
-            visited.add(current_station)
 
-            if current_station == end_station_id:
-                path.append(current_station)
-                return path
+            line_station = station.lines.first()  # Get the first line associated with the station
+            line_name = line_station.name if line_station else "N/A"
+            detailed_path.append({
+                "station_id": station_id,
+                "station_name": station.name,
+                "line_name": line_name
+            })
+        return detailed_path
 
-            for neighbor, _ in self.graph.get(current_station, []):
-                queue.append((neighbor, path + [current_station]))
-
-        logger.warning(f"No path found from {start_station_id} to {end_station_id}")
-        return None
+    def _get_lines_for_station(self, station_id):
+        """
+        Returns the lines associated with a station.
+        """
+        from apps.stations.models import Station
+        station = Station.objects.get(id=station_id)
+        return station.lines.all()

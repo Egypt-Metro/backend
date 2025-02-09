@@ -176,6 +176,7 @@ DATABASES = {
         "OPTIONS": {
             **default_db_config.get("OPTIONS", {}),  # Merge existing options
             "options": "-c search_path=public",  # Specify the default schema
+            'connect_timeout': 30,  # Increase the connection timeout (in seconds)
         },
         "DISABLE_SERVER_SIDE_CURSORS": True,  # Optimize for specific queries
     }

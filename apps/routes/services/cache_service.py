@@ -1,6 +1,9 @@
 # apps/routes/services/cache_service.py
 
 from django.core.cache import cache
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CacheService:
@@ -15,23 +18,27 @@ class CacheService:
 
         :param start_station_id: ID of the starting station.
         :param end_station_id: ID of the destination station.
-        :return: Cached route data if available, otherwise None.
+        cached_route = cache.get(cache_key)
         """
         cache_key = CacheService._generate_cache_key(start_station_id, end_station_id)
-        return cache.get(cache_key)
+        cached_route = cache.get(cache_key)
+        if cached_route:
+            logger.info(f"Cache hit for route: {cache_key}")
+        else:
+            logger.info(f"Cache miss for route: {cache_key}")
+        return cached_route
 
     @staticmethod
     def cache_route(start_station_id, end_station_id, route_data, timeout=3600):
         """
         Caches the computed route for future use.
-
-        :param start_station_id: ID of the starting station.
-        :param end_station_id: ID of the destination station.
-        :param route_data: The route data to cache.
-        :param timeout: Cache timeout in seconds (default: 1 hour).
         """
         cache_key = CacheService._generate_cache_key(start_station_id, end_station_id)
-        cache.set(cache_key, route_data, timeout)
+        try:
+            cache.set(cache_key, route_data, timeout)
+            logger.info(f"Route cached successfully: {cache_key}")
+        except Exception as e:
+            logger.error(f"Failed to cache route: {cache_key}. Error: {str(e)}")
 
     @staticmethod
     def delete_cached_route(start_station_id, end_station_id):
@@ -74,12 +81,10 @@ class CacheService:
         cache.clear()
 
     @staticmethod
-    def _generate_cache_key(start_station_id, end_station_id):
+    def _generate_cache_key(start_station_id, end_station_id, line_id=None):
         """
         Generates a standardized cache key for a given route.
-
-        :param start_station_id: ID of the starting station.
-        :param end_station_id: ID of the destination station.
-        :return: A formatted cache key string.
         """
+        if line_id:
+            return f"route:{start_station_id}-{end_station_id}-{line_id}"
         return f"route:{start_station_id}-{end_station_id}"

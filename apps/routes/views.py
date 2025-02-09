@@ -1,4 +1,5 @@
 import logging
+import traceback
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ValidationError
 from rest_framework.views import APIView
@@ -24,23 +25,28 @@ class RouteView(APIView):
             start_station, end_station = self._validate_stations(start_station_id, end_station_id)
 
             # Check cache first
-            cached_route = CacheService.get_cached_route(start_station_id, end_station_id)
+            cache_key = CacheService._generate_cache_key(start_station_id, end_station_id)
+            cached_route = CacheService.get_cached_route(cache_key)
             if cached_route:
                 logger.info(f"Returning cached route for {start_station_id} -> {end_station_id}")
                 return Response(cached_route)
 
             # Fetch from database
             route = PrecomputedRoute.objects.filter(
-                start_station=start_station, end_station=end_station
-            ).only("path", "distance", "travel_time").first()
+                start_station=start_station,
+                end_station=end_station
+            ).only("path", "interchanges").first()
 
             if not route:
                 logger.warning(f"No precomputed route found for {start_station_id} -> {end_station_id}")
                 return Response({"error": "Route not found."}, status=status.HTTP_404_NOT_FOUND)
 
             # Cache and return route data
-            route_data = {"path": route.path, "distance": route.distance, "travel_time": route.travel_time}
-            CacheService.cache_route(start_station_id, end_station_id, route_data)
+            route_data = {
+                "path": route.path,
+                "interchanges": route.interchanges
+            }
+            CacheService.cache_route(cache_key, route_data)
             logger.info(f"Route cached for {start_station_id} -> {end_station_id}")
             return Response(route_data)
 
@@ -95,7 +101,7 @@ def get_shortest_route(request):
     except ValidationError as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
-        logger.error(f"Unexpected error: {str(e)}")
+        logger.error(f"Unexpected error: {str(e)}\n{traceback.format_exc()}")
         return Response({"error": "An unexpected error occurred."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
