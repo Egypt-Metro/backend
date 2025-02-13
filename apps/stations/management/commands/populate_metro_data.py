@@ -42,11 +42,7 @@ class Command(BaseCommand):
                 {"name": "Hammamat El-Qobba", "latitude": 30.090, "longitude": 31.298},
                 {"name": "Saray El-Qobba", "latitude": 30.098, "longitude": 31.303},
                 {"name": "Hadayek El-Zaitoun", "latitude": 30.105, "longitude": 31.310},
-                {
-                    "name": "Helmeyet El-Zaitoun",
-                    "latitude": 30.115,
-                    "longitude": 31.314,
-                },
+                {"name": "Helmeyet El-Zaitoun", "latitude": 30.115, "longitude": 31.314},
                 {"name": "El-Matareyya", "latitude": 30.121, "longitude": 31.315},
                 {"name": "Ain Shams", "latitude": 30.131, "longitude": 31.318},
                 {"name": "Ezbet El-Nakhl", "latitude": 30.139, "longitude": 31.324},
@@ -59,18 +55,10 @@ class Command(BaseCommand):
             "stations": [
                 {"name": "El-Mounib", "latitude": 29.98139, "longitude": 31.21194},
                 {"name": "Sakiat Mekky", "latitude": 29.99556, "longitude": 31.20861},
-                {
-                    "name": "Omm El-Masryeen",
-                    "latitude": 30.00528,
-                    "longitude": 31.20806,
-                },
+                {"name": "Omm El-Masryeen", "latitude": 30.00528, "longitude": 31.20806},
                 {"name": "El Giza", "latitude": 30.01056, "longitude": 31.20722},
                 {"name": "Faisal", "latitude": 30.01722, "longitude": 31.20389},
-                {
-                    "name": "Cairo University",
-                    "latitude": 30.02611,
-                    "longitude": 31.20111,
-                },
+                {"name": "Cairo University", "latitude": 30.02611, "longitude": 31.20111},
                 {"name": "El Bohoth", "latitude": 30.03583, "longitude": 31.20028},
                 {"name": "Dokki", "latitude": 30.03833, "longitude": 31.21194},
                 {"name": "Opera", "latitude": 30.04222, "longitude": 31.22528},
@@ -83,16 +71,8 @@ class Command(BaseCommand):
                 {"name": "St. Teresa", "latitude": 30.08833, "longitude": 31.24556},
                 {"name": "Khalafawy", "latitude": 30.09806, "longitude": 31.24528},
                 {"name": "Mezallat", "latitude": 30.10500, "longitude": 31.24667},
-                {
-                    "name": "Kolleyyet El-Zeraa",
-                    "latitude": 30.11389,
-                    "longitude": 31.24861,
-                },
-                {
-                    "name": "Shubra El-Kheima",
-                    "latitude": 30.12250,
-                    "longitude": 31.24472,
-                },
+                {"name": "Kolleyyet El-Zeraa", "latitude": 30.11389, "longitude": 31.24861},
+                {"name": "Shubra El-Kheima", "latitude": 30.12250, "longitude": 31.24472},
             ],
         },
         {

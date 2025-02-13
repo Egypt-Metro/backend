@@ -1,80 +1,65 @@
 # apps/routes/admin.py
 
 from django.contrib import admin
-from apps.routes.models import PrecomputedRoute
+from apps.routes.models import Route
 
 
-@admin.register(PrecomputedRoute)
-class PrecomputedRouteAdmin(admin.ModelAdmin):
-    """
-    Admin interface for managing PrecomputedRoute objects.
-    Precomputed routes are managed programmatically, so add/delete permissions are restricted.
-    """
-
-    # List display configuration
+@admin.register(Route)
+class RouteAdmin(admin.ModelAdmin):
     list_display = (
-        "start_station",
-        "end_station",
-        "line",
-        "get_path_length",
-        "get_interchange_count",
+        'start_station',
+        'end_station',
+        'primary_line',
+        'number_of_stations',
+        'total_distance',
+        'total_time',
+        'is_active',
     )
-    list_filter = ("line",)
+
+    list_filter = (
+        'is_active',
+        'primary_line',
+        'created_at',
+        ('start_station', admin.RelatedOnlyFieldListFilter),
+        ('end_station', admin.RelatedOnlyFieldListFilter),
+    )
+
     search_fields = (
-        "start_station__name",
-        "end_station__name",
-        "line__name",
-    )
-    ordering = ("start_station", "end_station", "line")
-
-    # Fieldsets for the edit form
-    fieldsets = (
-        (
-            None,
-            {
-                "fields": (
-                    "start_station",
-                    "end_station",
-                    "line",
-                )
-            },
-        ),
-        (
-            "Route Details",
-            {
-                "fields": (
-                    "path",
-                    "interchanges",
-                ),
-                "classes": ("collapse",),  # Collapsible section
-            },
-        ),
+        'start_station__name',
+        'end_station__name',
     )
 
-    # Read-only fields to prevent accidental modifications
     readonly_fields = (
-        "path",
-        "interchanges",
+        'created_at',
+        'updated_at',
+        'number_of_stations',
+        'path',
+        'interchanges',
     )
 
-    # Custom methods for list display
-    def get_path_length(self, obj):
-        """Returns the number of stations in the path."""
-        return len(obj.path) if obj.path else 0
-
-    get_path_length.short_description = "Path Length"
-
-    def get_interchange_count(self, obj):
-        """Returns the number of interchanges in the route."""
-        return len(obj.interchanges) if obj.interchanges else 0
-
-    get_interchange_count.short_description = "Interchanges"
-
-    # Permissions
-    def has_add_permission(self, request):
-        """Precomputed routes should be managed programmatically."""
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        """Restrict deletion to avoid breaking route caching."""
-        return False
+    fieldsets = (
+        ('Basic Information', {
+            'fields': (
+                'start_station',
+                'end_station',
+                'primary_line',
+                'is_active',
+            )
+        }),
+        ('Route Details', {
+            'fields': (
+                'total_distance',
+                'total_time',
+                'number_of_stations',
+                'path',
+                'interchanges',
+            )
+        }),
+        ('Timestamps', {
+            'fields': (
+                'created_at',
+                'updated_at',
+            ),
+            'classes': ('collapse',)
+        }),
+    )

@@ -1,138 +1,188 @@
+# apps/routes/services/route_service.py
+
+from typing import Dict, List, Optional
+from collections import defaultdict
 import heapq
-import logging
-from apps.routes.services.graph_service import GraphService
-from apps.stations.models import Station
-
-logger = logging.getLogger(__name__)
+from apps.stations.models import Station, LineStation
+from .cache_service import CacheService
 
 
-class RouteService:
-    """
-    Service for computing the shortest path and ensuring all stations are connected.
-    """
-
+class MetroRouteService:
     def __init__(self):
-        self.graph = GraphService.build_graph()
+        self.graph = defaultdict(dict)
+        self.station_lines = defaultdict(set)
+        self.cache_service = CacheService()
+        self.build_graph()
 
-    def find_shortest_path(self, start_station_id, end_station_id, line_id=None):
-        """
-        Finds the shortest path between two stations, respecting the order of stations within each line.
-        """
-        if start_station_id not in self.graph or end_station_id not in self.graph:
-            logger.error(f"Invalid station IDs: {start_station_id}, {end_station_id}")
-            raise ValueError("One or both station IDs are invalid.")
+    def build_graph(self):
+        """Build an optimized graph representation of the metro network"""
+        line_stations = LineStation.objects.select_related(
+            'station', 'line'
+        ).order_by('line', 'order')
 
-        if start_station_id == end_station_id:
-            return {
-                "path": [{"station_id": start_station_id, "station_name": "Same Station", "line_name": "N/A"}],
-                "interchanges": []
+        current_line = None
+        line_stations_list = []
+
+        for ls in line_stations:
+            self.station_lines[ls.station.id].add(ls.line.id)
+
+            if current_line != ls.line:
+                if line_stations_list:
+                    self._connect_sequential_stations(line_stations_list)
+                line_stations_list = []
+                current_line = ls.line
+
+            line_stations_list.append(ls)
+
+        if line_stations_list:
+            self._connect_sequential_stations(line_stations_list)
+
+        self._add_interchange_connections()
+
+    def _connect_sequential_stations(self, line_stations: List[LineStation]):
+        """Connect sequential stations on the same line"""
+        for i in range(len(line_stations) - 1):
+            current = line_stations[i]
+            next_station = line_stations[i + 1]
+            distance = current.station.distance_to(next_station.station)
+
+            self.graph[current.station.id][next_station.station.id] = {
+                'distance': distance,
+                'line_id': current.line.id,
+                'line_name': current.line.name,
+                'line_color': current.line.color_code
+            }
+            self.graph[next_station.station.id][current.station.id] = {
+                'distance': distance,
+                'line_id': current.line.id,
+                'line_name': current.line.name,
+                'line_color': current.line.color_code
             }
 
-        # Initialize distances and priority queue
-        distances = {station_id: float("inf") for station_id in self.graph}
-        previous_stations = {station_id: None for station_id in self.graph}
-        distances[start_station_id] = 0
-        priority_queue = [(0, start_station_id)]
+    def _add_interchange_connections(self):
+        """Add connections between stations that share multiple lines"""
+        for station_id, lines in self.station_lines.items():
+            if len(lines) > 1:
+                connected_stations = LineStation.objects.filter(
+                    line_id__in=lines
+                ).exclude(
+                    station_id=station_id
+                ).select_related('station', 'line')
 
-        logger.info(f"Finding shortest path from {start_station_id} to {end_station_id}")
+                for cs in connected_stations:
+                    if station_id not in self.graph[cs.station.id]:
+                        distance = Station.objects.get(
+                            id=station_id
+                        ).distance_to(cs.station)
 
-        while priority_queue:
-            current_distance, current_station = heapq.heappop(priority_queue)
+                        self.graph[station_id][cs.station.id] = {
+                            'distance': distance,
+                            'line_id': cs.line.id,
+                            'line_name': cs.line.name,
+                            'line_color': cs.line.color_code
+                        }
 
-            if current_station == end_station_id:
-                break
+    def find_route(self, start_id: int, end_id: int) -> Optional[Dict]:
+        """Find the optimal route between two stations"""
+        # Try to get from cache first
+        cached_route = self.cache_service.get_cached_route(start_id, end_id)
+        if cached_route:
+            return cached_route
 
-            if current_distance > distances[current_station]:
-                continue
+        # Calculate new route
+        route_data = self._calculate_route(start_id, end_id)
 
-            for neighbor, weight in self.graph[current_station]:
-                distance = current_distance + weight
-                if distance < distances[neighbor]:
-                    distances[neighbor] = distance
-                    previous_stations[neighbor] = current_station
-                    heapq.heappush(priority_queue, (distance, neighbor))
+        # Cache the route if it exists
+        if route_data:
+            self.cache_service.cache_route(start_id, end_id, route_data)
 
-        # Reconstruct the shortest path
-        path = []
-        current_id = end_station_id
-        while current_id is not None:
-            path.insert(0, current_id)
-            current_id = previous_stations[current_id]
+        return route_data
 
-        if path[0] != start_station_id:
-            logger.error(f"No valid path found from {start_station_id} to {end_station_id}")
+    def _calculate_route(self, start_id: int, end_id: int) -> Optional[Dict]:
+        """Calculate the route between two stations"""
+        if start_id not in self.graph or end_id not in self.graph:
             return None
 
-        # Log the computed path
-        logger.info(f"Computed path: {path}")
+        distances = {station_id: float('infinity') for station_id in self.graph}
+        distances[start_id] = 0
+        previous = {}
+        lines_used = {}
+        pq = [(0, start_id)]
 
-        # Get station and line details for the path
-        detailed_path = self._get_detailed_path(path)
+        while pq:
+            current_distance, current = heapq.heappop(pq)
 
-        # Track interchanges
-        interchanges = self._find_interchanges(path)
+            if current == end_id:
+                break
 
-        return {
-            "path": detailed_path,
-            "interchanges": interchanges
-        }
-
-    def _find_interchanges(self, path):
-        """
-        Identifies interchanges (line changes) along the path.
-        Returns a list of dictionaries with interchange details.
-        """
-        interchanges = []
-        for i in range(1, len(path)):
-            current_station = path[i]
-            previous_station = path[i - 1]
-            current_lines = set(self._get_lines_for_station(current_station))
-            previous_lines = set(self._get_lines_for_station(previous_station))
-
-            # Check for line changes
-            if current_lines != previous_lines:
-                interchange_station = current_station
-                from_line = list(previous_lines)[0]  # Get the first line
-                to_line = list(current_lines)[0]  # Get the first line
-
-                # Convert Line objects to dictionaries
-                interchanges.append({
-                    "station_id": interchange_station,
-                    "station_name": Station.objects.get(id=interchange_station).name,
-                    "from_line": {"id": from_line.id, "name": from_line.name},
-                    "to_line": {"id": to_line.id, "name": to_line.name}
-                })
-
-        return interchanges
-
-    def _get_detailed_path(self, path):
-        """
-        Returns a detailed path with station names and line names.
-        """
-        # Fetch all stations and their line details in a single query
-        stations = Station.objects.filter(id__in=path).prefetch_related('lines')
-        station_map = {station.id: station for station in stations}
-
-        detailed_path = []
-        for station_id in path:
-            station = station_map.get(station_id)
-            if not station:
-                logger.warning(f"Station with ID {station_id} not found.")
+            if current_distance > distances[current]:
                 continue
 
-            line_station = station.lines.first()  # Get the first line associated with the station
-            line_name = line_station.name if line_station else "N/A"
-            detailed_path.append({
-                "station_id": station_id,
-                "station_name": station.name,
-                "line_name": line_name
-            })
-        return detailed_path
+            for neighbor, edge_data in self.graph[current].items():
+                distance = current_distance + edge_data['distance']
 
-    def _get_lines_for_station(self, station_id):
-        """
-        Returns the lines associated with a station.
-        """
-        from apps.stations.models import Station
-        station = Station.objects.get(id=station_id)
-        return station.lines.all()
+                if distance < distances[neighbor]:
+                    distances[neighbor] = distance
+                    previous[neighbor] = current
+                    lines_used[neighbor] = {
+                        'line_id': edge_data['line_id'],
+                        'line_name': edge_data['line_name'],
+                        'line_color': edge_data['line_color']
+                    }
+                    heapq.heappush(pq, (distance, neighbor))
+
+        if end_id not in previous:
+            return None
+
+        # Reconstruct path
+        path = []
+        current = end_id
+        line_changes = []
+        current_line = None
+
+        while current in previous:
+            station = Station.objects.get(id=current)
+            line_info = lines_used[current]
+
+            if current_line and current_line != line_info['line_id']:
+                line_changes.append({
+                    'station': station.name,
+                    'from_line': current_line,
+                    'to_line': line_info['line_id']
+                })
+
+            path.append({
+                'station': station.name,
+                'line': line_info['line_name'],
+                'line_color': line_info['line_color']
+            })
+
+            current_line = line_info['line_id']
+            current = previous[current]
+
+        # Add start station
+        start_station = Station.objects.get(id=start_id)
+        if path:  # Check if path exists
+            first_station_name = path[0]['station']
+            if first_station_name in lines_used:
+                first_line_info = lines_used[first_station_name]
+                path.append({
+                    'station': start_station.name,
+                    'line': first_line_info['line_name'],
+                    'line_color': first_line_info['line_color']
+                })
+            else:
+                # Handle case where first station info is not in lines_used
+                path.append({
+                    'station': start_station.name,
+                    'line': 'Unknown',
+                    'line_color': '#000000'
+                })
+        path.reverse()
+
+        return {
+            'path': path,
+            'distance': distances[end_id],
+            'interchanges': line_changes,
+            'num_stations': len(path)
+        }

@@ -1,36 +1,79 @@
 # apps/routes/models.py
 
-import logging
 from django.db import models
-from apps.stations.models import Station, Line
+from django.utils import timezone
+from apps.stations.models import Line, Station
+import logging
 
 logger = logging.getLogger(__name__)
 
 
-def get_default_line():
-    """Fetches the first available Line object ID or returns None if none exist."""
-    line = Line.objects.first()
-    if line:
-        return line.id
-    logger.warning("No Line objects exist. Please add at least one Line.")
-    return None
+class Route(models.Model):
+    """Model for storing routes between stations"""
 
-
-class PrecomputedRoute(models.Model):
-    """Stores precomputed shortest paths to optimize performance."""
-
-    start_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="route_starts")
-    end_station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name="route_ends")
-    line = models.ForeignKey(Line, on_delete=models.CASCADE, default=get_default_line)
-    path = models.JSONField(help_text="Ordered list of station IDs forming the route")
-    interchanges = models.JSONField(help_text="List of interchanges with corresponding lines", null=True, blank=True)
+    start_station = models.ForeignKey(
+        Station,
+        on_delete=models.CASCADE,
+        related_name='routes_from'
+    )
+    end_station = models.ForeignKey(
+        Station,
+        on_delete=models.CASCADE,
+        related_name='routes_to'
+    )
+    total_distance = models.FloatField(
+        help_text="Total distance in meters",
+        default=0
+    )
+    total_time = models.IntegerField(
+        help_text="Estimated time in minutes",
+        default=0
+    )
+    path = models.JSONField(
+        help_text="Ordered list of stations and lines in the route",
+        default=list
+    )
+    interchanges = models.JSONField(
+        help_text="List of interchange points",
+        default=list,
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    number_of_stations = models.IntegerField(default=0)
+    primary_line = models.ForeignKey(
+        Line,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='primary_routes'
+    )
 
     class Meta:
-        verbose_name_plural = "Precomputed Routes"
-        unique_together = ("start_station", "end_station", "line")  # Ensuring unique routes per line
+        verbose_name = "Route"
+        verbose_name_plural = "Routes"
+        unique_together = ('start_station', 'end_station')
         indexes = [
-            models.Index(fields=["start_station", "end_station", "line"]),  # Optimized indexing
+            models.Index(fields=['start_station', 'end_station']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['is_active']),
+            models.Index(fields=['primary_line']),
         ]
 
+    def save(self, *args, **kwargs):
+        # Calculate number of stations
+        if self.path:
+            self.number_of_stations = len(self.path)
+
+        # Set primary line
+        if self.path and isinstance(self.path, list) and len(self.path) > 0:
+            first_segment = self.path[0]
+            if isinstance(first_segment, dict) and 'line' in first_segment:
+                self.primary_line = Line.objects.filter(name=first_segment['line']).first()
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.start_station.name} → {self.end_station.name} via {self.line.name}"
+        return f"Route: {self.start_station.name} → {self.end_station.name}"
