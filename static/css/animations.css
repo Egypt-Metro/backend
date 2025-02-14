@@ -1,47 +1,124 @@
-/* static/css/animations.css */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Add to your existing animation.css */
+
+/* Line Cards Animation */
+.line-card {
+    animation: fadeIn 0.5s ease-out;
+    transition: transform 0.3s ease;
 }
 
-@keyframes pulseHighlight {
+.line-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Developer Card Animation */
+.developer-card {
+    animation: scaleIn 0.8s ease-out;
+}
+
+.developer-avatar {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* API Links Animation */
+.api-link {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.api-link:nth-child(1) { animation-delay: 0.1s; }
+.api-link:nth-child(2) { animation-delay: 0.2s; }
+.api-link:nth-child(3) { animation-delay: 0.3s; }
+
+/* Particle Interaction Animations */
+@keyframes pulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
 
-.metro-map {
+.interactive-element {
+    animation: pulse 2s infinite;
+}
+
+/* Hover Effects */
+.glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Content Fade In */
+.fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeIn 0.8s ease forwards;
+}
+
+.delay-1 { animation-delay: 0.2s; }
+.delay-2 { animation-delay: 0.4s; }
+.delay-3 { animation-delay: 0.6s; }
+
+/* Image Animations and Effects */
+.responsive-img {
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.responsive-img.loaded {
+    opacity: 1;
+}
+
+.image-hover {
+    overflow: hidden;
+    position: relative;
+}
+
+.image-hover img {
     transition: transform 0.3s ease;
 }
 
-.metro-map:hover {
-    transform: scale(1.02);
+.image-hover:hover img {
+    transform: scale(1.05);
 }
 
-.line-path {
-    animation: fadeInUp 0.5s ease-out forwards;
-    opacity: 0;
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1),
+        rgba(255, 255, 255, 0.2),
+        rgba(255, 255, 255, 0.1)
+    );
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
 }
 
-.line-path:nth-child(1) { animation-delay: 0.2s; }
-.line-path:nth-child(2) { animation-delay: 0.4s; }
-.line-path:nth-child(3) { animation-delay: 0.6s; }
-
-.api-category {
-    animation: fadeInUp 0.5s ease-out forwards;
-    opacity: 0;
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
-.api-category:nth-child(1) { animation-delay: 0.3s; }
-.api-category:nth-child(2) { animation-delay: 0.5s; }
-.api-category:nth-child(3) { animation-delay: 0.7s; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-.interchange-station {
-    animation: pulseHighlight 2s infinite;
+@keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.8s ease forwards;
+}
+
+.scale-in {
+    animation: scaleIn 0.5s ease forwards;
+}
+
+.hover-lift {
+    transition: transform 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
 }

@@ -4,30 +4,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Egypt Metro System{% endblock %}</title>
+    <title>{% block title %}Egypt Metro{% endblock %}</title>
     
-    <!-- CSS -->
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Particles.js -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <link rel="stylesheet" href="{% static 'css/animations.css' %}">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'css/animation.css' %}">
 </head>
 <body>
-    {% include 'includes/header.html' %}
+    <!-- Particles.js container -->
+    <div id="particles-js"></div>
     
-    <main class="main-content">
-        {% block content %}{% endblock %}
-    </main>
+    <!-- Content wrapper -->
+    <div class="site-wrapper">
+        {% include 'includes/header.html' %}
 
-    {% include 'includes/footer.html' %}
-    
-    <script src="{% static 'js/main.js' %}"></script>
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        {% include 'includes/footer.html' %}
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'js/particles-config.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

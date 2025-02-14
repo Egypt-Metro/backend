@@ -1,12 +1,14 @@
 # apps/stations/admin.py
 
+from venv import logger
 from django.contrib import admin
 from django.utils.html import format_html
 from django.db.models import Count
+import markupsafe
+
+from egypt_metro import settings
 from .models import Line, Station, LineStation
-from apps.stations.management.commands.populate_metro_data import (
-    Command as MetroDataCommand,
-)
+from apps.stations.management.commands.populate_metro_data import Command as MetroDataCommand
 
 # Get constants from MetroDataCommand
 LINE_OPERATIONS = MetroDataCommand.LINE_OPERATIONS
@@ -90,7 +92,7 @@ class StationAdmin(admin.ModelAdmin):
     list_display = [
         "name",
         "get_lines_display",
-        "is_interchange_display",
+        "is_interchange_display",  # Use the modified method
         "get_coordinates",
         "get_connections",
     ]
@@ -106,54 +108,83 @@ class StationAdmin(admin.ModelAdmin):
         ("Location", {"fields": ("latitude", "longitude"), "classes": ("collapse",)}),
     )
 
+    def is_interchange_display(self, obj):
+        """Display interchange status"""
+        return obj.lines.count() > 1
+    is_interchange_display.boolean = True
+    is_interchange_display.short_description = "Interchange"
+
     def get_lines_display(self, obj):
-        """Display lines with their colors"""
-        return format_html(
-            " ".join(
-                f'<span style="background-color: {line.color_code}; '
-                f'padding: 3px 7px; border-radius: 3px; margin: 0 2px;">'
-                f"{line.name}</span>"
-                for line in obj.lines.all()
-            )
-        )
+        """Display lines without colors"""
+        return ", ".join([line.name for line in obj.lines.all()])
 
     get_lines_display.short_description = "Lines"
 
-    def is_interchange_display(self, obj):
-        """Display interchange status with icon"""
-        is_interchange = obj.lines.count() > 1
-        icon = "✓" if is_interchange else "✗"
-        color = "green" if is_interchange else "red"
-        return format_html(f'<span style="color: {color};">{icon}</span>')
+    def is_interchange_status(self, obj):
+        """
+        Custom method to display interchange status with a more robust approach
+        """
+        try:
+            # Determine interchange status
+            is_interchange = obj.lines.count() > 1
 
-    is_interchange_display.short_description = "Interchange"
-    is_interchange_display.boolean = True
+            # Use Django's built-in boolean icon method
+            return markupsafe(
+                '<img src="{}" alt="{}" style="width:16px; height:16px;">'.format(
+                    f'/static/admin/img/icon-{"yes" if is_interchange else "no"}.svg',
+                    'Yes' if is_interchange else 'No'
+                )
+            )
+        except Exception as e:
+            if settings.DEBUG:
+                print(f"Error in is_interchange_status: {e}")
+            return markupsafe('<span style="color:red;">Error</span>')
+
+    is_interchange_status.short_description = "Interchange"
+    is_interchange_status.boolean = True
 
     def get_coordinates(self, obj):
         """Display coordinates with link to map"""
-        if obj.latitude and obj.longitude:
-            return format_html(
-                '<a href="https://www.google.com/maps?q={},{}" target="_blank">'
-                "{:.6f}, {:.6f}</a>",
-                obj.latitude,
-                obj.longitude,
-                obj.latitude,
-                obj.longitude,
-            )
-        return "N/A"
+        try:
+            # Check if coordinates exist and are valid
+            if (obj.latitude is not None and obj.longitude is not None and isinstance(obj.latitude, (int, float)) and isinstance(obj.longitude, (int, float))):
+
+                # Safely convert to float and round
+                lat = round(float(obj.latitude), 6)
+                lon = round(float(obj.longitude), 6)
+
+                # Validate coordinate ranges
+                if -90 <= lat <= 90 and -180 <= lon <= 180:
+                    return format_html(
+                        '<a href="https://www.google.com/maps?q={},{}" target="_blank">{}, {}</a>',
+                        lat, lon, lat, lon
+                    )
+
+            logger.warning(f"Invalid coordinates for station {obj.name}: Lat {obj.latitude}, Lon {obj.longitude}")
+            return "N/A"
+        except Exception as e:
+            # Log the full error
+            logger.error(f"Coordinate error for station {obj.name}: {e}", exc_info=True)
+            return "Invalid Coordinates"
 
     get_coordinates.short_description = "Location"
 
     def get_connections(self, obj):
         """Display connecting stations"""
-        if not obj.is_interchange():
-            return "-"
-        connections = []
-        for conn in CONNECTING_STATIONS:
-            if conn["name"] == obj.name:
-                connections.extend(conn["lines"])
-        return " ↔ ".join(connections) if connections else "-"
+        try:
+            if not obj.is_interchange():
+                return "-"
 
+            connections = []
+            for conn in CONNECTING_STATIONS:
+                if conn["name"] == obj.name:
+                    connections.extend(conn["lines"])
+
+            return " ↔ ".join(connections) if connections else "-"
+        except Exception as e:
+            if settings.DEBUG:
+                print(f"Error in get_connections: {e}")
+            return "Error"
     get_connections.short_description = "Connections"
 
 
@@ -174,21 +205,28 @@ class LineStationAdmin(admin.ModelAdmin):
 
     def get_next_station(self, obj):
         """Display next station in sequence"""
-        next_station = LineStation.objects.filter(
-            line=obj.line, order=obj.order + 1
-        ).first()
-        return next_station.station.name if next_station else "-"
-
-    get_next_station.short_description = "Next Station"
+        try:
+            next_station = LineStation.objects.filter(
+                line=obj.line, order=obj.order + 1
+            ).first()
+            return next_station.station.name if next_station else "-"
+        except Exception as e:
+            if settings.DEBUG:
+                print(f"Error in get_next_station: {e}")
+            return "Error"
 
     def get_distance_to_next(self, obj):
         """Display distance to next station"""
-        next_station = LineStation.objects.filter(
-            line=obj.line, order=obj.order + 1
-        ).first()
-        if next_station:
-            distance = obj.station.distance_to(next_station.station)
-            return f"{distance / 1000:.2f} km"
-        return "-"
-
+        try:
+            next_station = LineStation.objects.filter(
+                line=obj.line, order=obj.order + 1
+            ).first()
+            if next_station:
+                distance = obj.station.distance_to(next_station.station)
+                return f"{distance / 1000:.2f} km"
+            return "-"
+        except Exception as e:
+            if settings.DEBUG:
+                print(f"Error in get_distance_to_next: {e}")
+            return "Error"
     get_distance_to_next.short_description = "Distance to Next"

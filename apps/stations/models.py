@@ -94,6 +94,12 @@ class Station(models.Model):
         """Checks if this is an interchange station."""
         return self.lines.count() > 1
 
+    def is_interchange_display(self, obj):
+        """Display interchange status"""
+        return obj.is_interchange
+    is_interchange_display.boolean = True
+    is_interchange_display.short_description = "Interchange"
+
     def get_nearest_interchange(
         self, target_line: Line
     ) -> Optional[Tuple["Station", float]]:

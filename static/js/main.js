@@ -1,36 +1,35 @@
-// static/js/main.js
+// Image loading optimization
 document.addEventListener('DOMContentLoaded', function() {
-    // Metro map interactivity
-    const map = document.querySelector('.metro-map');
-    const stations = document.querySelectorAll('.station-point');
+    // Lazy load images
+    const images = document.querySelectorAll('img[data-src]');
     
-    stations.forEach(station => {
-        station.addEventListener('click', () => {
-            showStationInfo(station.dataset.stationId);
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.onload = () => img.classList.add('loaded');
+                observer.unobserve(img);
+            }
         });
     });
 
-    // API documentation search
-    const searchInput = document.querySelector('.api-search');
-    const apiEndpoints = document.querySelectorAll('.api-list li');
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            apiEndpoints.forEach(endpoint => {
-                const text = endpoint.textContent.toLowerCase();
-                endpoint.style.display = text.includes(searchTerm) ? 'block' : 'none';
-            });
+    images.forEach(img => imageObserver.observe(img));
+
+    // Responsive image sizing
+    function handleResponsiveImages() {
+        const contentWidth = document.querySelector('.container').offsetWidth;
+        const images = document.querySelectorAll('.responsive-img');
+        
+        images.forEach(img => {
+            if (contentWidth < 768) {
+                img.style.maxWidth = '100%';
+            } else {
+                img.style.maxWidth = '75%';
+            }
         });
     }
 
-    // Smooth scrolling for navigation links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            document.querySelector(this.getAttribute('href')).scrollIntoView({
-                behavior: 'smooth'
-            });
-        });
-    });
+    window.addEventListener('resize', handleResponsiveImages);
+    handleResponsiveImages();
 });

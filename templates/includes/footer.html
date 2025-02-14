@@ -1,36 +1,43 @@
-<footer class="main-footer">
-    <div class="footer-content">
-        <div class="footer-section">
-            <h3>About Developer</h3>
-            <div class="developer-info">
-                <img src="https://github.com/AhmedNassar7.png" alt="Ahmed Nassar" class="developer-avatar">
-                <div class="developer-details">
-                    <h4>Ahmed Nassar</h4>
-                    <a href="https://github.com/AhmedNassar7" target="_blank" class="social-link">
-                        <i class="fab fa-github"></i>
-                        GitHub
+<!-- templates/includes/footer.html -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3 class="footer-title">About Egypt Metro</h3>
+                <p>Connecting millions of Egyptians daily with safe, reliable, and modern metro transportation.</p>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-title">Quick Links</h3>
+                <div class="footer-links">
+                    <a href="#" class="footer-link">Routes</a>
+                    <a href="#" class="footer-link">Stations</a>
+                    <a href="#" class="footer-link">Tickets</a>
+                    <a href="#" class="footer-link">Schedule</a>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h3 class="footer-title">Contact Us</h3>
+                <div class="footer-links">
+                    <a href="tel:+201234567890" class="footer-link">
+                        <i class="fas fa-phone"></i> +20 123 456 7890
+                    </a>
+                    <a href="mailto:info@egyptmetro.com" class="footer-link">
+                        <i class="fas fa-envelope"></i> info@egyptmetro.com
                     </a>
                 </div>
             </div>
+            <div class="footer-section">
+                <h3 class="footer-title">Follow Us</h3>
+                <div class="footer-social">
+                    <a href="#" class="social-icon"><i class="fab fa-facebook"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-linkedin"></i></a>
+                </div>
+            </div>
         </div>
-        <div class="footer-section">
-            <h3>Quick Links</h3>
-            <ul class="footer-links">
-                <li><a href="{% url 'admin:index' %}">Admin Panel</a></li>
-                <li><a href="{% url 'schema-swagger-ui' %}">API Documentation</a></li>
-                <li><a href="{% url 'health_check' %}">Health Check</a></li>
-            </ul>
+        <div class="footer-bottom">
+            <p>&copy; {% now "Y" %} Egypt Metro System. All rights reserved.</p>
         </div>
-        <div class="footer-section">
-            <h3>System Info</h3>
-            <ul class="system-info">
-                <li>Version: {{ version }}</li>
-                <li>Environment: {{ environment }}</li>
-                <li>Last Updated: {{ current_time }}</li>
-            </ul>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        <p>&copy; {% now "Y" %} Egypt Metro System. All rights reserved.</p>
     </div>
 </footer>

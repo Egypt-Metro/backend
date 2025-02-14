@@ -1,0 +1,21 @@
+/* Admin Customization */
+#header {
+    background: var(--primary);
+    color: white;
+}
+
+.module h2, .module caption {
+    background: var(--primary-dark);
+}
+
+div.breadcrumbs {
+    background: var(--primary);
+}
+
+.submit-row input {
+    background: var(--primary);
+}
+
+.submit-row input:hover {
+    background: var(--primary-dark);
+}
