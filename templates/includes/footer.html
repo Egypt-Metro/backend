@@ -1,0 +1,36 @@
+<footer class="main-footer">
+    <div class="footer-content">
+        <div class="footer-section">
+            <h3>About Developer</h3>
+            <div class="developer-info">
+                <img src="https://github.com/AhmedNassar7.png" alt="Ahmed Nassar" class="developer-avatar">
+                <div class="developer-details">
+                    <h4>Ahmed Nassar</h4>
+                    <a href="https://github.com/AhmedNassar7" target="_blank" class="social-link">
+                        <i class="fab fa-github"></i>
+                        GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-section">
+            <h3>Quick Links</h3>
+            <ul class="footer-links">
+                <li><a href="{% url 'admin:index' %}">Admin Panel</a></li>
+                <li><a href="{% url 'schema-swagger-ui' %}">API Documentation</a></li>
+                <li><a href="{% url 'health_check' %}">Health Check</a></li>
+            </ul>
+        </div>
+        <div class="footer-section">
+            <h3>System Info</h3>
+            <ul class="system-info">
+                <li>Version: {{ version }}</li>
+                <li>Environment: {{ environment }}</li>
+                <li>Last Updated: {{ current_time }}</li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>&copy; {% now "Y" %} Egypt Metro System. All rights reserved.</p>
+    </div>
+</footer>

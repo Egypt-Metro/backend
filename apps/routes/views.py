@@ -9,6 +9,19 @@ from django.core.exceptions import ValidationError
 
 
 class RouteView(views.APIView):
+    """
+    API endpoint for finding routes between metro stations.
+
+    GET Parameters:
+        start (str): Name of the starting station
+        end (str): Name of the destination station
+
+    Returns:
+        route (list): List of stations in the route
+        total_distance (float): Total distance in kilometers
+        num_stations (int): Number of stations in the route
+        interchanges (list): List of interchange points
+    """
     route_service = MetroRouteService()
 
     def get(self, request):

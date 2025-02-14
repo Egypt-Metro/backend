@@ -289,36 +289,37 @@ LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 
 LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "{levelname} {asctime} {module} {message}",
-            "style": "{",
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
         },
     },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'logs/debug.log',
+            'formatter': 'verbose',
         },
-        "file": {
-            "level": "DEBUG",
-            "class": "logging.FileHandler",
-            "filename": str(LOGS_DIR / "debug.log"),
-            "formatter": "verbose",
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
     },
-    "loggers": {
-        "django": {
-            "handlers": ["console"],  # Only console for production
-            "level": "INFO",
-            "propagate": True,
+    'loggers': {
+        'apps.stations': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
         },
-        "__main__": {
-            "handlers": ["console"],  # Only console for production
-            "level": "INFO",
-            "propagate": True,
+        'apps.routes': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
         },
     },
 }

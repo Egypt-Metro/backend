@@ -1,9 +1,9 @@
 # apps/routes/services/route_service.py
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
+from geopy.distance import geodesic
 from collections import defaultdict
-import heapq
-from apps.stations.models import Station, LineStation
+from apps.stations.models import Line, Station, LineStation
 from .cache_service import CacheService
 
 
@@ -13,6 +13,13 @@ class MetroRouteService:
         self.station_lines = defaultdict(set)
         self.cache_service = CacheService()
         self.build_graph()
+
+    def _calculate_distance(self, station1: Station, station2: Station) -> float:
+        """Calculate the distance between two stations in meters"""
+        return geodesic(
+            (station1.latitude, station1.longitude),
+            (station2.latitude, station2.longitude)
+        ).meters
 
     def build_graph(self):
         """Build an optimized graph representation of the metro network"""
@@ -39,12 +46,12 @@ class MetroRouteService:
 
         self._add_interchange_connections()
 
-    def _connect_sequential_stations(self, line_stations: List[LineStation]):
+    def _connect_sequential_stations(self, line_stations):
         """Connect sequential stations on the same line"""
         for i in range(len(line_stations) - 1):
             current = line_stations[i]
             next_station = line_stations[i + 1]
-            distance = current.station.distance_to(next_station.station)
+            distance = self._calculate_distance(current.station, next_station.station)
 
             self.graph[current.station.id][next_station.station.id] = {
                 'distance': distance,
@@ -52,6 +59,7 @@ class MetroRouteService:
                 'line_name': current.line.name,
                 'line_color': current.line.color_code
             }
+            # Add reverse connection for bidirectional travel
             self.graph[next_station.station.id][current.station.id] = {
                 'distance': distance,
                 'line_id': current.line.id,
@@ -71,9 +79,8 @@ class MetroRouteService:
 
                 for cs in connected_stations:
                     if station_id not in self.graph[cs.station.id]:
-                        distance = Station.objects.get(
-                            id=station_id
-                        ).distance_to(cs.station)
+                        station = Station.objects.get(id=station_id)
+                        distance = self._calculate_distance(station, cs.station)
 
                         self.graph[station_id][cs.station.id] = {
                             'distance': distance,
@@ -99,90 +106,102 @@ class MetroRouteService:
         return route_data
 
     def _calculate_route(self, start_id: int, end_id: int) -> Optional[Dict]:
-        """Calculate the route between two stations"""
+        """Calculate optimal route considering interchanges"""
         if start_id not in self.graph or end_id not in self.graph:
             return None
 
-        distances = {station_id: float('infinity') for station_id in self.graph}
-        distances[start_id] = 0
-        previous = {}
-        lines_used = {}
-        pq = [(0, start_id)]
-
-        while pq:
-            current_distance, current = heapq.heappop(pq)
-
-            if current == end_id:
-                break
-
-            if current_distance > distances[current]:
-                continue
-
-            for neighbor, edge_data in self.graph[current].items():
-                distance = current_distance + edge_data['distance']
-
-                if distance < distances[neighbor]:
-                    distances[neighbor] = distance
-                    previous[neighbor] = current
-                    lines_used[neighbor] = {
-                        'line_id': edge_data['line_id'],
-                        'line_name': edge_data['line_name'],
-                        'line_color': edge_data['line_color']
-                    }
-                    heapq.heappush(pq, (distance, neighbor))
-
-        if end_id not in previous:
-            return None
-
-        # Reconstruct path
-        path = []
-        current = end_id
-        line_changes = []
-        current_line = None
-
-        while current in previous:
-            station = Station.objects.get(id=current)
-            line_info = lines_used[current]
-
-            if current_line and current_line != line_info['line_id']:
-                line_changes.append({
-                    'station': station.name,
-                    'from_line': current_line,
-                    'to_line': line_info['line_id']
-                })
-
-            path.append({
-                'station': station.name,
-                'line': line_info['line_name'],
-                'line_color': line_info['line_color']
-            })
-
-            current_line = line_info['line_id']
-            current = previous[current]
-
-        # Add start station
         start_station = Station.objects.get(id=start_id)
-        if path:  # Check if path exists
-            first_station_name = path[0]['station']
-            if first_station_name in lines_used:
-                first_line_info = lines_used[first_station_name]
-                path.append({
-                    'station': start_station.name,
-                    'line': first_line_info['line_name'],
-                    'line_color': first_line_info['line_color']
+        end_station = Station.objects.get(id=end_id)
+
+        # Check if stations are on the same line
+        common_lines = set(start_station.lines.all()) & set(end_station.lines.all())
+        if common_lines:
+            # Direct route
+            line = common_lines.pop()
+            return self._get_direct_route(start_station, end_station, line)
+
+        # Need to find route with interchange
+        return self._get_route_with_interchange(start_station, end_station)
+
+    def _get_direct_route(self, start_station: Station, end_station: Station, line: Line) -> Dict:
+        """Calculate direct route on same line"""
+        start_order = start_station.get_station_order(line)
+        end_order = end_station.get_station_order(line)
+
+        # Get all stations in order
+        stations = []
+        if start_order < end_order:
+            for order in range(start_order, end_order + 1):
+                station = Station.objects.get(
+                    station_lines__line=line,
+                    station_lines__order=order
+                )
+                stations.append({
+                    'station': station.name,
+                    'line': line.name,
+                    'line_color': line.color_code
                 })
-            else:
-                # Handle case where first station info is not in lines_used
-                path.append({
-                    'station': start_station.name,
-                    'line': 'Unknown',
-                    'line_color': '#000000'
+        else:
+            for order in range(start_order, end_order - 1, -1):
+                station = Station.objects.get(
+                    station_lines__line=line,
+                    station_lines__order=order
+                )
+                stations.append({
+                    'station': station.name,
+                    'line': line.name,
+                    'line_color': line.color_code
                 })
-        path.reverse()
 
         return {
-            'path': path,
-            'distance': distances[end_id],
-            'interchanges': line_changes,
-            'num_stations': len(path)
+            'path': stations,
+            'distance': start_station.distance_to(end_station),
+            'num_stations': len(stations),
+            'interchanges': []
         }
+
+    def _get_route_with_interchange(self, start_station: Station, end_station: Station) -> Dict:
+        """Find best route requiring line changes"""
+        best_route = None
+        min_total_distance = float('inf')
+
+        # Get all possible interchange combinations
+        for start_line in start_station.lines.all():
+            for end_line in end_station.lines.all():
+                # Find connecting stations between these lines
+                connecting_stations = Station.objects.filter(
+                    lines=start_line
+                ).filter(
+                    lines=end_line
+                ).distinct()
+
+                for interchange in connecting_stations:
+                    # Calculate route through this interchange
+                    first_segment = self._get_direct_route(
+                        start_station,
+                        interchange,
+                        start_line
+                    )
+                    second_segment = self._get_direct_route(
+                        interchange,
+                        end_station,
+                        end_line
+                    )
+
+                    total_distance = first_segment['distance'] + second_segment['distance']
+                    if total_distance < min_total_distance:
+                        min_total_distance = total_distance
+                        # Combine routes
+                        path = first_segment['path'] + second_segment['path'][1:]
+                        best_route = {
+                            'path': path,
+                            'distance': total_distance,
+                            'num_stations': len(path),
+                            'interchanges': [{
+                                'station': interchange.name,
+                                'from_line': start_line.name,
+                                'to_line': end_line.name
+                            }]
+                        }
+
+        return best_route

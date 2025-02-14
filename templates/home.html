@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Egypt Metro System</h1>
+        <div class="hero-info">
+            <span class="version">Version {{ version }}</span>
+            <span class="environment">{{ environment|upper }}</span>
+            <span class="current-time">{{ current_time }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="metro-system">
+    <!-- Metro Lines Section -->
+    <section class="metro-lines">
+        <h2>Metro Lines</h2>
+        <div class="line-cards">
+            {% for line in metro_lines %}
+            <div class="line-card" style="border-color: {{ line.color }}">
+                <div class="line-header" style="background-color: {{ line.color }}">
+                    <h3>{{ line.name }}</h3>
+                </div>
+                <div class="line-info">
+                    <p><i class="fas fa-train"></i> {{ line.stations }} Stations</p>
+                    <p><i class="fas fa-route"></i> {{ line.start }} ↔ {{ line.end }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Metro Map Section -->
+    <section class="metro-map">
+        <h2>Interactive Metro Map</h2>
+        <div class="map-container">
+            <img src="{% static 'images/metro-map.png' %}" alt="Metro Map" class="map-image">
+            <div class="map-overlay">
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <span class="line-indicator" style="background-color: #FF0000;"></span>
+                        <span>First Line</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="line-indicator" style="background-color: #008000;"></span>
+                        <span>Second Line</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="line-indicator" style="background-color: #0000FF;"></span>
+                        <span>Third Line</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Documentation Section -->
+    <section class="api-docs">
+        <h2>API Documentation</h2>
+        <div class="api-links">
+            <a href="{% url 'schema-swagger-ui' %}" class="api-link">
+                <i class="fas fa-book"></i>
+                <span>Swagger UI</span>
+            </a>
+            <a href="{% url 'schema-redoc' %}" class="api-link">
+                <i class="fas fa-file-alt"></i>
+                <span>ReDoc</span>
+            </a>
+            <a href="{% url 'schema-json' %}" class="api-link">
+                <i class="fas fa-code"></i>
+                <span>OpenAPI JSON</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- Developer Info Section -->
+    <section class="developer-info">
+        <h2>Developer</h2>
+        <div class="developer-card">
+            <img src="https://github.com/AhmedNassar7.png" alt="Ahmed Nassar" class="developer-avatar">
+            <div class="developer-details">
+                <h3>Ahmed Nassar</h3>
+                <a href="https://github.com/AhmedNassar7" target="_blank" class="github-link">
+                    <i class="fab fa-github"></i>
+                    GitHub Profile
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

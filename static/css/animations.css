@@ -1,0 +1,47 @@
+/* static/css/animations.css */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseHighlight {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.metro-map {
+    transition: transform 0.3s ease;
+}
+
+.metro-map:hover {
+    transform: scale(1.02);
+}
+
+.line-path {
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+}
+
+.line-path:nth-child(1) { animation-delay: 0.2s; }
+.line-path:nth-child(2) { animation-delay: 0.4s; }
+.line-path:nth-child(3) { animation-delay: 0.6s; }
+
+.api-category {
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+}
+
+.api-category:nth-child(1) { animation-delay: 0.3s; }
+.api-category:nth-child(2) { animation-delay: 0.5s; }
+.api-category:nth-child(3) { animation-delay: 0.7s; }
+
+.interchange-station {
+    animation: pulseHighlight 2s infinite;
+}

@@ -26,6 +26,7 @@ from django.views.generic import RedirectView
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
+from django.conf.urls.static import static
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -83,6 +84,9 @@ urlpatterns = [
 
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),  # ReDoc
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Debug the URL loading process
 # logger.debug('URL patterns: %s', [path.pattern for path in urlpatterns])

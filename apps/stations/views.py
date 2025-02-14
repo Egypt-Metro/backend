@@ -10,6 +10,7 @@ from rest_framework.response import (
 from rest_framework.exceptions import APIException  # Import APIException for custom exceptions
 from django.db import DatabaseError     # Import DatabaseError for database exceptions
 from django.db.models import Q  # Import Q for complex queries
+from apps.routes.services.route_service import MetroRouteService
 from apps.stations.models import Station  # Import the Station model
 from .serializers import StationSerializer  # Import the StationSerializer
 from .pagination import StandardResultsSetPagination  # Import the pagination class
@@ -17,9 +18,7 @@ from django.shortcuts import get_object_or_404  # Import get_object_or_404 for e
 from apps.stations.services.ticket_service import (
     calculate_ticket_price,
 )  # Import the ticket price calculation service
-from apps.stations.utils.location_helpers import (
-    find_nearest_station,
-)  # Import the find_nearest_station function
+from apps.stations.utils.location_utils import find_nearest_station  # Import the nearest station utility
 
 logger = logging.getLogger(__name__)
 
@@ -75,47 +74,57 @@ class TripDetailsView(APIView):
 
     def get(self, request, start_station_id, end_station_id):
         try:
-            # Get stations with proper error handling using get_object_or_404
+            # Get stations
             start_station = get_object_or_404(Station, id=start_station_id)
             end_station = get_object_or_404(Station, id=end_station_id)
 
-            # Calculate ticket price using the service
-            ticket_price = calculate_ticket_price(start_station, end_station)
+            # Get route
+            route_service = MetroRouteService()
+            route_data = route_service.find_route(start_station_id, end_station_id)
 
-            # Number of stations between start and end
-            num_stations = (
-                abs(
-                    start_station.get_station_order(start_station.lines.first())
-                    - end_station.get_station_order(end_station.lines.first())
+            if not route_data:
+                return Response(
+                    {"error": "No route found"},
+                    status=status.HTTP_404_NOT_FOUND
                 )
-                + 1
+
+            # Calculate price using actual route
+            price = calculate_ticket_price(
+                start_station,
+                end_station,
+                route_data['path']
             )
 
-            # Estimated travel time (in minutes)
-            travel_time = num_stations * 2  # 2 minutes per station (can be customized)
+            # Calculate time (2 min per station + 3 min per interchange)
+            base_time = route_data['num_stations'] * 2
+            interchange_time = len(route_data['interchanges']) * 3
+            total_time = base_time + interchange_time
 
-            # Prepare response data
-            data = {
+            response_data = {
                 "start_station": start_station.name,
                 "end_station": end_station.name,
-                "ticket_price": ticket_price,
-                "number_of_stations": num_stations,
-                "estimated_travel_time": travel_time,
+                "route": route_data['path'],
+                "price": price,
+                "total_stations": route_data['num_stations'],
+                "estimated_time": total_time,
+                "interchanges": route_data['interchanges'],
+                "total_distance": round(route_data['distance'] / 1000, 2)  # Convert to km
             }
-            return Response(data)
 
-        except Station.DoesNotExist:
-            return Response({"error": "Station not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(response_data)
+
         except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"Error in TripDetailsView: {str(e)}")
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class NearestStationView(APIView):
     """
     Finds the nearest station to the user's location.
     """
-
-    permission_classes = [AllowAny]  # Public access
 
     permission_classes = [AllowAny]  # Public access
 
@@ -126,6 +135,10 @@ class NearestStationView(APIView):
         return self._get_nearest_station(request)
 
     def _get_nearest_station(self, request):
+        """
+        Find nearest station to given coordinates.
+        Returns same response structure for frontend compatibility plus station coordinates.
+        """
         try:
             # Extract latitude and longitude from query params (GET) or request body (POST)
             latitude = request.query_params.get("latitude") or request.data.get("latitude")
@@ -137,7 +150,15 @@ class NearestStationView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            latitude, longitude = float(latitude), float(longitude)
+            try:
+                latitude = float(latitude)
+                longitude = float(longitude)
+            except ValueError:
+                return Response(
+                    {"error": "Invalid Latitude or Longitude."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             nearest_station, distance = find_nearest_station(latitude, longitude)
 
             if nearest_station is None:
@@ -146,18 +167,19 @@ class NearestStationView(APIView):
                     status=status.HTTP_404_NOT_FOUND,
                 )
 
+            # Add station coordinates to the response while maintaining existing structure
             return Response(
                 {
                     "nearest_station": nearest_station.name,
                     "distance": round(distance, 2),
+                    "station_latitude": nearest_station.latitude,
+                    "station_longitude": nearest_station.longitude,
                 }
             )
-        except ValueError:
-            return Response(
-                {"error": "Invalid Latitude or Longitude."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+
         except Exception as e:
+            logger.error(f"Error finding nearest station: {str(e)}")
             return Response(
-                {"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

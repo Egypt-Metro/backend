@@ -1,0 +1,28 @@
+<section class="api-documentation">
+    <h2>API Documentation</h2>
+    <div class="api-grid">
+        <div class="api-category">
+            <h3>Authentication</h3>
+            <ul class="api-list">
+                <li><code>POST /api/users/register/</code> - Register new user</li>
+                <li><code>POST /api/users/login/</code> - User login</li>
+                <li><code>POST /api/users/token/refresh/</code> - Refresh token</li>
+            </ul>
+        </div>
+        <div class="api-category">
+            <h3>Stations</h3>
+            <ul class="api-list">
+                <li><code>GET /api/stations/list/</code> - List all stations</li>
+                <li><code>GET /api/stations/nearest/</code> - Find nearest station</li>
+                <li><code>GET /api/stations/trip/{start}/{end}/</code> - Get trip details</li>
+            </ul>
+        </div>
+        <div class="api-category">
+            <h3>Routes</h3>
+            <ul class="api-list">
+                <li><code>GET /api/routes/shortest/</code> - Find shortest route</li>
+                <li><code>GET /api/routes/route/{start}/{end}/</code> - Get precomputed route</li>
+            </ul>
+        </div>
+    </div>
+</section>

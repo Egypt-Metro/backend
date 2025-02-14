@@ -1,47 +1,61 @@
 # apps/stations/services/ticket_service.py
 
 
-def calculate_ticket_price(start_station, end_station):
+from venv import logger
+
+
+def calculate_total_stations(start_station, end_station, route_path=None):
     """
-    Calculate the ticket price based on the number of stations between start and end.
-    Handles single-line routes and multi-line transfers.
+    Calculate total stations including interchanges.
     """
+    if not route_path:
+        return 0
+
+    # Count unique stations in path
+    unique_stations = set()
+    for station in route_path:
+        unique_stations.add(station['station'])
+
+    return len(unique_stations)
+
+
+def calculate_ticket_price(start_station, end_station, route_path=None):
+    """Calculate ticket price based on total stations and interchanges"""
     try:
-        # Validate inputs
-        if not start_station or not end_station:
-            raise ValueError("Both start_station and end_station must be provided.")
+        if not route_path:
+            return None
 
-        # Determine total stations between start and end
-        total_stations = calculate_total_stations(start_station, end_station)
+        # Count unique stations
+        stations = set()
+        prev_line = None
+        transfers = 0
 
-        # Calculate the ticket price based on the number of stations
-        return calculate_price(total_stations)
+        for segment in route_path:
+            stations.add(segment['station'])
+            if prev_line and segment['line'] != prev_line:
+                transfers += 1
+            prev_line = segment['line']
+
+        total_stations = len(stations)
+
+        # Base price based on stations
+        if total_stations <= 9:
+            price = 8
+        elif total_stations <= 16:
+            price = 10
+        elif total_stations <= 23:
+            price = 15
+        else:
+            price = 20
+
+        # Add transfer fee
+        price += (transfers * 2)  # 2 EGP per transfer
+
+        return price
 
     except Exception as e:
-        # Return a structured error response for better debugging
-        return {"error": f"Failed to calculate ticket price: {str(e)}"}
-
-
-def calculate_total_stations(start_station, end_station):
-    """
-    Calculate the total number of stations between start and end stations.
-    Handles single-line and multi-line scenarios.
-    """
-    start_lines = start_station.lines.all()
-    end_lines = end_station.lines.all()
-
-    if not start_lines or not end_lines:
-        raise ValueError("Start or end station is not part of any line.")
-
-    # Case 1: Single line (direct route)
-    if set(start_lines) == set(end_lines):
-        start_line = start_lines.first()
-        start_order = start_station.get_station_order(start_line)
-        end_order = end_station.get_station_order(start_line)
-        return abs(end_order - start_order) + 1
-
-    # Case 2: Multi-line (transfer required)
-    return calculate_transfer_cost(start_station, end_station)
+        logger.error(f"Error calculating ticket price: {str(e)}")
+        raise
 
 
 def calculate_transfer_cost(start_station, end_station):

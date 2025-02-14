@@ -1,0 +1,47 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Egypt Metro System</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <header class="main-header">
+        <nav class="nav-container">
+            <div class="logo-section">
+                <img src="{% static 'images/metro-logo.png' %}" alt="Metro Logo" class="logo">
+                <h1>Egypt Metro System</h1>
+            </div>
+            <div class="nav-links">
+                <a href="{% url 'home' %}" class="nav-link">
+                    <i class="fas fa-home"></i>
+                    Home
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-route"></i>
+                    Routes
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-ticket-alt"></i>
+                    Tickets
+                </a>
+                <a href="{% url 'admin:index' %}" class="nav-link primary-button">
+                    <i class="fas fa-user-shield"></i>
+                    Admin Portal
+                </a>
+                <a href="{% url 'schema-swagger-ui' %}" class="nav-link">
+                    <i class="fas fa-book"></i>
+                    API Docs
+                </a>
+            </div>
+        </nav>
+    </header>
+</body>
+</html>
