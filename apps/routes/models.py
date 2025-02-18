@@ -63,17 +63,24 @@ class Route(models.Model):
         ]
 
     def save(self, *args, **kwargs):
-        # Calculate number of stations
+        # Calculate number of stations from path
         if self.path:
-            self.number_of_stations = len(self.path)
+            self.number_of_stations = len([
+                station for station in self.path
+                if isinstance(station, dict) and 'station' in station
+            ])
 
         # Set primary line
         if self.path and isinstance(self.path, list) and len(self.path) > 0:
             first_segment = self.path[0]
             if isinstance(first_segment, dict) and 'line' in first_segment:
-                self.primary_line = Line.objects.filter(name=first_segment['line']).first()
+                try:
+                    self.primary_line = Line.objects.get(name=first_segment['line'])
+                except Line.DoesNotExist:
+                    logger.warning(f"Line not found: {first_segment['line']}")
+                    self.primary_line = None
 
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"Route: {self.start_station.name} → {self.end_station.name}"
+        return f"Route: {self.start_station.name} -> {self.end_station.name}"

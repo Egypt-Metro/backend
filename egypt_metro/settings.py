@@ -172,11 +172,15 @@ DATABASES = {
         "PASSWORD": default_db_config.get("PASSWORD", os.getenv("DB_PASSWORD")),
         "HOST": default_db_config.get("HOST", os.getenv("DB_HOST")),
         "PORT": default_db_config.get("PORT", os.getenv("DB_PORT")),
-        "CONN_MAX_AGE": default_db_config.get("CONN_MAX_AGE", 600),
+        "CONN_MAX_AGE": default_db_config.get("CONN_MAX_AGE", 0),  # Reuse connections for up to 600 seconds
         "OPTIONS": {
             **default_db_config.get("OPTIONS", {}),  # Merge existing options
             "options": "-c search_path=public",  # Specify the default schema
             'connect_timeout': 30,  # Increase the connection timeout (in seconds)
+            'keepalives': 1,  # Enable TCP keepalives
+            'keepalives_idle': 60,  # Increase this value
+            'keepalives_interval': 10,
+            'keepalives_count': 5,
         },
         "DISABLE_SERVER_SIDE_CURSORS": True,  # Optimize for specific queries
     }

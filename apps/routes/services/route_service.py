@@ -1,6 +1,7 @@
 # apps/routes/services/route_service.py
 
 from typing import Dict, Optional
+from venv import logger
 from geopy.distance import geodesic
 from collections import defaultdict
 from apps.stations.models import Line, Station, LineStation
@@ -91,10 +92,23 @@ class MetroRouteService:
 
     def find_route(self, start_id: int, end_id: int) -> Optional[Dict]:
         """Find the optimal route between two stations"""
-        # Try to get from cache first
+        try:
+            Station.objects.get(id=start_id)
+            Station.objects.get(id=end_id)
+        except Station.DoesNotExist as e:
+            logger.error(f"Station not found: {str(e)}")
+            return None
+        
         cached_route = self.cache_service.get_cached_route(start_id, end_id)
         if cached_route:
             return cached_route
+
+        # Ensure both stations exist
+        try:
+            Station.objects.get(id=start_id)
+            Station.objects.get(id=end_id)
+        except Station.DoesNotExist:
+            return None
 
         # Calculate new route
         route_data = self._calculate_route(start_id, end_id)
@@ -108,6 +122,7 @@ class MetroRouteService:
     def _calculate_route(self, start_id: int, end_id: int) -> Optional[Dict]:
         """Calculate optimal route considering interchanges"""
         if start_id not in self.graph or end_id not in self.graph:
+            logger.error(f"Station IDs not found in graph: start_id={start_id}, end_id={end_id}")
             return None
 
         start_station = Station.objects.get(id=start_id)
@@ -118,9 +133,11 @@ class MetroRouteService:
         if common_lines:
             # Direct route
             line = common_lines.pop()
+            logger.info(f"Direct route found for {start_station.name} -> {end_station.name} on line {line.name}")
             return self._get_direct_route(start_station, end_station, line)
 
         # Need to find route with interchange
+        logger.info(f"Looking for route with interchange: {start_station.name} -> {end_station.name}")
         return self._get_route_with_interchange(start_station, end_station)
 
     def _get_direct_route(self, start_station: Station, end_station: Station, line: Line) -> Dict:
@@ -175,6 +192,8 @@ class MetroRouteService:
                     lines=end_line
                 ).distinct()
 
+                logger.info(f"Checking interchange between {start_line.name} and {end_line.name}")
+
                 for interchange in connecting_stations:
                     # Calculate route through this interchange
                     first_segment = self._get_direct_route(
@@ -203,5 +222,10 @@ class MetroRouteService:
                                 'to_line': end_line.name
                             }]
                         }
+
+        if best_route:
+            logger.info(f"Found route with interchange: {start_station.name} -> {end_station.name}")
+        else:
+            logger.warning(f"No route found for {start_station.name} -> {end_station.name}")
 
         return best_route

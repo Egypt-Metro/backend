@@ -108,6 +108,26 @@ class StationAdmin(admin.ModelAdmin):
         ("Location", {"fields": ("latitude", "longitude"), "classes": ("collapse",)}),
     )
 
+    def get_search_results(self, request, queryset, search_term):
+        queryset, use_distinct = super().get_search_results(request, queryset, search_term)
+
+        if 'autocomplete' in request.path:
+            queryset = queryset.prefetch_related('lines')
+
+        return queryset, use_distinct
+
+    def format_json(self, obj):
+        return {
+            'id': obj.id,
+            'text': obj.name,
+            'lines': ', '.join(line.name for line in obj.lines.all())
+        }
+
+    def formatted_name(self, obj):
+        """Display station name with its lines"""
+        lines = ', '.join(line.name for line in obj.lines.all())
+        return f"{obj.name} ({lines})"
+
     def is_interchange_display(self, obj):
         """Display interchange status"""
         return obj.lines.count() > 1

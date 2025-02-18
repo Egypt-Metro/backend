@@ -1,0 +1,29 @@
+.station-select2-dropdown {
+    padding: 8px;
+}
+
+.station-select2-result {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.station-select2-name {
+    font-weight: bold;
+}
+
+.station-select2-lines {
+    color: #666;
+    font-size: 0.9em;
+    margin-left: 10px;
+}
+
+.station-select2-result:hover {
+    background-color: #f5f5f5;
+}
+
+.select2-container--admin-autocomplete .select2-results__option--highlighted {
+    background-color: #79aec8 !important;
+    color: #fff !important;
+}

@@ -1,218 +1,259 @@
-# apps/routes/management/commands/populate_routes.py
-
+from typing import Dict, List, Tuple
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from apps.stations.models import LineStation, Station
+from apps.stations.models import Line, LineStation, Station
 from apps.routes.models import Route
 from apps.routes.services.route_service import MetroRouteService
 import logging
-from tqdm import tqdm  # For progress bar
+from tqdm import tqdm
+from django.db.models import Prefetch
+from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = 'Populate all possible routes between stations'
+    help = "Populate all possible routes between stations"
+    batch_size = 2000
+    chunk_size = 500
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--clear',
-            action='store_true',
-            help='Clear existing routes before populating',
+            "--batch-size",
+            type=int,
+            default=self.batch_size,
+            help="Batch size for route population",
+        )
+        parser.add_argument(
+            "--clear",
+            action="store_true",
+            help="Clear existing routes before populating",
+        )
+        parser.add_argument(
+            "--workers",
+            type=int,
+            default=4,
+            help="Number of worker threads",
         )
 
     def handle(self, *args, **options):
         try:
-            if options['clear']:
-                self.stdout.write('Clearing existing routes...')
-                Route.objects.all().delete()
+            stats = {"created": 0, "skipped": 0, "failed": 0, "total": 0}
 
-            route_service = MetroRouteService()
-            stations = Station.objects.all()
+            if options["clear"]:
+                self.clear_existing_routes()
 
-            # Calculate total possible routes
-            total_stations = stations.count()
-            total_routes = total_stations * (total_stations - 1)
+            stations = self.get_ordered_stations()
+            existing_routes = self.get_existing_routes()
 
-            self.stdout.write(
-                f'Found {total_stations} stations. Calculating {total_routes} possible routes...'
-            )
+            # Create station pairs using IDs instead of objects
+            station_pairs = self.create_station_pairs(stations)
+            chunks = self.create_chunks(station_pairs, self.chunk_size)
 
-            routes_created = 0
-            routes_skipped = 0
-            routes_failed = 0
+            total_chunks = len(chunks)
+            with tqdm(total=total_chunks, desc="Processing chunks") as pbar:
+                with ThreadPoolExecutor(max_workers=options["workers"]) as executor:
+                    futures = []
+                    for chunk in chunks:
+                        future = executor.submit(
+                            self.process_chunk,
+                            chunk,
+                            existing_routes
+                        )
+                        futures.append(future)
 
-            with transaction.atomic():
-                progress_bar = tqdm(total=total_routes, desc="Calculating routes")
+                    for future in futures:
+                        try:
+                            result = future.result()
+                            if result:
+                                self.save_routes_batch(result)
+                                stats["created"] += len(result)
+                            pbar.update(1)
+                        except Exception as e:
+                            logger.error(f"Chunk processing failed: {str(e)}")
+                            stats["failed"] += 1
+                            pbar.update(1)
 
-                for start_station in stations:
-                    for end_station in stations:
-                        if start_station != end_station:
-                            try:
-                                # Check existing route
-                                existing_route = Route.objects.filter(
-                                    start_station=start_station,
-                                    end_station=end_station,
-                                    is_active=True
-                                ).first()
+            self.print_summary(stats)
 
-                                if existing_route:
-                                    routes_skipped += 1
-                                    progress_bar.update(1)
-                                    continue
+        except Exception as e:
+            logger.error(f"Route population failed: {str(e)}")
+            self.stdout.write(self.style.ERROR(f"Route population failed: {str(e)}"))
 
-                                # Calculate new route
-                                route_data = route_service.find_route(
-                                    start_station.id,
-                                    end_station.id
-                                )
+    def create_chunks(self, items: list, chunk_size: int) -> List[list]:
+        return [items[i:i + chunk_size] for i in range(0, len(items), chunk_size)]
 
-                                if route_data:
-                                    # Calculate accurate travel time
-                                    base_time = route_data['num_stations'] * 2  # 2 minutes per station
-                                    interchange_time = len(route_data['interchanges']) * 3  # 3 minutes per interchange
-                                    total_time = base_time + interchange_time
+    def create_station_pairs(self, stations: List[Station]) -> List[Tuple[int, int, str, str]]:
+        pairs = []
+        for i, start_station in enumerate(stations):
+            for end_station in stations[i + 1:]:
+                pairs.append((
+                    start_station.id,
+                    end_station.id,
+                    start_station.name,
+                    end_station.name
+                ))
+        return pairs
 
-                                    # Create route
-                                    Route.objects.create(
-                                        start_station=start_station,
-                                        end_station=end_station,
-                                        total_distance=route_data['distance'],
-                                        total_time=total_time,
-                                        path=route_data['path'],
-                                        interchanges=route_data['interchanges'],
-                                        is_active=True
-                                    )
-                                    routes_created += 1
+    def calculate_routes(self, stations: List[Station], batch_size: int, stats: Dict):
+        """Calculate routes between stations"""
+        route_service = MetroRouteService()
+        current_batch = []
+        total_routes = len(stations) * (len(stations) - 1)  # Both directions
 
-                                else:
-                                    routes_failed += 1
-                                    logger.warning(
-                                        f"No route found between {start_station.name} "
-                                        f"and {end_station.name}"
-                                    )
+        with tqdm(total=total_routes, desc="Calculating routes") as progress_bar:
+            for start_station in stations:
+                for end_station in stations:
+                    if start_station.id == end_station.id:
+                        continue  # Skip same station
 
-                            except Exception as e:
-                                routes_failed += 1
-                                logger.error(
-                                    f"Error creating route from {start_station.name} "
-                                    f"to {end_station.name}: {str(e)}"
-                                )
+                    try:
+                        # Create route in both directions
+                        route_data = route_service.find_route(
+                            start_station.id, end_station.id
+                        )
 
-                            progress_bar.update(1)
+                        if route_data:
+                            current_batch.append({
+                                "start_station": start_station,
+                                "end_station": end_station,
+                                "route_data": route_data,
+                                "total_time": self.calculate_total_time(route_data),
+                            })
 
-                progress_bar.close()
+                            # Create reverse route if it doesn't exist
+                            reverse_route_data = route_service.find_route(
+                                end_station.id, start_station.id
+                            )
+                            if reverse_route_data:
+                                current_batch.append({
+                                    "start_station": end_station,
+                                    "end_station": start_station,
+                                    "route_data": reverse_route_data,
+                                    "total_time": self.calculate_total_time(reverse_route_data),
+                                })
 
-            # Final summary
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f'\nRoute population completed:\n'
-                    f'- Created: {routes_created}\n'
-                    f'- Skipped: {routes_skipped}\n'
-                    f'- Failed: {routes_failed}\n'
-                    f'- Total processed: {routes_created + routes_skipped + routes_failed}'
+                        if len(current_batch) >= batch_size:
+                            self.save_batch_with_retry(current_batch)
+                            current_batch = []
+
+                    except Exception as e:
+                        self.handle_route_error(start_station, end_station, e, stats)
+
+                    progress_bar.update(1)
+
+            if current_batch:
+                self.save_batch_with_retry(current_batch)
+
+    def process_chunk(self, chunk: List[Tuple[int, int, str, str]], existing_routes: set) -> List[Dict]:
+        route_service = MetroRouteService()
+        routes_batch = []
+
+        for start_id, end_id, start_name, end_name in chunk:
+            if (start_id, end_id) in existing_routes:
+                continue
+
+            try:
+                route_data = route_service.find_route(start_id, end_id)
+
+                if route_data:
+                    routes_batch.append({
+                        "start_station_id": start_id,
+                        "end_station_id": end_id,
+                        "distance": route_data["distance"],
+                        "total_time": self.calculate_total_time(route_data),
+                        "path": route_data["path"],
+                        "interchanges": route_data["interchanges"],
+                    })
+                else:
+                    logger.warning(f"No route data found for {start_name} -> {end_name}")
+
+            except Exception as e:
+                logger.error(
+                    f"Route calculation failed: {start_name} (ID: {start_id}) -> {end_name} (ID: {end_id}): {str(e)}"
+                )
+
+        return routes_batch
+
+    @transaction.atomic
+    def save_routes_batch(self, routes_data: List[Dict]):
+        routes_to_create = []
+        for route_info in routes_data:
+            start_station = Station.objects.get(id=route_info["start_station_id"])
+            end_station = Station.objects.get(id=route_info["end_station_id"])
+
+            routes_to_create.append(
+                Route(
+                    start_station=start_station,
+                    end_station=end_station,
+                    total_distance=route_info["distance"],
+                    total_time=route_info["total_time"],
+                    path=route_info["path"],
+                    interchanges=route_info["interchanges"],
+                    is_active=True,
                 )
             )
 
-            for start_station in stations:
-                for end_station in stations:
-                    if start_station != end_station:
-                        try:
-                            route_data = route_service.find_route(
-                                start_station.id,
-                                end_station.id
-                            )
+        Route.objects.bulk_create(
+            routes_to_create,
+            batch_size=self.batch_size,
+            ignore_conflicts=True
+        )
 
-                            if route_data:
-                                # Verify route calculations
-                                if self.verify_route_calculations(route_data, start_station, end_station):
-                                    # Create route
-                                    self.create_route(route_data, start_station, end_station)
-                                    routes_created += 1
-                                else:
-                                    routes_failed += 1
-                                    logger.error(f"Route verification failed for {start_station.name} to {end_station.name}")
-                        except Exception as e:
-                            routes_failed += 1
-                            logger.error(f"Error verifying or creating route from {start_station.name} to {end_station.name}: {str(e)}")
+    def get_ordered_stations(self) -> List[Station]:
+        stations = []
+        seen_stations = set()
 
-        except Exception as e:
-            logger.error(f'Error populating routes: {str(e)}')
-            self.stdout.write(
-                self.style.ERROR(f'Error populating routes: {str(e)}')
+        lines = Line.objects.prefetch_related(
+            Prefetch(
+                "line_stations",
+                queryset=LineStation.objects.select_related("station").order_by("order"),
             )
+        ).all()
 
-    def monitor_route_creation(self, route_data, start_station, end_station):
-        """Monitor and log route creation details"""
-        logger.info(f"Creating route: {start_station.name} → {end_station.name}")
-        logger.info(f"Distance: {route_data['distance']:.2f}m")
-        logger.info(f"Stations: {route_data['num_stations']}")
-        if route_data['interchanges']:
-            logger.info(f"Interchanges: {len(route_data['interchanges'])}")
-            for interchange in route_data['interchanges']:
-                logger.info(f"  - {interchange['station']}: "
-                            f"{interchange['from_line']} → {interchange['to_line']}")
+        for line in lines:
+            for line_station in line.line_stations.all():
+                if line_station.station.id not in seen_stations:
+                    stations.append(line_station.station)
+                    seen_stations.add(line_station.station.id)
 
-    def cleanup_old_routes(self):
-        """Clean up old or invalid routes"""
-        old_routes = Route.objects.filter(is_active=False)
-        count = old_routes.count()
-        old_routes.delete()
-        logger.info(f"Cleaned up {count} old routes")
+        total_stations = len(stations)
+        total_routes = (total_stations * (total_stations - 1)) // 2
+        self.stdout.write(
+            f"Found {total_stations} stations. Will calculate {total_routes} routes."
+        )
+        return stations
 
-    def verify_route_calculations(self, route_data, start_station, end_station):
-        """Verify route calculations are correct"""
+    def get_existing_routes(self) -> set:
+        return set(
+            Route.objects.filter(is_active=True).values_list(
+                "start_station_id", "end_station_id"
+            )
+        )
+
+    def clear_existing_routes(self):
+        self.stdout.write("Clearing existing routes...")
         try:
-            # Verify basic route data
-            if not route_data or 'path' not in route_data:
-                raise ValueError("Invalid route data")
-
-            path = route_data['path']
-
-            # Verify path starts and ends at correct stations
-            if path[0]['station'] != start_station.name or path[-1]['station'] != end_station.name:
-                raise ValueError("Route path endpoints mismatch")
-
-            # Verify station sequence is continuous
-            for i in range(len(path) - 1):
-                current = path[i]
-                next_station = path[i + 1]
-
-                # Verify stations are connected
-                if not self.are_stations_connected(current['station'], next_station['station']):
-                    raise ValueError(f"Discontinuous path between {current['station']} and {next_station['station']}")
-
-            # Verify interchanges
-            if route_data['interchanges']:
-                for interchange in route_data['interchanges']:
-                    if not self.is_valid_interchange(interchange['station']):
-                        raise ValueError(f"Invalid interchange station: {interchange['station']}")
-
-            return True
-
+            with transaction.atomic():
+                Route.objects.all().delete()
+                self.stdout.write(self.style.SUCCESS("Successfully cleared existing routes"))
         except Exception as e:
-            logger.error(f"Route verification failed: {str(e)}")
-            return False
+            logger.error(f"Failed to clear routes: {str(e)}")
+            raise
 
-    def are_stations_connected(self, station1_name: str, station2_name: str) -> bool:
-        """Check if two stations are directly connected"""
-        try:
-            station1 = Station.objects.get(name=station1_name)
-            station2 = Station.objects.get(name=station2_name)
+    def calculate_total_time(self, route_data: Dict) -> int:
+        return (
+            route_data["num_stations"] * 2  # Base time
+            + len(route_data["interchanges"]) * 3  # Interchange time
+        )
 
-            # Check if stations are on same line and adjacent
-            common_lines = set(station1.lines.all()) & set(station2.lines.all())
-            for line in common_lines:
-                order1 = LineStation.objects.get(line=line, station=station1).order
-                order2 = LineStation.objects.get(line=line, station=station2).order
-                if abs(order1 - order2) == 1:
-                    return True
-
-            return False
-        except Exception as e:
-            logger.error(f"Error checking station connection: {str(e)}")
-            return False
-
-    def is_valid_interchange(self, station_name: str) -> bool:
-        """Verify if a station is a valid interchange point"""
-        return any(conn["name"] == station_name for conn in self.CONNECTING_STATIONS)
+    def print_summary(self, stats: Dict):
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"\nRoute population completed:\n"
+                f'Created: {stats["created"]}\n'
+                f'Skipped: {stats["skipped"]}\n'
+                f'Failed: {stats["failed"]}\n'
+                f'Total: {stats["created"] + stats["skipped"] + stats["failed"]}'
+            )
+        )
