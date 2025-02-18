@@ -6,7 +6,7 @@
 
 ## Overview
 
-The **Egypt Metro Backend** is a robust API, business logic, and metro administration for managing and operating the Egypt Metro platform. Built with **Django**, it provides seamless user authentication, station & lines management, trip details, route planning, real-time train schedules, online tickets & subscription management, and AI-powered features such as crowd prediction, route optimization, and Chatbot Support. The system efficiently handles approximately **4 million passengers daily**, ensuring scalability and reliability. The backend integrates with Flutter (frontend) and AI models, delivering a scalable and efficient solution.
+The **Egypt Metro Backend** is a robust API, business logic, and metro administration for managing and operating the Egypt Metro platform. Built with **Django**, it provides seamless user authentication, station & lines management, trip details, route planning, real-time train schedules & crowd management, online tickets & subscription management, user profiles, payment options, and AI-powered features such as crowd prediction, route optimization, and Chatbot Support. The system efficiently handles approximately **4 million passengers daily**, ensuring scalability and reliability. The backend integrates with Flutter (frontend) and AI models, delivering a scalable and efficient solution.
 
 ---
 
@@ -17,7 +17,7 @@ The **Egypt Metro Backend** is a robust API, business logic, and metro administr
 - `User Authentication`: Registration, login, profile management, and JWT support.
 - `Station Management`: Nearest station lookup, station list, and trip details.
 - `Route and Trip Planning`: Manage metro routes, count the number of stations, and calculate ticket prices.
-- `Train Schedules`: Provide real-time schedule data, including arrival times and GPS-tracked train locations.
+- `Real-Time Train Schedules`: Provide real-time schedule data, including arrival times and GPS-tracked train locations.
 - `Real-Time Crowd Management`: Use AI to predict train crowd levels and recommend less crowded options.
 - `User Profiles`: Manage user accounts, including registration, login, subscription types, and payment options.
 - `Online Ticketing`: Buy and generate tickets online with QR codes for easy scanning at metro gates
