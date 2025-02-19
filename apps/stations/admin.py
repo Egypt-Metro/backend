@@ -1,14 +1,16 @@
 # apps/stations/admin.py
 
 from venv import logger
-from django.contrib import admin
-from django.utils.html import format_html
-from django.db.models import Count
-import markupsafe
 
-from metro import settings
-from .models import Line, Station, LineStation
+import markupsafe
+from django.contrib import admin
+from django.db.models import Count
+from django.utils.html import format_html
+
 from apps.stations.management.commands.populate_metro_data import Command as MetroDataCommand
+from metro import settings
+
+from .models import Line, LineStation, Station
 
 # Get constants from MetroDataCommand
 LINE_OPERATIONS = MetroDataCommand.LINE_OPERATIONS
@@ -75,11 +77,7 @@ class LineAdmin(admin.ModelAdmin):
 
     def get_interchanges(self, obj):
         """Display interchange stations"""
-        interchanges = (
-            Station.objects.filter(lines=obj)
-            .annotate(line_count=Count("lines"))
-            .filter(line_count__gt=1)
-        )
+        interchanges = Station.objects.filter(lines=obj).annotate(line_count=Count("lines")).filter(line_count__gt=1)
         return ", ".join([station.name for station in interchanges])
 
     get_interchanges.short_description = "Interchanges"
@@ -111,26 +109,23 @@ class StationAdmin(admin.ModelAdmin):
     def get_search_results(self, request, queryset, search_term):
         queryset, use_distinct = super().get_search_results(request, queryset, search_term)
 
-        if 'autocomplete' in request.path:
-            queryset = queryset.prefetch_related('lines')
+        if "autocomplete" in request.path:
+            queryset = queryset.prefetch_related("lines")
 
         return queryset, use_distinct
 
     def format_json(self, obj):
-        return {
-            'id': obj.id,
-            'text': obj.name,
-            'lines': ', '.join(line.name for line in obj.lines.all())
-        }
+        return {"id": obj.id, "text": obj.name, "lines": ", ".join(line.name for line in obj.lines.all())}
 
     def formatted_name(self, obj):
         """Display station name with its lines"""
-        lines = ', '.join(line.name for line in obj.lines.all())
+        lines = ", ".join(line.name for line in obj.lines.all())
         return f"{obj.name} ({lines})"
 
     def is_interchange_display(self, obj):
         """Display interchange status"""
         return obj.lines.count() > 1
+
     is_interchange_display.boolean = True
     is_interchange_display.short_description = "Interchange"
 
@@ -151,8 +146,7 @@ class StationAdmin(admin.ModelAdmin):
             # Use Django's built-in boolean icon method
             return markupsafe(
                 '<img src="{}" alt="{}" style="width:16px; height:16px;">'.format(
-                    f'/static/admin/img/icon-{"yes" if is_interchange else "no"}.svg',
-                    'Yes' if is_interchange else 'No'
+                    f'/static/admin/img/icon-{"yes" if is_interchange else "no"}.svg', "Yes" if is_interchange else "No"
                 )
             )
         except Exception as e:
@@ -167,8 +161,12 @@ class StationAdmin(admin.ModelAdmin):
         """Display coordinates with link to map"""
         try:
             # Check if coordinates exist and are valid
-            if (obj.latitude is not None and obj.longitude is not None and isinstance(obj.latitude, (int, float)) and isinstance(obj.longitude, (int, float))):
-
+            if (
+                obj.latitude is not None
+                and obj.longitude is not None
+                and isinstance(obj.latitude, (int, float))
+                and isinstance(obj.longitude, (int, float))
+            ):
                 # Safely convert to float and round
                 lat = round(float(obj.latitude), 6)
                 lon = round(float(obj.longitude), 6)
@@ -176,8 +174,7 @@ class StationAdmin(admin.ModelAdmin):
                 # Validate coordinate ranges
                 if -90 <= lat <= 90 and -180 <= lon <= 180:
                     return format_html(
-                        '<a href="https://www.google.com/maps?q={},{}" target="_blank">{}, {}</a>',
-                        lat, lon, lat, lon
+                        '<a href="https://www.google.com/maps?q={},{}" target="_blank">{}, {}</a>', lat, lon, lat, lon
                     )
 
             logger.warning(f"Invalid coordinates for station {obj.name}: Lat {obj.latitude}, Lon {obj.longitude}")
@@ -205,6 +202,7 @@ class StationAdmin(admin.ModelAdmin):
             if settings.DEBUG:
                 print(f"Error in get_connections: {e}")
             return "Error"
+
     get_connections.short_description = "Connections"
 
 
@@ -226,9 +224,7 @@ class LineStationAdmin(admin.ModelAdmin):
     def get_next_station(self, obj):
         """Display next station in sequence"""
         try:
-            next_station = LineStation.objects.filter(
-                line=obj.line, order=obj.order + 1
-            ).first()
+            next_station = LineStation.objects.filter(line=obj.line, order=obj.order + 1).first()
             return next_station.station.name if next_station else "-"
         except Exception as e:
             if settings.DEBUG:
@@ -238,9 +234,7 @@ class LineStationAdmin(admin.ModelAdmin):
     def get_distance_to_next(self, obj):
         """Display distance to next station"""
         try:
-            next_station = LineStation.objects.filter(
-                line=obj.line, order=obj.order + 1
-            ).first()
+            next_station = LineStation.objects.filter(line=obj.line, order=obj.order + 1).first()
             if next_station:
                 distance = obj.station.distance_to(next_station.station)
                 return f"{distance / 1000:.2f} km"
@@ -249,4 +243,5 @@ class LineStationAdmin(admin.ModelAdmin):
             if settings.DEBUG:
                 print(f"Error in get_distance_to_next: {e}")
             return "Error"
+
     get_distance_to_next.short_description = "Distance to Next"

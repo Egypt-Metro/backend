@@ -2,11 +2,13 @@
 
 import json
 import logging
-from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.exceptions import DenyConnection
+
 from channels.db import database_sync_to_async
-from .services.train_service import TrainService
+from channels.exceptions import DenyConnection
+from channels.generic.websocket import AsyncWebsocketConsumer
+
 from .models import Train
+from .services.train_service import TrainService
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +27,7 @@ class TrainConsumer(AsyncWebsocketConsumer):
         """Handle WebSocket connection and authentication"""
         try:
             # Get train ID from URL route
-            self.train_id = self.scope['url_route']['kwargs']['train_id']
+            self.train_id = self.scope["url_route"]["kwargs"]["train_id"]
 
             # Verify train exists
             train_exists = await self.verify_train()
@@ -34,10 +36,10 @@ class TrainConsumer(AsyncWebsocketConsumer):
                 raise DenyConnection()
 
             # Set up group names for different update types
-            self.base_group = f'train_{self.train_id}'
-            self.location_group = f'{self.base_group}_location'
-            self.crowd_group = f'{self.base_group}_crowd'
-            self.schedule_group = f'{self.base_group}_schedule'
+            self.base_group = f"train_{self.train_id}"
+            self.location_group = f"{self.base_group}_location"
+            self.crowd_group = f"{self.base_group}_crowd"
+            self.schedule_group = f"{self.base_group}_schedule"
 
             # Join all relevant groups
             for group in [self.base_group, self.location_group, self.crowd_group, self.schedule_group]:
@@ -70,16 +72,16 @@ class TrainConsumer(AsyncWebsocketConsumer):
         """Handle incoming WebSocket messages"""
         try:
             data = json.loads(text_data)
-            message_type = data.get('type')
-            message_data = data.get('data', {})
+            message_type = data.get("type")
+            message_data = data.get("data", {})
 
             # Handle different types of updates
             handlers = {
-                'location_update': self.handle_location_update,
-                'crowd_update': self.handle_crowd_update,
-                'schedule_update': self.handle_schedule_update,
-                'service_alert': self.handle_service_alert,
-                'request_status': self.handle_status_request
+                "location_update": self.handle_location_update,
+                "crowd_update": self.handle_crowd_update,
+                "schedule_update": self.handle_schedule_update,
+                "service_alert": self.handle_service_alert,
+                "request_status": self.handle_status_request,
             }
 
             handler = handlers.get(message_type)
@@ -109,10 +111,7 @@ class TrainConsumer(AsyncWebsocketConsumer):
             status = await database_sync_to_async(train_service.get_train_status)(self.train_id)
 
             if status:
-                await self.send(text_data=json.dumps({
-                    'type': 'initial_data',
-                    'data': status
-                }))
+                await self.send(text_data=json.dumps({"type": "initial_data", "data": status}))
         except Exception as e:
             logger.error(f"Error sending initial data: {e}")
             await self.send_error("Error fetching initial data")
@@ -125,15 +124,15 @@ class TrainConsumer(AsyncWebsocketConsumer):
                 await self.channel_layer.group_send(
                     self.location_group,
                     {
-                        'type': 'location_update',
-                        'data': {
-                            'train_id': self.train_id,
-                            'latitude': data['latitude'],
-                            'longitude': data['longitude'],
-                            'speed': data.get('speed'),
-                            'timestamp': data.get('timestamp')
-                        }
-                    }
+                        "type": "location_update",
+                        "data": {
+                            "train_id": self.train_id,
+                            "latitude": data["latitude"],
+                            "longitude": data["longitude"],
+                            "speed": data.get("speed"),
+                            "timestamp": data.get("timestamp"),
+                        },
+                    },
                 )
         except Exception as e:
             logger.error(f"Error handling location update: {e}")
@@ -146,14 +145,14 @@ class TrainConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_send(
                 self.crowd_group,
                 {
-                    'type': 'crowd_update',
-                    'data': {
-                        'train_id': self.train_id,
-                        'car_number': data.get('car_number'),
-                        'passenger_count': data.get('passenger_count'),
-                        'timestamp': data.get('timestamp')
-                    }
-                }
+                    "type": "crowd_update",
+                    "data": {
+                        "train_id": self.train_id,
+                        "car_number": data.get("car_number"),
+                        "passenger_count": data.get("passenger_count"),
+                        "timestamp": data.get("timestamp"),
+                    },
+                },
             )
         except Exception as e:
             logger.error(f"Error handling crowd update: {e}")
@@ -165,15 +164,15 @@ class TrainConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_send(
                 self.schedule_group,
                 {
-                    'type': 'schedule_update',
-                    'data': {
-                        'train_id': self.train_id,
-                        'status': data.get('status'),
-                        'delay': data.get('delay'),
-                        'next_station': data.get('next_station'),
-                        'estimated_arrival': data.get('estimated_arrival')
-                    }
-                }
+                    "type": "schedule_update",
+                    "data": {
+                        "train_id": self.train_id,
+                        "status": data.get("status"),
+                        "delay": data.get("delay"),
+                        "next_station": data.get("next_station"),
+                        "estimated_arrival": data.get("estimated_arrival"),
+                    },
+                },
             )
         except Exception as e:
             logger.error(f"Error handling schedule update: {e}")
@@ -185,14 +184,14 @@ class TrainConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_send(
                 self.base_group,
                 {
-                    'type': 'service_alert',
-                    'data': {
-                        'train_id': self.train_id,
-                        'alert_type': data.get('alert_type'),
-                        'message': data.get('message'),
-                        'severity': data.get('severity', 'info')
-                    }
-                }
+                    "type": "service_alert",
+                    "data": {
+                        "train_id": self.train_id,
+                        "alert_type": data.get("alert_type"),
+                        "message": data.get("message"),
+                        "severity": data.get("severity", "info"),
+                    },
+                },
             )
         except Exception as e:
             logger.error(f"Error handling service alert: {e}")
@@ -205,10 +204,7 @@ class TrainConsumer(AsyncWebsocketConsumer):
             status = await database_sync_to_async(train_service.get_train_status)(self.train_id)
 
             if status:
-                await self.send(text_data=json.dumps({
-                    'type': 'status_update',
-                    'data': status
-                }))
+                await self.send(text_data=json.dumps({"type": "status_update", "data": status}))
         except Exception as e:
             logger.error(f"Error handling status request: {e}")
             await self.send_error("Error fetching status")
@@ -216,29 +212,26 @@ class TrainConsumer(AsyncWebsocketConsumer):
     # Message type handlers
     async def location_update(self, event):
         """Send location update to WebSocket"""
-        await self.send(text_data=json.dumps(event['data']))
+        await self.send(text_data=json.dumps(event["data"]))
 
     async def crowd_update(self, event):
         """Send crowd update to WebSocket"""
-        await self.send(text_data=json.dumps(event['data']))
+        await self.send(text_data=json.dumps(event["data"]))
 
     async def schedule_update(self, event):
         """Send schedule update to WebSocket"""
-        await self.send(text_data=json.dumps(event['data']))
+        await self.send(text_data=json.dumps(event["data"]))
 
     async def service_alert(self, event):
         """Send service alert to WebSocket"""
-        await self.send(text_data=json.dumps(event['data']))
+        await self.send(text_data=json.dumps(event["data"]))
 
     async def send_error(self, message):
         """Send error message to WebSocket"""
-        await self.send(text_data=json.dumps({
-            'type': 'error',
-            'message': message
-        }))
+        await self.send(text_data=json.dumps({"type": "error", "message": message}))
 
     @staticmethod
     def validate_location_data(data):
         """Validate location update data"""
-        required_fields = ['latitude', 'longitude']
+        required_fields = ["latitude", "longitude"]
         return all(field in data for field in required_fields)

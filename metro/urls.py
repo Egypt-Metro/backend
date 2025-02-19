@@ -17,17 +17,21 @@ Including another URLconf
 # metro/urls.py
 
 import logging
+
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
-from metro import settings
-from .views import health_check, home
+from django.urls import include, path
+
 # from django.conf.urls.static import static
 from django.views.generic import RedirectView
-from drf_yasg.views import get_schema_view
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
 from rest_framework.permissions import AllowAny
-from django.conf.urls.static import static
+
+from metro import settings
+
+from .views import health_check, home
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -54,40 +58,30 @@ schema_view = get_schema_view(
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),  # Admin panel
-
     # Home
-    path("", home, name="home"),    # Home view
-
-    path('favicon.ico', RedirectView.as_view(url=settings.STATIC_URL + 'favicon.ico')),  # Favicon
-
+    path("", home, name="home"),  # Home view
+    path("favicon.ico", RedirectView.as_view(url=settings.STATIC_URL + "favicon.ico")),  # Favicon
     # Check environment
     # path('check-environment/', check_environment, name='check_environment'),
-
     # Authentication
     path("accounts/", include("allauth.urls")),  # Allauth authentication
-
     # API Routes
     path("api/users/", include("apps.users.urls")),  # User
     path("api/stations/", include("apps.stations.urls")),  # Stations
-    path('api/routes/', include('apps.routes.urls')),  # Routes
-    path('api/trains/', include('apps.routes.urls')),  # Routes
-
+    path("api/routes/", include("apps.routes.urls")),  # Routes
+    path("api/trains/", include("apps.routes.urls")),  # Routes
     # Miscellaneous
     path("health/", health_check, name="health_check"),  # Health check
-
     # Documentation
     path("swagger.json", schema_view.without_ui(cache_timeout=0), name="schema-json"),  # Swagger JSON
-
     path(
         "swagger/",
         schema_view.with_ui("swagger", cache_timeout=0),
         name="schema-swagger-ui",
     ),  # Swagger UI
-
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),  # ReDoc
-
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]
 
 if settings.DEBUG:

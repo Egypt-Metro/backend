@@ -6,7 +6,7 @@ from drf_spectacular.renderers import OpenAPIRenderer
 
 
 class Command(BaseCommand):
-    help = 'Generate API documentation'
+    help = "Generate API documentation"
 
     def handle(self, *args, **options):
         generator = SchemaGenerator()
@@ -14,5 +14,5 @@ class Command(BaseCommand):
         renderer = OpenAPIRenderer()
         output = renderer.render(schema, None, None)
 
-        with open('docs/api/swagger.yaml', 'w') as f:
+        with open("docs/api/swagger.yaml", "w") as f:
             f.write(output.decode())

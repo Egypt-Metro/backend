@@ -1,13 +1,16 @@
 # apps/trains/services/train_service.py
 
+import logging
 from os import name
+
+from django.core.cache import cache
 from django.db.models import Count, Q
 from django.utils import timezone
-from django.core.cache import cache
+
 from apps.stations.models import Line
+
+from ..constants import CROWD_LEVELS, LINE_CONFIG, PEAK_HOURS
 from ..models import Train, TrainCar
-from ..constants import LINE_CONFIG, CROWD_LEVELS, PEAK_HOURS
-import logging
 
 logger = logging.getLogger(name)
 
@@ -23,24 +26,18 @@ def get_train_status(self, train_id):
 
     if not status:
         try:
-            train = Train.objects.select_related(
-                "line", "current_station", "next_station"
-            ).get(train_id=train_id)
+            train = Train.objects.select_related("line", "current_station", "next_station").get(train_id=train_id)
 
             status = {
                 "train_id": train.train_id,
                 "line": train.line.name,
                 "current_station": {
-                    "name": (
-                        train.current_station.name if train.current_station else None
-                    ),
+                    "name": (train.current_station.name if train.current_station else None),
                     "arrival_time": self._format_time(train.get_next_station_arrival()),
                 },
                 "next_station": {
                     "name": train.next_station.name if train.next_station else None,
-                    "estimated_arrival": self._format_time(
-                        train.get_next_station_arrival()
-                    ),
+                    "estimated_arrival": self._format_time(train.get_next_station_arrival()),
                 },
                 "status": train.status,
                 "direction": train.direction,
@@ -92,9 +89,7 @@ def get_crowd_levels(self, train):
     return crowd_levels
 
 
-def update_train_location(
-    self, train_id, station_id=None, latitude=None, longitude=None, speed=None
-):
+def update_train_location(self, train_id, station_id=None, latitude=None, longitude=None, speed=None):
     """Update train location and related data"""
     try:
         train = Train.objects.get(train_id=train_id)
@@ -137,9 +132,7 @@ def validate_line_ac_distribution(self, line_id):
         if not config:
             return True
 
-        required_ac_trains = int(
-            (config["has_ac_percentage"] / 100) * line_stats["total_trains"]
-        )
+        required_ac_trains = int((config["has_ac_percentage"] / 100) * line_stats["total_trains"])
 
         return line_stats["ac_trains"] == required_ac_trains
     except Exception as e:
@@ -154,9 +147,7 @@ def get_line_trains(self, line_id):
 
     if not trains_data:
         try:
-            trains = Train.objects.filter(line_id=line_id).select_related(
-                "line", "current_station", "next_station"
-            )
+            trains = Train.objects.filter(line_id=line_id).select_related("line", "current_station", "next_station")
             trains_data = [self.get_train_status(train.train_id) for train in trains]
             cache.set(cache_key, trains_data, self.CACHE_TIMEOUT)
         except Exception as e:

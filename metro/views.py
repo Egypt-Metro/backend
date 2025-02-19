@@ -2,10 +2,12 @@
 
 import logging
 import os
-from django.http import HttpResponse, JsonResponse
-from django.db import connection
+
 # from django.utils.timezone import now
 from datetime import datetime
+
+from django.db import connection
+from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 logger = logging.getLogger(__name__)
@@ -50,8 +52,8 @@ def home(request):
         "admin_panel": "/admin/",  # Link to Django admin panel
         "api_documentation": "/docs/",  # Link to API documentation
         "health_check": "/health/",  # Health check endpoint
-        "swagger": "/swagger/",     # Swagger API documentation
-        "redoc": "/redoc/",     # Redoc API documentation
+        "swagger": "/swagger/",  # Swagger API documentation
+        "redoc": "/redoc/",  # Redoc API documentation
         "version": "1.0.0",  # Backend version
         "current_date_time": current_date_time,  # Current date and time with minutes and seconds
         "environment": environment,  # Current environment (dev or prod)
