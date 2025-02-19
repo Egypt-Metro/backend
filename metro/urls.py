@@ -1,5 +1,5 @@
 """
-URL configuration for egypt_metro project.
+URL configuration for metro project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
@@ -14,16 +14,17 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-# egypt_metro/urls.py
+# metro/urls.py
 
 import logging
 from django.contrib import admin
 from django.urls import path, include
-from egypt_metro import settings
+from metro import settings
 from .views import health_check, home
 # from django.conf.urls.static import static
 from django.views.generic import RedirectView
 from drf_yasg.views import get_schema_view
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
 from django.conf.urls.static import static
@@ -69,6 +70,7 @@ urlpatterns = [
     path("api/users/", include("apps.users.urls")),  # User
     path("api/stations/", include("apps.stations.urls")),  # Stations
     path('api/routes/', include('apps.routes.urls')),  # Routes
+    path('api/trains/', include('apps.routes.urls')),  # Routes
 
     # Miscellaneous
     path("health/", health_check, name="health_check"),  # Health check
@@ -83,6 +85,9 @@ urlpatterns = [
     ),  # Swagger UI
 
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),  # ReDoc
+
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
 
 if settings.DEBUG:

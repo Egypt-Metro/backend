@@ -14,7 +14,7 @@ services:
       poetry install --no-dev && \
       python manage.py collectstatic --noinput && \
       python manage.py migrate --noinput
-    startCommand: gunicorn egypt_metro.wsgi:application --bind 0.0.0.0:$PORT --workers=3 --threads=2 --timeout=120
+    startCommand: gunicorn metro.wsgi:application --bind 0.0.0.0:$PORT --workers=3 --threads=2 --timeout=120
     envVars:
       - key: ENVIRONMENT             # Environment for loading specific config
         value: prod

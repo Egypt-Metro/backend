@@ -1,4 +1,4 @@
-# egypt_metro/views.py
+# metro/views.py
 
 import logging
 import os

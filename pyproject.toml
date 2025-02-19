@@ -129,5 +129,5 @@ build-backend = "poetry.core.masonry.api"
 
 # Add this section to specify the package directory
 packages = [
-    { include = "egypt_metro" },  # Main package directory
+    { include = "metro" },  # Main package directory
 ]

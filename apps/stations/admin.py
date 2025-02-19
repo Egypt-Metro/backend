@@ -6,7 +6,7 @@ from django.utils.html import format_html
 from django.db.models import Count
 import markupsafe
 
-from egypt_metro import settings
+from metro import settings
 from .models import Line, Station, LineStation
 from apps.stations.management.commands.populate_metro_data import Command as MetroDataCommand
 

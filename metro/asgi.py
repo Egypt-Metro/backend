@@ -1,5 +1,5 @@
 """
-ASGI config for egypt_metro project.
+ASGI config for metro project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -11,6 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "egypt_metro.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "metro.settings")
 
 application = get_asgi_application()

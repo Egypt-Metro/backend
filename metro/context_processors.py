@@ -1,4 +1,4 @@
-# egypt_metro/context_processors.py
+# metro/context_processors.py
 
 # Context processors are functions that run before rendering a template.
 def project_name(request):
