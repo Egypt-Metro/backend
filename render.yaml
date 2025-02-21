@@ -1,6 +1,6 @@
 # render.yaml
 # Render configuration file for deploying a Django application to Render
-# https://render.com/docs/deploy-django
+# schema: https://render.com/schema/render.yaml.json
 
 services:
   - type: web
@@ -14,7 +14,7 @@ services:
       poetry install --no-dev && \
       python manage.py collectstatic --noinput && \
       python manage.py migrate --noinput
-    startCommand: gunicorn metro.wsgi:application --bind 0.0.0.0:$PORT --workers=3 --threads=2 --timeout=120
+    startCommand: gunicorn --preload metro.wsgi:application --bind 0.0.0.0:$PORT --workers=3 --threads=2 --timeout=120
     envVars:
       - key: ENVIRONMENT             # Environment for loading specific config
         value: prod
