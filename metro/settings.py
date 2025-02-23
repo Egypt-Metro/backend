@@ -35,7 +35,7 @@ load_dotenv(dotenv_path)
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")   # Environment (dev, test, prod)
-DEBUG = ENVIRONMENT == "dev"  # Debug mode based on environment
+DEBUG = True
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
 
@@ -72,7 +72,7 @@ INSTALLED_APPS = [
     "apps.stations.apps.StationsConfig",  # Stations app
     "apps.routes.apps.RoutesConfig",  # Routes app
     "apps.trains.apps.TrainsConfig",  # Trains app
-    "apps.authentication.apps.AuthenticationConfig",
+    "apps.authentication.apps.AuthenticationConfig",    # Authentication app
 ]
 
 # Middleware configuration
