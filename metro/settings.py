@@ -34,20 +34,10 @@ load_dotenv(dotenv_path)
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
-DEBUG = os.getenv("DEBUG", "False") == "True"  # Default to False
-ALLOWED_HOSTS = [
-    "127.0.0.1",
-    "localhost",
-    "backend-54v5.onrender.com",  # Your production domain
-]
-DEBUG = True
+ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")   # Environment (dev, test, prod)
+DEBUG = ENVIRONMENT == "dev"  # Debug mode based on environment
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
-CSRF_TRUSTED_ORIGINS = [
-    "https://backend-54v5.onrender.com",
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
-]
 
 # Set API start time to the application's boot time
 API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -56,6 +46,7 @@ API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 INSTALLED_APPS = [
     "django.contrib.admin",  # Admin panel
     "django.contrib.auth",  # Authentication framework
+    'django_rest_passwordreset',  # Password reset
     "django.contrib.contenttypes",  # Content types framework
     "django.contrib.sessions",  # Sessions framework
     "django.contrib.messages",  # Messages framework
@@ -74,11 +65,14 @@ INSTALLED_APPS = [
     "channels",  # Channels
     "import_export",  # Import and export data
     "rangefilter",  # Range filter for Django admin
+    'sslserver',    # SSL server for development
+    'django_extensions',  # Django extensions
     # Custom apps
     "apps.users.apps.UsersConfig",  # Users app
     "apps.stations.apps.StationsConfig",  # Stations app
     "apps.routes.apps.RoutesConfig",  # Routes app
     "apps.trains.apps.TrainsConfig",  # Trains app
+    "apps.authentication.apps.AuthenticationConfig",
 ]
 
 # Middleware configuration
@@ -107,6 +101,33 @@ AI_SERVICE_URL = "http://your-ai-service-url/api"  # Your friend's AI service UR
 AI_SERVICE_API_KEY = "your-api-key"  # API key for authentication
 AI_SERVICE_TIMEOUT = 30  # seconds
 
+# Email Configuration (Production-focused with Mailgun)
+EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
+ANYMAIL = {
+    "MAILGUN_API_KEY": os.getenv("MAILGUN_API_KEY"),
+    "MAILGUN_SENDER_DOMAIN": os.getenv("MAILGUN_DOMAIN"),
+    "MAILGUN_API_URL": "https://api.eu.mailgun.net/v3",  # Use EU endpoint if in Europe
+}
+
+# Email settings
+DEFAULT_FROM_EMAIL = f"Metro App <noreply@{os.getenv('MAILGUN_DOMAIN')}>"
+EMAIL_TIMEOUT = 30
+EMAIL_SUBJECT_PREFIX = '[Metro] '
+
+# Password Reset Settings
+DJANGO_REST_PASSWORDRESET_TOKEN_CONFIG = {
+    "CLASS": "django_rest_passwordreset.tokens.RandomStringTokenGenerator",
+    "OPTIONS": {
+        "min_length": 20,
+        "max_length": 30
+    }
+}
+DJANGO_REST_PASSWORDRESET_NO_INFORMATION_LEAKAGE = True
+DJANGO_REST_MULTITOKENAUTH_RESET_TOKEN_EXPIRY_TIME = 24  # Hours
+
+# Define REQUIRED_ENV_VARS and add to it
+REQUIRED_ENV_VARS = ["MAILGUN_API_KEY", "MAILGUN_DOMAIN"]
+
 # For production Redis
 # if ENVIRONMENT == 'prod':
 #     REDIS_HOST = os.getenv('REDIS_HOST', 'your-production-redis-host')
@@ -115,13 +136,48 @@ AI_SERVICE_TIMEOUT = 30  # seconds
 #     REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 #     REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 
+# Security Settings based on environment
+if ENVIRONMENT == 'prod':
+    # Production settings
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+else:
+    # Development settings
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_PROXY_SSL_HEADER = None
+
+# Update ALLOWED_HOSTS and CORS settings
+ALLOWED_HOSTS = [
+    "127.0.0.1",
+    "localhost",
+    "backend-54v5.onrender.com",
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "https://backend-54v5.onrender.com",
+] if ENVIRONMENT == "prod" else [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+]
+
+# Add development URLs to CSRF trusted origins
+CSRF_TRUSTED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "https://backend-54v5.onrender.com",
+]
+
 # CORS settings
-CORS_ALLOW_ALL_ORIGINS = os.getenv("CORS_ALLOW_ALL_ORIGINS", "False") == "True"
-if not CORS_ALLOW_ALL_ORIGINS:
-    CORS_ALLOWED_ORIGINS = [
-        "https://backend-54v5.onrender.com",
-        "http://localhost:8000",
-    ]
 CORS_ALLOW_HEADERS = list(default_headers) + [
     "Authorization",  # Authorization header
     "Content-Type",  # Content type header
@@ -243,17 +299,18 @@ if ENVIRONMENT == "prod":
     # Security settings Production
     CSRF_COOKIE_SECURE = True  # Ensure CSRF cookies are only sent over HTTPS
     SESSION_COOKIE_SECURE = True  # Ensure session cookies are only sent over HTTPS
-    # SECURE_BROWSER_XSS_FILTER = True    # Enable XSS protection for browsers
-    # SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent content type sniffing
-    # SECURE_HSTS_SECONDS = 31536000  # 1 year in seconds
-    # SECURE_HSTS_INCLUDE_SUBDOMAINS = True   # Include subdomains for HSTS
-    # SECURE_HSTS_PRELOAD = True  # Enable HSTS preload list
+    SECURE_BROWSER_XSS_FILTER = True    # Enable XSS protection for browsers
+    SECURE_CONTENT_TYPE_NOSNIFF = True  # Prevent content type sniffing
+    SECURE_HSTS_SECONDS = 31536000  # 1 year in seconds
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True   # Include subdomains for HSTS
+    SECURE_HSTS_PRELOAD = True  # Enable HSTS preload list
     SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
-    # # Proxy Settings
-    # USE_X_FORWARDED_HOST = True
+
+    # Proxy Settings
+    USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    # SECURE_REFERRER_POLICY = "same-origin"  # Referrer policy
-    # X_FRAME_OPTIONS = "DENY"    # Prevent framing of site content
+    SECURE_REFERRER_POLICY = "same-origin"  # Referrer policy
+    X_FRAME_OPTIONS = "DENY"    # Prevent framing of site content
 
 REQUIRED_ENV_VARS = ["SECRET_KEY", "DATABASE_URL", "JWT_SECRET", "BASE_URL"]
 
@@ -301,6 +358,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",  # Default to authenticated users
         "rest_framework.permissions.AllowAny",  # Allow any user
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",  # Default renderer
@@ -318,8 +376,8 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "60/minute",  # Anonymous users can make 60 requests per minute
-        "user": "120/minute",  # Authenticated users can make 120 requests per minute
+        'anon': '100/day',
+        'user': '1000/day',
         "station_lookup": "10/second",  # For specific station lookup endpoints
         "route_planning": "30/minute",  # For route and trip planning APIs
         "ticket_booking": "15/minute",  # For ticket booking and QR code generation
@@ -420,7 +478,7 @@ CONSTANCE_CONFIG = {
     "DEFAULT_TIMEOUT": (30, "Default timeout for user actions."),
 }
 
-# Session Settings
+# Session Configuration
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"  # Cached database session engine
 SESSION_CACHE_ALIAS = "default"  # Cache alias for sessions
 SESSION_COOKIE_AGE = 3600  # Session cookie age in seconds (1 hour)

@@ -243,26 +243,49 @@ class TrainCrowdView(APIView):
 
     @extend_schema(summary="Get crowd levels", responses={200: CrowdLevelSerializer})
     def get(self, request, train_id):
-        """Get current crowd levels for a train with historical data"""
+        """Get current crowd levels for a train"""
         try:
-            train = get_object_or_404(Train, train_id=train_id)
+            train = get_object_or_404(Train, id=train_id)  # Using integer ID
+            crowd_service = CrowdService()
 
-            # Get current and historical crowd data
-            current_data = self.crowd_service.get_crowd_levels(train)
-            historical_data = self.crowd_service.get_historical_data(train)
+            # Get current crowd data
+            crowd_data = crowd_service.get_crowd_levels(train)
 
+            if not crowd_data:
+                return Response(
+                    {"error": "Failed to retrieve crowd levels"},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+            # Format response for Flutter
+            response_data = {
+                "train_id": int(train_id),
+                "crowd_data": [
+                    {
+                        "car_id": data["car_id"],
+                        "crowd_level": data["crowd_level"],
+                        "timestamp": data["timestamp"]
+                    } for data in crowd_data["crowd_data"]
+                ],
+                "is_ac": train.has_air_conditioning
+            }
+
+            # Cache the response
+            cache_key = f"crowd_data_{train_id}"
+            cache.set(cache_key, response_data, timeout=30)  # Cache for 30 seconds
+
+            return Response(response_data)
+
+        except Train.DoesNotExist:
             return Response(
-                {
-                    "status": "success",
-                    "data": {"current": current_data, "historical": historical_data},
-                    "timestamp": timezone.now(),
-                }
+                {"error": "Train not found"},
+                status=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
             logger.error(f"Error getting crowd levels: {str(e)}")
             return Response(
                 {"error": "Failed to retrieve crowd levels"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
 

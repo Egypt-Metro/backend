@@ -49,7 +49,10 @@ class TrainCar(models.Model):
     @property
     def load_percentage(self):
         """Calculate the current load percentage"""
-        return (self.current_load / self.capacity) * 100 if self.capacity else 0
+        if self.capacity:
+            percentage = (self.current_load / self.capacity) * 100
+            return round(percentage, 2)  # Round to 2 decimal places
+        return 0
 
     @property
     def crowd_status(self):
@@ -91,8 +94,14 @@ class CrowdMeasurement(models.Model):
     train_car = models.ForeignKey(TrainCar, on_delete=models.CASCADE, related_name="measurements")
     timestamp = models.DateTimeField(auto_now_add=True)
     passenger_count = models.IntegerField()
-    crowd_percentage = models.FloatField(validators=[MinValueValidator(0), MaxValueValidator(100)])
-    confidence_score = models.FloatField(
+    crowd_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,  # Store only 2 decimal places
+        validators=[MinValueValidator(0), MaxValueValidator(100)]
+    )
+    confidence_score = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,  # Store only 2 decimal places
         validators=[MinValueValidator(0), MaxValueValidator(1)],
         help_text="Confidence level of the measurement (0-1)",
     )
@@ -115,6 +124,10 @@ class CrowdMeasurement(models.Model):
     def is_reliable(self):
         """Check if measurement is considered reliable"""
         return self.confidence_score >= 0.8
+
+    @property
+    def formatted_crowd_percentage(self):
+        return round(self.crowd_percentage, 2)
 
     @classmethod
     def get_recent_measurements(cls, train_car, minutes=15):

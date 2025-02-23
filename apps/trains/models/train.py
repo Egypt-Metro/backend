@@ -9,7 +9,12 @@ from ..constants import CARS_PER_TRAIN, DIRECTION_CHOICES, LINE_CONFIG, PEAK_HOU
 
 
 class Train(models.Model):
-    train_id = models.CharField(max_length=50, unique=True)
+    train_id = models.CharField(
+        max_length=10,
+        unique=True,
+        db_index=True,
+        help_text="Unique numeric identifier for the train"
+    )
     line = models.ForeignKey("stations.Line", on_delete=models.CASCADE)
     number_of_cars = models.IntegerField(default=CARS_PER_TRAIN)
     has_air_conditioning = models.BooleanField(default=False)
@@ -43,9 +48,12 @@ class Train(models.Model):
             models.Index(fields=["line", "status"]),
             models.Index(fields=["current_station"]),
         ]
+        ordering = ['train_id']
 
     def __str__(self):
-        return f"{self.train_id} ({self.line.name})"
+        station_info = f" at {self.current_station.name}" if self.current_station else ""
+        ac_status = "AC" if self.has_air_conditioning else "Non-AC"
+        return f"Train {self.train_id} - Line {self.line.name} ({ac_status}){station_info}"
 
     def clean(self):
         if self.line_id:
@@ -70,7 +78,16 @@ class Train(models.Model):
             if line_config and self.speed > line_config["speed_limit"]:
                 raise ValidationError(f"Speed exceeds line limit of {line_config['speed_limit']} km/h")
 
+    def get_train_number(self):
+        """Extract the train number from train_id"""
+        return int(str(self.train_id)[-3:])
+
+    def get_line_number(self):
+        """Extract the line number from train_id"""
+        return int(str(self.train_id)[:-3])
+
     def save(self, *args, **kwargs):
+        # Update train_type based on AC status
         self.train_type = "AC" if self.has_air_conditioning else "NON_AC"
         self.full_clean()
         super().save(*args, **kwargs)
@@ -98,3 +115,10 @@ class Train(models.Model):
             if start <= current_time <= end:
                 return True
         return False
+
+    @property
+    def formatted_id(self):
+        """Return a formatted version of the train ID"""
+        line_num = self.get_line_number()
+        train_num = self.get_train_number()
+        return f"{line_num}-{train_num:03d}"

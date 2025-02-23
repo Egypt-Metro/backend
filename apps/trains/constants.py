@@ -3,7 +3,7 @@ STATION_STOP_TIME = 120  # seconds
 
 # Line configurations with actual station counts
 LINE_CONFIG = {
-    "LINE_1": {
+    "LINE_First_Line": {
         "has_ac_percentage": 50,
         "total_trains": 30,
         "speed_limit": 80,
@@ -15,7 +15,7 @@ LINE_CONFIG = {
             ("MARG", "El-Marg"),
         ],
     },
-    "LINE_2": {
+    "LINE_Second_Line": {
         "has_ac_percentage": 50,
         "total_trains": 20,
         "speed_limit": 80,
@@ -27,7 +27,7 @@ LINE_CONFIG = {
             ("MONIB", "El-Monib"),
         ],
     },
-    "LINE_3": {
+    "LINE_Third_Line": {
         "has_ac_percentage": 100,
         "total_trains": 25,
         "speed_limit": 100,
@@ -50,8 +50,12 @@ TRAIN_STATUS_CHOICES = [
 ]
 
 DIRECTION_CHOICES = [
-    ("NORTHBOUND", "Northbound"),
-    ("SOUTHBOUND", "Southbound"),
+    ("HELWAN", "Helwan"),
+    ("MARG", "El-Marg"),
+    ("SHOBRA", "Shobra El Kheima"),
+    ("MONIB", "El-Monib"),
+    ("ADLY", "Adly Mansour"),
+    ("KIT_KAT", "Kit Kat"),
 ]
 
 # Train types

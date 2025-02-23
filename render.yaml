@@ -28,6 +28,10 @@ services:
         value: "False"
       - key: PYTHON_VERSION          # Specify the Python version
         value: "3.11.10"
+      - key: MAILGUN_API_KEY
+        sync: false
+      - key: MAILGUN_DOMAIN
+        sync: false
     disk:                            # Persistent storage (optional)
       name: persistent-data
       mountPath: /var/lib/egypt-metro

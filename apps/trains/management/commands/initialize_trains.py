@@ -1,6 +1,8 @@
+from decimal import ROUND_DOWN, Decimal, DecimalException
 import logging
 import random
 
+from dj_database_url import config
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
@@ -20,86 +22,150 @@ class Command(BaseCommand):
         with transaction.atomic():
             self.stdout.write("Initializing trains...")
 
-            # Delete existing trains
+            # Clear existing data
             Train.objects.all().delete()
+            TrainCar.objects.all().delete()
 
             # Get all lines and log their names
             lines = Line.objects.all()
             self.stdout.write(f"Found lines: {', '.join([line.name for line in lines])}")
 
             for line in lines:
-                line_name = f"LINE_{line.name}"
-                config = LINE_CONFIG.get(line_name)
+                # Remove spaces and special characters from line name
+                formatted_line_name = line.name.replace(" ", "_")
+                line_config_key = f"LINE_{formatted_line_name}"
+                config = LINE_CONFIG.get(line_config_key)
 
                 if not config:
                     self.stdout.write(
                         self.style.WARNING(
-                            f"No config for line {line.name}. " f'Available configs: {", ".join(LINE_CONFIG.keys())}'
+                            f"No config for line {line.name}. "
+                            f'Available configs: {", ".join(LINE_CONFIG.keys())}'
                         )
                     )
                     continue
 
                 # Get actual stations for this line
                 stations = Station.objects.filter(lines=line).order_by("station_lines__order")
+                station_count = stations.count()
 
-                self.stdout.write(f"Processing {line.name}: Found {stations.count()} stations")
+                self.stdout.write(f"Processing {line.name}: Found {station_count} stations")
 
-                if not stations.exists():
+                if not station_count:
                     self.stdout.write(self.style.WARNING(f"No stations found for {line.name}"))
                     continue
 
                 # Calculate trains needed
                 total_trains = config["total_trains"]
                 ac_trains = int((config["has_ac_percentage"] / 100) * total_trains)
-                station_spacing = max(1, stations.count() // total_trains)
+                station_spacing = max(1, station_count // total_trains)
 
                 self.stdout.write(
-                    f"Creating {ac_trains} AC and {total_trains - ac_trains} " f"non-AC trains for {line.name}"
+                    f"Creating {ac_trains} AC and {total_trains - ac_trains} "
+                    f"non-AC trains for {line.name}"
                 )
 
                 try:
                     # Create AC trains
                     for i in range(ac_trains):
-                        station_index = (i * station_spacing) % stations.count()
+                        station_index = (i * station_spacing) % station_count
                         train = self._create_train(line, i + 1, True, stations, station_index, config)
                         self._create_cars(train, is_peak=self._is_peak_hour())
 
                     # Create non-AC trains
                     for i in range(total_trains - ac_trains):
-                        station_index = ((i + ac_trains) * station_spacing) % stations.count()
-                        train = self._create_train(line, i + ac_trains + 1, False, stations, station_index, config)
+                        station_index = ((i + ac_trains) * station_spacing) % station_count
+                        train = self._create_train(
+                            line, i + ac_trains + 1, False, stations, station_index, config
+                        )
                         self._create_cars(train, is_peak=self._is_peak_hour())
 
                     self.stdout.write(self.style.SUCCESS(f"Created {total_trains} trains for {line.name}"))
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f"Error creating trains for {line.name}: {str(e)}"))
 
-    def _create_train(self, line, number, has_ac, stations, station_index, config):
-        """Create a train with realistic data"""
+    def _create_train(self, line, number, has_ac, station_list, station_index, config):
+        """
+        Create a train with comprehensive error handling and validation.
+
+        Args:
+            line: Line object
+            number: Train number within the line
+            has_ac: Boolean indicating AC status
+            stations: QuerySet of stations
+            station_index: Current station index
+            config: Line configuration dictionary
+
+        Returns:
+            Train object
+        """
         try:
-            current_station = stations[station_index]
-            next_station = stations[station_index + 1] if station_index < len(stations) - 1 else stations[0]
+            # Validate input parameters
+            if not all([line, station_list, config]):
+                raise ValueError("Missing required parameters")
+
+            # Get current and next stations with validation
+            try:
+                current_station = station_list[station_index]
+                next_station = station_list[station_index + 1] if station_index < len(station_list) - 1 else station_list[0]
+            except IndexError as e:
+                raise ValueError(f"Invalid station index: {station_index}") from e
 
             # Get direction based on station order
-            direction = self._determine_direction(line, current_station, next_station)
+            current_order = current_station.get_station_order(line)
+            next_order = next_station.get_station_order(line)
+
+            # Use directions from the passed config
+            directions = config["directions"]
+
+            if current_order is None or next_order is None:
+                self.stdout.write(self.style.WARNING(
+                    f"Station order not found for line {line.name}: "
+                    f"Current: {current_station.name}, Next: {next_station.name}"
+                ))
+                direction = directions[0][0]  # Default direction
+            else:
+                direction = directions[0][0] if next_order > current_order else directions[1][0]
+
+            # Generate train_id with validation
+            line_mapping = {
+                'First': '1',
+                'Second': '2',
+                'Third': '3'
+            }
+
+            line_number = line_mapping.get(line.name.split()[0])
+            if not line_number:
+                raise ValueError(f"Invalid line name format: {line.name}")
+
+            # Convert train_id to string format
+            train_id = f"{line_number}{number:03d}"
+
+            # Handle coordinates
+            try:
+                lat = Decimal(str(current_station.latitude or 0)).quantize(
+                    Decimal("0.000001"),
+                    rounding=ROUND_DOWN
+                )
+                lon = Decimal(str(current_station.longitude or 0)).quantize(
+                    Decimal("0.000001"),
+                    rounding=ROUND_DOWN
+                )
+            except (TypeError, DecimalException) as e:
+                self.stdout.write(self.style.WARNING(f"Error converting coordinates: {e}"))
+                lat, lon = Decimal("0.000000"), Decimal("0.000000")
 
             # Determine status
             is_peak = self._is_peak_hour()
-            status = "IN_SERVICE" if (is_peak or random.random() > 0.1) else random.choice(["DELAYED", "MAINTENANCE"])
+            status = (
+                "IN_SERVICE"
+                if (is_peak or random.random() > 0.1)
+                else random.choice(["DELAYED", "MAINTENANCE"])
+            )
 
-            # Convert and round coordinates to Decimal with 6 decimal places
-            from decimal import ROUND_DOWN, Decimal
-
-            try:
-                lat = Decimal(str(current_station.latitude)).quantize(Decimal("0.000001"), rounding=ROUND_DOWN)
-                lon = Decimal(str(current_station.longitude)).quantize(Decimal("0.000001"), rounding=ROUND_DOWN)
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f"Error converting coordinates: {e}"))
-                lat = Decimal("0.000000")
-                lon = Decimal("0.000000")
-
+            # Create train
             train = Train.objects.create(
-                train_id=f'{line.name}_{number:03d}_{"AC" if has_ac else "NONAC"}',
+                train_id=train_id,
                 line=line,
                 has_air_conditioning=has_ac,
                 number_of_cars=CARS_PER_TRAIN,
@@ -113,11 +179,34 @@ class Command(BaseCommand):
                 last_updated=timezone.now(),
             )
 
-            self.stdout.write(f"Created train: {train.train_id}")
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Created train {train.train_id} on line {line.name}\n"
+                    f"Direction: {direction} ({current_station.name} → {next_station.name})\n"
+                    f"Status: {status}, AC: {has_ac}"
+                )
+            )
             return train
 
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Error creating train: {str(e)}"))
+            self.stdout.write(
+                self.style.ERROR(
+                    f"Error creating train for line {line.name}:\n"
+                    f"Error type: {type(e).__name__}\n"
+                    f"Error message: {str(e)}"
+                )
+            )
+            raise
+
+        except Exception as e:
+            # Log detailed error information
+            self.stdout.write(
+                self.style.ERROR(
+                    f"Error creating train for line {line.name}:\n"
+                    f"Error type: {type(e).__name__}\n"
+                    f"Error message: {str(e)}"
+                )
+            )
             raise
 
     def _create_cars(self, train, is_peak):
@@ -177,17 +266,23 @@ class Command(BaseCommand):
         try:
             current_order = current_station.get_station_order(line)
             next_order = next_station.get_station_order(line)
+            directions = config["directions"]
 
-            line_config = LINE_CONFIG[f"LINE_{line.name}"]
-            directions = line_config["directions"]
+            # Log station orders for debugging
+            self.stdout.write(
+                f"Determining direction for line {line.name}: "
+                f"Current station ({current_station.name}) order: {current_order}, "
+                f"Next station ({next_station.name}) order: {next_order}"
+            )
 
-            # Default to first direction if order comparison fails
             if current_order is None or next_order is None:
+                self.stdout.write(f"Using default direction {directions[0][0]}")
                 return directions[0][0]
 
-            return directions[0][0] if next_order > current_order else directions[1][0]
+            direction = directions[0][0] if next_order > current_order else directions[1][0]
+            self.stdout.write(f"Selected direction: {direction}")
+            return direction
 
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Error determining direction: {str(e)}"))
-            # Return default direction
-            return LINE_CONFIG[f"LINE_{line.name}"]["directions"][0][0]
+            return config["directions"][0][0]

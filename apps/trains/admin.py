@@ -64,8 +64,7 @@ class TrainAdmin(ImportExportModelAdmin):
         "status_badge",
         "current_station_link",
         "direction",
-        "speed",
-        "car_count",
+        "ac_status",
         "total_passengers",
         "last_updated",
     )
@@ -124,6 +123,18 @@ class TrainAdmin(ImportExportModelAdmin):
         )
 
     status_badge.short_description = "Status"
+
+    def ac_status(self, obj):
+        if obj.has_air_conditioning:
+            return format_html(
+                '<span style="color: white; background-color: #28a745; padding: 3px 7px; '
+                'border-radius: 3px;">AC</span>'
+            )
+        return format_html(
+            '<span style="color: white; background-color: #dc3545; padding: 3px 7px; '
+            'border-radius: 3px;">Non-AC</span>'
+        )
+    ac_status.short_description = "AC Status"
 
     def car_count(self, obj):
         return obj.cars.count()
@@ -329,11 +340,18 @@ class CrowdMeasurementAdmin(admin.ModelAdmin):
         "passenger_count",
         "crowd_percentage",
         "confidence_score",
-        "measurement_method",
     )
     list_filter = ("measurement_method", ("timestamp", DateRangeFilter), "train_car__train__line")
     search_fields = ("train_car__train__train_id",)
     readonly_fields = ("timestamp",)
+
+    def formatted_crowd_percentage(self, obj):
+        return f"{obj.crowd_percentage:.2f}%"
+    formatted_crowd_percentage.short_description = "Crowd Percentage"
+
+    def formatted_confidence_score(self, obj):
+        return f"{obj.confidence_score:.2f}"
+    formatted_confidence_score.short_description = "Confidence Score"
 
     def train_car_link(self, obj):
         url = reverse("admin:trains_traincar_change", args=[obj.train_car.id])
@@ -343,11 +361,4 @@ class CrowdMeasurementAdmin(admin.ModelAdmin):
             obj.train_car.train.train_id,
             obj.train_car.car_number,
         )
-
     train_car_link.short_description = "Train Car"
-
-
-# Register any additional models or customize admin site
-admin.site.site_header = "Train Management System"
-admin.site.site_title = "Train Management System"
-admin.site.index_title = "Administration"

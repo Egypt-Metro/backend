@@ -69,7 +69,8 @@ urlpatterns = [
     path("api/users/", include("apps.users.urls")),  # User
     path("api/stations/", include("apps.stations.urls")),  # Stations
     path("api/routes/", include("apps.routes.urls")),  # Routes
-    path("api/trains/", include("apps.routes.urls")),  # Routes
+    path("api/trains/", include("apps.routes.urls")),  # Trains
+    path("api/auth/", include("apps.authentication.urls")),  # Tickets
     # Miscellaneous
     path("health/", health_check, name="health_check"),  # Health check
     # Documentation
