@@ -1,5 +1,7 @@
 # apps/trains/api/views.py
 
+from datetime import timedelta
+import random
 from venv import logger
 
 from django.core.cache import cache
@@ -11,9 +13,12 @@ from rest_framework import status
 from rest_framework import status as drf_status
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.stations.models import Station
+from apps.trains.services.schedule_service import ScheduleService
 
 from ..models import Schedule, Train, TrainCar
 from ..services.crowd_service import CrowdService
@@ -30,7 +35,7 @@ class TrainViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = TrainSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Public access
     filterset_class = TrainFilter
     search_fields = ["train_id", "line__name"]
     ordering_fields = ["train_id", "status", "last_updated"]
@@ -189,47 +194,264 @@ class TrainViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=["Schedules"])
-class ScheduleViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for managing train schedules.
-    Provides CRUD operations and additional actions for schedule management.
-    """
+class StationUpcomingTrainsView(APIView):
+    """Get upcoming trains for a selected station with detailed information."""
 
-    serializer_class = ScheduleSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Schedule.objects.all().select_related("train", "station").order_by("sequence_number")
+    permission_classes = [AllowAny]
 
     @extend_schema(
-        summary="Get station schedule",
-        parameters=[OpenApiParameter(name="station_id", type=str, required=True)],
+        parameters=[
+            OpenApiParameter(
+                name='station_id',
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description='ID of the selected station'
+            ),
+            OpenApiParameter(
+                name='limit',
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description='Number of upcoming trains to return (default: 3)'
+            )
+        ]
     )
-    @action(detail=False, methods=["GET"])
-    def station_schedule(self, request):
-        """Get schedule for a specific station with real-time updates"""
-        station_id = request.query_params.get("station_id")
-        if not station_id:
-            return Response({"error": "station_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-
+    def get(self, request):
         try:
-            schedules = self.get_queryset().filter(station_id=station_id, is_active=True)
-            serializer = self.get_serializer(schedules, many=True)
+            # Get parameters
+            station_id = request.query_params.get('station_id')
+            limit = int(request.query_params.get('limit', 3))
 
-            return Response(
-                {
-                    "status": "success",
-                    "count": schedules.count(),
-                    "data": serializer.data,
-                    "timestamp": timezone.now(),
-                }
+            if not station_id:
+                return Response({
+                    "error": "station_id is required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get station and its line
+            station = get_object_or_404(Station, id=station_id)
+
+            # Get upcoming schedules using service
+            schedules = ScheduleService.get_upcoming_trains_for_station(
+                station_id=station_id,
+                limit=limit
             )
+
+            response_data = {
+                "station": {
+                    "id": station.id,
+                    "name": station.name,
+                    "line": station.line.name,
+                    "location": {
+                        "latitude": station.latitude,
+                        "longitude": station.longitude
+                    }
+                },
+                "current_time": timezone.now(),
+                "upcoming_trains": schedules,
+            }
+
+            return Response(response_data)
+
         except Exception as e:
-            logger.error(f"Error getting station schedule: {str(e)}")
+            logger.error(f"Error getting upcoming trains: {str(e)}")
             return Response(
-                {"error": "Failed to retrieve station schedule"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                {"error": "Failed to retrieve upcoming trains"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+
+class StationTrainSchedulesView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, station_id=None):
+        try:
+            # Get query parameters
+            station_id = request.query_params.get('station_id')
+            current_time = timezone.now()
+
+            if not station_id:
+                return Response({
+                    "error": "station_id is required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Get all schedules for the station
+            schedules = Schedule.objects.filter(
+                station_id=station_id,
+                departure_time__gte=current_time
+            ).select_related(
+                'train',
+                'train__line',
+                'station'
+            ).order_by('departure_time')[:20]  # Get next 20 schedules
+
+            schedule_data = []
+            for schedule in schedules:
+                schedule_data.append({
+                    "id": schedule.id,
+                    "train_number": schedule.train.train_id,
+                    "line_name": schedule.train.line.name,
+                    "scheduled_departure": schedule.departure_time,
+                    "destination": schedule.train.destination.name if schedule.train.destination else None,
+                    "status": schedule.train.status,
+                    "is_active": schedule.is_active,
+                    "train_details": {
+                        "id": schedule.train.id,
+                        "capacity": schedule.train.capacity,
+                        "current_load": schedule.train.current_load,
+                        "has_ac": schedule.train.has_air_conditioning,
+                    }
+                })
+
+            return Response({
+                "status": "success",
+                "station_id": station_id,
+                "current_time": current_time,
+                "schedule_count": len(schedule_data),
+                "schedules": schedule_data
+            })
+
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@extend_schema(tags=["Schedules"])
+class StationSchedulesView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            # Get query parameters
+            start_station_id = request.query_params.get('start_station_id')
+            time_window = int(request.query_params.get('time_window', 120))  # Default 2 hours
+            limit = int(request.query_params.get('limit', 3))  # Default to 3 upcoming trains
+
+            if not start_station_id:
+                return Response({
+                    "error": "start_station_id is required"
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            current_time = timezone.now()
+            end_time = current_time + timezone.timedelta(minutes=time_window)
+
+            # Get the start station
+            start_station = get_object_or_404(Station, id=start_station_id)
+
+            # Get upcoming schedules
+            schedules = Schedule.objects.filter(
+                station=start_station,
+                departure_time__gte=current_time,
+                departure_time__lte=end_time,
+                is_active=True
+            ).select_related(
+                'train',
+                'train__line',
+                'station'
+            ).order_by('departure_time')[:limit]
+
+            schedules_data = []
+            for schedule in schedules:
+                train = schedule.train
+
+                # Simulate crowd levels for each car
+                car_crowds = []
+                for car_num in range(1, train.number_of_cars + 1):
+                    car_crowds.append({
+                        "car_number": car_num,
+                        "crowd_level": random.choice(['LOW', 'MODERATE', 'HIGH']),
+                        "available_seats": random.randint(0, 40),
+                        "temperature": random.randint(20, 25) if train.has_air_conditioning else None
+                    })
+
+                # Calculate estimated times
+                delay = random.randint(0, 10) if schedule.status == 'DELAYED' else 0
+                estimated_departure = schedule.departure_time + timedelta(minutes=delay)
+
+                schedule_info = {
+                    "schedule_id": schedule.id,
+                    "train": {
+                        "id": train.id,
+                        "train_number": train.train_id,
+                        "line_name": train.line.name,
+                        "line_color": train.line.color_code,
+                        "has_ac": train.has_air_conditioning,
+                        "number_of_cars": train.number_of_cars,
+                        "status": schedule.status
+                    },
+                    "timing": {
+                        "scheduled_arrival": schedule.arrival_time,
+                        "scheduled_departure": schedule.departure_time,
+                        "estimated_departure": estimated_departure,
+                        "delay_minutes": delay
+                    },
+                    "crowd_info": {
+                        "expected_level": schedule.expected_crowd_level,
+                        "cars": car_crowds
+                    },
+                    "service_info": {
+                        "is_express": random.choice([True, False]),
+                        "amenities": ["WiFi", "USB Charging"] if train.has_air_conditioning else [],
+                        "announcements": []
+                    }
+                }
+
+                if delay > 0:
+                    schedule_info["service_info"]["announcements"].append(
+                        f"Train delayed by {delay} minutes"
+                    )
+
+                schedules_data.append(schedule_info)
+
+            return Response({
+                "status": "success",
+                "start_station": {
+                    "id": start_station.id,
+                    "name": start_station.name,
+                    "location": {
+                        "latitude": start_station.latitude,
+                        "longitude": start_station.longitude
+                    }
+                },
+                "current_time": current_time,
+                "schedule_count": len(schedules_data),
+                "schedules": schedules_data
+            })
+
+        except Exception as e:
+            logger.error(f"Error getting station schedules: {str(e)}")
+            return Response({
+                "error": "Failed to retrieve schedules",
+                "detail": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class ScheduleViewSet(viewsets.ModelViewSet):
+    """ViewSet for viewing and editing schedules."""
+
+    queryset = Schedule.objects.all()
+    serializer_class = ScheduleSerializer
+
+    @action(detail=False)
+    def upcoming(self, request):
+        """Get upcoming schedules for a station."""
+        station_id = request.query_params.get('station_id')
+        if not station_id:
+            return Response(
+                {"error": "station_id is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        schedules = ScheduleService.get_upcoming_schedules(station_id)
+        serializer = self.get_serializer(schedules, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Cancel a schedule."""
+        schedule = ScheduleService.cancel_schedule(pk)
+        serializer = self.get_serializer(schedule)
+        return Response(serializer.data)
 
 
 class TrainCrowdView(APIView):
@@ -237,7 +459,7 @@ class TrainCrowdView(APIView):
     API View for managing train crowd levels.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     serializer_class = CrowdLevelSerializer
     crowd_service = CrowdService()
 
@@ -295,7 +517,7 @@ class TrainListView(APIView):
     API View for custom train listing.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     serializer_class = TrainSerializer
 
     @extend_schema(summary="List trains with custom format", responses={200: TrainSerializer(many=True)})
@@ -322,7 +544,7 @@ class TrainDetailView(APIView):
     API View for custom train details.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     serializer_class = TrainDetailSerializer
 
     @extend_schema(summary="Get detailed train information", responses={200: TrainDetailSerializer})
@@ -362,7 +584,7 @@ class TrainScheduleView(APIView):
     API View for retrieving train schedules.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     serializer_class = ScheduleSerializer
 
     @extend_schema(summary="Get train schedule", responses={200: ScheduleSerializer(many=True)})

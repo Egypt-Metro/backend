@@ -1,76 +1,131 @@
 # apps/trains/models/schedule.py
 
-import datetime
-
-from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from ..constants import ScheduleStatus, CrowdLevel
 
 
 class Schedule(models.Model):
-    DAY_TYPES = [
-        ("WEEKDAY", "Weekday"),
-        ("SATURDAY", "Saturday"),
-        ("SUNDAY", "Sunday"),
-        ("HOLIDAY", "Holiday"),
-    ]
+    """
+    Model for train schedules focusing on arrival times at stations.
+    Handles schedule tracking and status management.
+    """
 
-    train = models.ForeignKey("Train", on_delete=models.CASCADE, related_name="schedules")
-    station = models.ForeignKey("stations.Station", on_delete=models.CASCADE)
-    arrival_time = models.TimeField()
-    departure_time = models.TimeField()
-    day_type = models.CharField(max_length=10, choices=DAY_TYPES)
-    sequence_number = models.PositiveIntegerField(validators=[MinValueValidator(1)])
-    is_active = models.BooleanField(default=True)  # Added this field
-    last_updated = models.DateTimeField(auto_now=True)  # Added this field
+    # Core fields with explicit related_name
+    train = models.ForeignKey(
+        'Train',
+        on_delete=models.CASCADE,
+        related_name='schedules',
+        help_text="Train assigned to this schedule"
+    )
+    station = models.ForeignKey(
+        'stations.Station',
+        on_delete=models.CASCADE,
+        related_name='train_schedules',
+        help_text="Station for this schedule"
+    )
 
-    class Meta:
-        ordering = ["sequence_number"]
-        indexes = [
-            models.Index(fields=["train", "day_type"]),
-            models.Index(fields=["station", "arrival_time"]),
-        ]
+    # Timing field
+    arrival_time = models.DateTimeField(
+        db_index=True,
+        help_text="Expected arrival time at the station"
+    )
 
-    def __str__(self):
-        return f"{self.train.train_id} - {self.station.name} ({self.day_type})"
+    # Status fields
+    status = models.CharField(
+        max_length=10,
+        choices=ScheduleStatus.choices,
+        default=ScheduleStatus.ON_TIME,
+        help_text="Current status of the schedule"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether this schedule is currently active"
+    )
 
+    # Crowd information
+    expected_crowd_level = models.CharField(
+        max_length=10,
+        choices=CrowdLevel.choices,
+        default=CrowdLevel.MODERATE,
+        help_text="Expected crowding level at the station"
+    )
 
-class ActualSchedule(models.Model):
-    STATUS_CHOICES = [
-        ("ON_TIME", "On Time"),
-        ("DELAYED", "Delayed"),
-        ("CANCELLED", "Cancelled"),
-        ("SKIPPED", "Station Skipped"),
-        ("DIVERTED", "Train Diverted"),
-    ]
-
-    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE)
-    actual_arrival = models.DateTimeField(null=True)
-    actual_departure = models.DateTimeField(null=True)
-    delay_minutes = models.IntegerField(default=0)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="ON_TIME")
-    reason = models.TextField(blank=True, null=True)
+    # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         indexes = [
-            models.Index(fields=["schedule", "status"]),
-            models.Index(fields=["created_at"]),
+            models.Index(fields=['station', 'arrival_time']),
+            models.Index(fields=['train', 'arrival_time']),
         ]
+        ordering = ['arrival_time']
+        verbose_name = 'Train Schedule'
+        verbose_name_plural = 'Train Schedules'
+
+    def __str__(self):
+        return (
+            f"Train {self.train.train_id} at {self.station.name} - "
+            f"{self.arrival_time.strftime('%Y-%m-%d %H:%M')}"
+        )
+
+    def clean(self):
+        """Validate schedule data"""
+        if self.arrival_time < timezone.now():
+            raise ValidationError("Arrival time cannot be in the past")
 
     def save(self, *args, **kwargs):
-        # Calculate delay if actual arrival time is provided
-        if self.actual_arrival and self.schedule.arrival_time:
-            scheduled_time = datetime.datetime.combine(self.actual_arrival.date(), self.schedule.arrival_time)
-            scheduled_time = timezone.make_aware(scheduled_time)
-            delay = self.actual_arrival - scheduled_time
-            self.delay_minutes = max(0, int(delay.total_seconds() / 60))
-
-            # Update status based on delay
-            if self.delay_minutes == 0:
-                self.status = "ON_TIME"
-            elif self.delay_minutes > 0:
-                self.status = "DELAYED"
-
+        """Override save to ensure data validation"""
+        self.full_clean()
         super().save(*args, **kwargs)
+
+    # Properties
+    @property
+    def is_delayed(self) -> bool:
+        """Check if schedule is delayed"""
+        return self.status == ScheduleStatus.DELAYED
+
+    @property
+    def is_cancelled(self) -> bool:
+        """Check if schedule is cancelled"""
+        return self.status == ScheduleStatus.CANCELLED
+
+    @property
+    def delay_duration(self) -> int:
+        """Calculate delay duration in minutes"""
+        if not self.is_delayed:
+            return 0
+        delay = timezone.now() - self.arrival_time
+        return max(0, int(delay.total_seconds() / 60))
+
+    # Methods
+    def update_status(self, new_status: str, new_arrival_time=None):
+        """Update schedule status and optionally arrival time"""
+        if new_status not in ScheduleStatus.values:
+            raise ValueError(f"Invalid status: {new_status}")
+
+        self.status = new_status
+        if new_arrival_time:
+            self.arrival_time = new_arrival_time
+        self.save()
+
+    def cancel(self):
+        """Cancel this schedule"""
+        self.status = ScheduleStatus.CANCELLED
+        self.is_active = False
+        self.save()
+
+    @classmethod
+    def get_active_schedules(cls, station_id: int, time_window: int = 120):
+        """Get active schedules for a station within time window"""
+        current_time = timezone.now()
+        end_time = current_time + timezone.timedelta(minutes=time_window)
+
+        return cls.objects.filter(
+            station_id=station_id,
+            arrival_time__gte=current_time,
+            arrival_time__lte=end_time,
+            is_active=True
+        ).select_related('train', 'station')

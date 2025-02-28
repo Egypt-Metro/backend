@@ -7,7 +7,7 @@ from django.utils.html import format_html
 from import_export.admin import ImportExportModelAdmin
 from rangefilter.filters import DateRangeFilter
 
-from .models import ActualSchedule, CrowdMeasurement, Schedule, Train, TrainCar
+from .models import CrowdMeasurement, Schedule, Train, TrainCar
 
 
 class TrainCarInline(admin.TabularInline):
@@ -48,12 +48,10 @@ class ScheduleInline(admin.TabularInline):
     fields = (
         "station",
         "arrival_time",
-        "departure_time",
-        "day_type",
-        "sequence_number",
+        "expected_crowd_level",
         "is_active",
     )
-    ordering = ("day_type", "sequence_number")
+    ordering = ("arrival_time",)
 
 
 @admin.register(Train)
@@ -251,85 +249,69 @@ class ScheduleAdmin(ImportExportModelAdmin):
         "train_link",
         "station_link",
         "arrival_time",
-        "departure_time",
-        "day_type",
-        "sequence_number",
+        "status",
+        "expected_crowd_level",
         "is_active",
     )
-    list_filter = ("day_type", "is_active", "train__line", ("last_updated", DateRangeFilter))
+    list_filter = (
+        "status",
+        "is_active",
+        "expected_crowd_level",
+        "train__line",
+        ("created_at", DateRangeFilter)
+    )
     search_fields = ("train__train_id", "station__name")
-    ordering = ("train", "day_type", "sequence_number")
+    ordering = ("arrival_time",)
     actions = ["activate_schedules", "deactivate_schedules"]
-    readonly_fields = ("last_updated",)
+    readonly_fields = ("created_at", "updated_at")
+
+    fieldsets = (
+        ("Basic Information", {
+            "fields": (
+                "train",
+                "station",
+            )
+        }),
+        ("Timing", {
+            "fields": (
+                "arrival_time",
+            )
+        }),
+        ("Status", {
+            "fields": (
+                "status",
+                "is_active",
+                "expected_crowd_level",
+            )
+        }),
+        ("Metadata", {
+            "fields": (
+                "created_at",
+                "updated_at",
+            ),
+            "classes": ("collapse",)
+        }),
+    )
 
     def train_link(self, obj):
         url = reverse("admin:trains_train_change", args=[obj.train.id])
         return format_html('<a href="{}">{}</a>', url, obj.train.train_id)
-
     train_link.short_description = "Train"
 
     def station_link(self, obj):
         url = reverse("admin:stations_station_change", args=[obj.station.id])
         return format_html('<a href="{}">{}</a>', url, obj.station.name)
-
     station_link.short_description = "Station"
 
     def activate_schedules(self, request, queryset):
         updated = queryset.update(is_active=True)
         self.message_user(request, f"{updated} schedules activated.")
-
     activate_schedules.short_description = "Activate selected schedules"
 
     def deactivate_schedules(self, request, queryset):
         updated = queryset.update(is_active=False)
         self.message_user(request, f"{updated} schedules deactivated.")
-
     deactivate_schedules.short_description = "Deactivate selected schedules"
-
-
-@admin.register(ActualSchedule)
-class ActualScheduleAdmin(admin.ModelAdmin):
-    list_display = (
-        "schedule_link",
-        "status_badge",
-        "actual_arrival",
-        "actual_departure",
-        "delay_minutes",
-        "created_at",
-    )
-    list_filter = ("status", ("created_at", DateRangeFilter), "schedule__train__line")
-    search_fields = ("schedule__train__train_id", "schedule__station__name")
-    readonly_fields = ("delay_minutes", "created_at", "updated_at")
-    fieldsets = (
-        ("Schedule Information", {"fields": ("schedule", "status", "reason")}),
-        ("Timing Information", {"fields": ("actual_arrival", "actual_departure", "delay_minutes")}),
-        ("Metadata", {"fields": ("created_at", "updated_at"), "classes": ("collapse",)}),
-    )
-
-    def schedule_link(self, obj):
-        url = reverse("admin:trains_schedule_change", args=[obj.schedule.id])
-        return format_html('<a href="{}">{} - {}</a>', url, obj.schedule.train.train_id, obj.schedule.station.name)
-
-    schedule_link.short_description = "Schedule"
-
-    def status_badge(self, obj):
-        colors = {
-            "ON_TIME": "green",
-            "DELAYED": "orange",
-            "CANCELLED": "red",
-            "SKIPPED": "gray",
-            "DIVERTED": "purple",
-        }
-        return format_html(
-            '<span style="color: white; background-color: {}; padding: 3px 7px;'
-            ' border-radius: 3px;">'
-            "{}"
-            "</span>",
-            colors.get(obj.status, "black"),
-            obj.status,
-        )
-
-    status_badge.short_description = "Status"
 
 
 @admin.register(CrowdMeasurement)

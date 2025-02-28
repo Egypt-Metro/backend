@@ -1,0 +1,71 @@
+<!-- templates/admin/users/statistics.html -->
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'admin/css/user_admin.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="user-admin-container">
+    <!-- Statistics Summary -->
+    <div class="stats-grid">
+        <div class="stats-card">
+            <h3>Total Users</h3>
+            <div class="stats-value">{{ stats.total_users }}</div>
+        </div>
+        
+        <div class="stats-card">
+            <h3>Active Users</h3>
+            <div class="stats-value">{{ stats.active_users }}</div>
+        </div>
+        
+        <div class="stats-card">
+            <h3>Premium Users</h3>
+            <div class="stats-value">{{ stats.premium_users }}</div>
+        </div>
+    </div>
+
+    <!-- User Growth Chart -->
+    <div class="stats-card">
+        <h3>User Growth</h3>
+        <canvas id="userStatsChart" height="300"></canvas>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="stats-card">
+        <h3>Recent Activity</h3>
+        <table class="metro-table">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in recent_activities %}
+                <tr>
+                    <td>{{ activity.user }}</td>
+                    <td>{{ activity.action }}</td>
+                    <td>{{ activity.date|date:"Y-m-d H:i" }}</td>
+                    <td>
+                        <span class="user-badge status-{{ activity.status|lower }}">
+                            {{ activity.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+    {{ block.super }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'admin/js/user_admin.js' %}"></script>
+{% endblock %}

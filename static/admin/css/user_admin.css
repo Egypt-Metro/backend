@@ -1,0 +1,64 @@
+/* static/admin/css/user_admin.css */
+:root {
+    --metro-primary: #007bff;
+    --metro-success: #28a745;
+    --metro-warning: #ffc107;
+    --metro-danger: #dc3545;
+    --metro-gray: #6c757d;
+    --metro-light: #f8f9fa;
+}
+
+/* User Admin specific styles */
+.user-admin-container {
+    padding: 20px;
+}
+
+/* Badge styles */
+.user-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: white;
+}
+
+.subscription-free { background-color: var(--metro-gray); }
+.subscription-basic { background-color: var(--metro-primary); }
+.subscription-premium { background-color: var(--metro-success); }
+
+.status-active { background-color: var(--metro-success); }
+.status-inactive { background-color: var(--metro-danger); }
+
+/* Statistics Dashboard */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stats-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stats-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--metro-primary);
+}
+
+/* Responsive tables */
+.metro-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+@media (max-width: 768px) {
+    .metro-table {
+        display: block;
+        overflow-x: auto;
+    }
+}

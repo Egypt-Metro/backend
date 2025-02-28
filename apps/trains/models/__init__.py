@@ -1,5 +1,7 @@
+# apps/trains/models/__init__.py
+
 from .crowd import CrowdMeasurement, TrainCar
-from .schedule import ActualSchedule, Schedule
+from .schedule import Schedule
 from .train import Train
 
-__all__ = ["Train", "Schedule", "ActualSchedule", "TrainCar", "CrowdMeasurement"]
+__all__ = ["Train", "Schedule", "TrainCar", "CrowdMeasurement"]

@@ -149,6 +149,7 @@ else:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
     SECURE_PROXY_SSL_HEADER = None
+    CORS_ORIGIN_ALLOW_ALL = True
 
 # Update ALLOWED_HOSTS and CORS settings
 ALLOWED_HOSTS = [
@@ -164,16 +165,12 @@ CORS_ALLOWED_ORIGINS = [
 ] if ENVIRONMENT == "prod" else [
     "http://127.0.0.1:8000",
     "http://localhost:8000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
 ]
 
 # Add development URLs to CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://localhost:8000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3000",
     "https://backend-54v5.onrender.com",
 ]
 
@@ -386,9 +383,13 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "SIGNING_KEY": os.getenv("JWT_SECRET"),  # Secret key for JWT tokens
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),  # Access token lifetime   # 1 hour
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Refresh token lifetime  # 7 days
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
 # Create logs directory if it doesn't exist
@@ -430,6 +431,16 @@ LOGGING = {
         },
     },
 }
+
+# Authentication Settings
+# LOGIN_URL = '/admin/login/'
+# LOGIN_REDIRECT_URL = '/admin/'
+# LOGOUT_REDIRECT_URL = 'admin:login'
+
+# # AllAuth Settings
+# ACCOUNT_AUTHENTICATION_METHOD = 'username'  # or 'email' or 'username_email'
+# ACCOUNT_EMAIL_VERIFICATION = 'none'  # for development
+# ACCOUNT_EMAIL_REQUIRED = True
 
 # Add Cache configuration
 # CACHES = {
@@ -515,6 +526,9 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage" 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
+
+# Make sure the static directory exists
+os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 
 # Media files (optional, if your project uses media uploads)
 MEDIA_URL = "/media/"

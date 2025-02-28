@@ -20,6 +20,24 @@ urlpatterns = [
     # Additional train views (if needed)
     path("list/", views.TrainListView.as_view(), name="train-list-custom"),
     path("<str:train_id>/details/", views.TrainDetailView.as_view(), name="train-detail-custom"),
+    # station schedules
+    path('station/<str:station_id>/schedules/',
+         views.StationTrainSchedulesView.as_view(),
+         name='station-schedules'),
+    # station schedules using query parameter
+    path('station-schedules/',
+         views.StationTrainSchedulesView.as_view(),
+         name='station-schedules-query'),
+
+    # station schedules
+    path('station-schedules/between/',
+         views.StationSchedulesView.as_view(),
+         name='station-schedules-between'),
+    path(
+        'stations/upcoming-trains/',
+        views.StationUpcomingTrainsView.as_view(),
+        name='station-upcoming-trains'
+    ),
 ]
 
 # API Endpoint Documentation

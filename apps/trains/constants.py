@@ -1,5 +1,11 @@
+# apps/trains/constants.py
+from django.db import models
+
+# Common settings
 CARS_PER_TRAIN = 10
 STATION_STOP_TIME = 120  # seconds
+SCHEDULE_TIME_WINDOW = 120  # minutes
+MAX_SCHEDULES = 10
 
 # Line configurations with actual station counts
 LINE_CONFIG = {
@@ -89,6 +95,19 @@ PEAK_HOURS = {
         "end": "19:00",
     },
 }
+
+
+class ScheduleStatus(models.TextChoices):
+    ON_TIME = 'ON_TIME', 'On Time'
+    DELAYED = 'DELAYED', 'Delayed'
+    CANCELLED = 'CANCELLED', 'Cancelled'
+
+
+class CrowdLevel(models.TextChoices):
+    LOW = 'LOW', 'Low'
+    MODERATE = 'MODERATE', 'Moderate'
+    HIGH = 'HIGH', 'High'
+
 
 # Average speeds
 AVERAGE_SPEEDS = {
