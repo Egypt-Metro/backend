@@ -1,4 +1,4 @@
-# constants/choices.py
+# apps/users/constants/choices.py
 from django.db import models
 
 
@@ -9,7 +9,6 @@ class SubscriptionType(models.TextChoices):
 
 
 class PaymentMethod(models.TextChoices):
-    CASH = 'CASH', 'Cash'
     CREDIT_CARD = 'CREDIT_CARD', 'Credit Card'
     WALLET = 'WALLET', 'Digital Wallet'
 

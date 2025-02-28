@@ -1,3 +1,4 @@
+# backend/metro/urls.py
 """
 URL configuration for metro project.
 
@@ -58,6 +59,15 @@ schema_view = get_schema_view(
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),  # Admin panel
+    path('admin/login/', admin.site.login, name='admin_login'),  # Admin login
+    path('admin/logout/', admin.site.logout, name='admin_logout'),  # Admin logout
+    # path('admin/login/', auth_views.LoginView.as_view(
+    #     template_name='admin/login.html',
+    #     redirect_authenticated_user=True
+    # ), name='admin_login'),  # Admin login
+    # path('admin/logout/', auth_views.LogoutView.as_view(
+    #     next_page='admin_login'
+    # ), name='admin_logout'),    # Admin logout
     # Home
     path("", home, name="home"),  # Home view
     path("favicon.ico", RedirectView.as_view(url=settings.STATIC_URL + "favicon.ico")),  # Favicon
@@ -70,7 +80,7 @@ urlpatterns = [
     path("api/stations/", include("apps.stations.urls")),  # Stations
     path("api/routes/", include("apps.routes.urls")),  # Routes
     path("api/trains/", include("apps.trains.api.urls")),  # Trains
-    path("api/auth/", include("apps.authentication.urls")),  # Tickets
+    path("api/auth/", include("apps.authentication.urls")),  # Authentication
     # Miscellaneous
     path("health/", health_check, name="health_check"),  # Health check
     # Documentation

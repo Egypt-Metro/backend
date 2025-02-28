@@ -70,7 +70,7 @@ class PasswordResetService:
                 recipient_list=[user.email],
                 html_message=html_message
             )
-            
+
             logger.info(f"Password reset email sent to {user.email}")
             return True
 

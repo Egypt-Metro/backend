@@ -1,6 +1,7 @@
 # apps/users/api/urls.py
 from django.urls import path
-from .views import auth, profile, base
+
+from .views import auth, profile, base, auth_test
 from rest_framework_simplejwt.views import TokenRefreshView
 
 app_name = 'users'
@@ -17,5 +18,7 @@ urlpatterns = [
     # Token refresh endpoint
     path('token/refresh/', TokenRefreshView.as_view(), name='token-refresh'),
 
-    path("superusers/", base.get_superusers, name="get_superusers")
+    path("superusers/", base.get_superusers, name="get_superusers"),
+
+    path('test-auth/', auth_test.test_auth, name='test-auth'),
 ]

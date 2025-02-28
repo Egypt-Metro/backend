@@ -94,6 +94,9 @@ class User(AbstractUser):
         help_text='Date and time when the user was last updated'
     )
 
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
+
     # Custom manager for enhanced user operations
     objects = CustomUserManager()
 
@@ -126,18 +129,13 @@ class User(AbstractUser):
             })
 
     def save(self, *args, **kwargs):
-        """
-        Override save method to ensure data consistency
-        and perform any necessary calculations.
-        """
-        self.full_clean()  # Validate all fields
+        """Ensure email is set as username if not provided"""
+        if not self.username and self.email:
+            self.username = self.email.split('@')[0]
 
         # Ensure email is lowercase
-        self.email = self.email.lower()
-
-        # Update username if not set
-        if not self.username:
-            self.username = self.email.split('@')[0]
+        if self.email:
+            self.email = self.email.lower()
 
         super().save(*args, **kwargs)
 

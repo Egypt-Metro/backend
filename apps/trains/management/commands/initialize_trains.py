@@ -75,15 +75,15 @@ class Command(BaseCommand):
         try:
             station_count = stations.count()
             trains_created = 0
-            
+
             # Create trains for each station (both directions)
             for station_index in range(station_count):
                 station = stations[station_index]
-                
+
                 # Create trains in both directions at each station
                 for direction_index in range(2):  # 0: forward, 1: backward
                     is_ac = trains_created < ac_trains
-                    
+
                     # Determine next station based on direction
                     if direction_index == 0:  # Forward direction
                         next_station = stations[station_index + 1] if station_index < station_count - 1 else stations[0]

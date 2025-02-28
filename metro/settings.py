@@ -44,6 +44,7 @@ API_START_TIME = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
 # Application definition
 INSTALLED_APPS = [
+    # Django apps
     "django.contrib.admin",  # Admin panel
     "django.contrib.auth",  # Authentication framework
     'django_rest_passwordreset',  # Password reset
@@ -51,7 +52,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",  # Sessions framework
     "django.contrib.messages",  # Messages framework
     "django.contrib.staticfiles",  # Static files
-    # External packages
+
+    # # Third-party apps
     "allauth",  # Authentication
     "allauth.account",  # Account management
     # "allauth.socialaccount",  # Social authentication
@@ -67,7 +69,8 @@ INSTALLED_APPS = [
     "rangefilter",  # Range filter for Django admin
     'sslserver',    # SSL server for development
     'django_extensions',  # Django extensions
-    # Custom apps
+
+    # Project apps
     "apps.users.apps.UsersConfig",  # Users app
     "apps.stations.apps.StationsConfig",  # Stations app
     "apps.routes.apps.RoutesConfig",  # Routes app
@@ -87,6 +90,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",  # Clickjacking middleware
     "corsheaders.middleware.CorsMiddleware",  # CORS middleware
     "allauth.account.middleware.AccountMiddleware",  # Account middleware
+    'apps.users.middleware.AdminAccessMiddleware',  # Admin access middleware
 ]
 
 ROOT_URLCONF = "metro.urls"  # Root URL configuration
@@ -339,6 +343,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",  # For admin logins
+    'apps.users.backends.EmailOrUsernameModelBackend',  # Custom user model
     # "allauth.account.auth_backends.AuthenticationBackend",  # For allauth
 ]
 
@@ -433,9 +438,9 @@ LOGGING = {
 }
 
 # Authentication Settings
-# LOGIN_URL = '/admin/login/'
-# LOGIN_REDIRECT_URL = '/admin/'
-# LOGOUT_REDIRECT_URL = 'admin:login'
+LOGIN_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/admin/'
+LOGOUT_REDIRECT_URL = '/admin/login/'
 
 # # AllAuth Settings
 # ACCOUNT_AUTHENTICATION_METHOD = 'username'  # or 'email' or 'username_email'
@@ -492,8 +497,8 @@ CONSTANCE_CONFIG = {
 # Session Configuration
 SESSION_ENGINE = "django.contrib.sessions.backends.cached_db"  # Cached database session engine
 SESSION_CACHE_ALIAS = "default"  # Cache alias for sessions
-SESSION_COOKIE_AGE = 3600  # Session cookie age in seconds (1 hour)
-SESSION_EXPIRE_AT_BROWSER_CLOSE = ENVIRONMENT == "dev"  # True for development, False for production
+SESSION_COOKIE_AGE = 86400   # Session cookie age in seconds (24 hours)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # True for development, False for production
 SESSION_SAVE_EVERY_REQUEST = True  # Save session data on every request
 
 HANDLER404 = "metro.views.custom_404"  # Custom 404 handler
@@ -533,6 +538,11 @@ os.makedirs(os.path.join(BASE_DIR, 'static'), exist_ok=True)
 # Media files (optional, if your project uses media uploads)
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "mediafiles"  # Folder where media files will be uploaded
+
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',  # File system finder
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',      # App directories finder
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field

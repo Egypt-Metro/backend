@@ -68,7 +68,7 @@ class Command(BaseCommand):
         """Generate schedules for a train considering its direction."""
         try:
             current_time = start_time
-            
+
             # Get stations in the correct order based on train direction
             ordered_stations = list(stations)
             if train.direction == train.line.get_last_station().name:
@@ -76,7 +76,7 @@ class Command(BaseCommand):
 
             # Find current station index
             current_index = ordered_stations.index(train.current_station)
-            
+
             # Generate schedules starting from current station
             for hour in range(hours):
                 hour_start = start_time + timedelta(hours=hour)
@@ -85,20 +85,20 @@ class Command(BaseCommand):
                 # Generate schedules for remaining stations in direction
                 for idx in range(current_index, len(ordered_stations)):
                     station = ordered_stations[idx]
-                    
+
                     if idx == current_index:
                         arrival_time = current_time
                     else:
                         prev_station = ordered_stations[idx - 1]
-                        
+
                         # Calculate travel time
                         distance = prev_station.distance_to(station)
                         speed = AVERAGE_SPEEDS['PEAK'] if self._is_peak_hour() else AVERAGE_SPEEDS['NORMAL']
                         travel_time = (distance / speed) * 3600  # Convert to seconds
-                        
+
                         # Add dwell time
                         dwell_time = self._get_dwell_time(prev_station)
-                        
+
                         # Calculate arrival time
                         arrival_time = current_time + timedelta(seconds=int(travel_time + dwell_time))
 

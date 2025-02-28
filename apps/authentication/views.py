@@ -31,7 +31,7 @@ class RequestPasswordResetView(APIView):
             try:
                 user = User.objects.get(email=serializer.validated_data['email'])
                 token = PasswordResetService.create_reset_token(user)
-                
+
                 if PasswordResetService.send_reset_email(user, token):
                     return Response(
                         {"message": "Password reset email sent successfully"},
@@ -66,7 +66,7 @@ class ValidateTokenView(APIView):
         if serializer.is_valid():
             token = serializer.validated_data['token']
             is_valid = PasswordResetService.validate_token(token)
-            
+
             return Response({"is_valid": is_valid}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
