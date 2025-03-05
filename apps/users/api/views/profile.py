@@ -1,14 +1,18 @@
 # apps/users/api/views/profile.py
+import logging
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from django.core.cache import cache
-
-from apps.users.constants.choices import UserMessages
+from rest_framework import status
+from apps.users.constants.messages import UserMessages
 from .base import BaseAPIView
 from ..serializers.profile import ProfileSerializer
 from ..serializers.user import UpdateUserSerializer
 from ...services.profile_service import ProfileService
 from ...utils.response_helpers import ApiResponse
-from ...utils.decorators import log_api_request
+from ...utils.decorators import log_api_request, rate_limit
+
+logger = logging.getLogger(__name__)
 
 
 class UserProfileView(BaseAPIView):
@@ -35,33 +39,53 @@ class UserProfileView(BaseAPIView):
 
 
 class UpdateUserView(BaseAPIView):
-    """Handle user profile updates with validation"""
     permission_classes = [IsAuthenticated]
     serializer_class = UpdateUserSerializer
 
     @log_api_request
+    @rate_limit(requests=5, duration=300)
     def patch(self, request):
-        serializer = self.serializer_class(
-            request.user,
-            data=request.data,
-            partial=True
-        )
+        """Handle profile updates with validation"""
+        try:
+            serializer = self.serializer_class(
+                request.user,
+                data=request.data,
+                partial=True,
+                context={'request': request}
+            )
 
-        if serializer.is_valid():
-            try:
-                updated_user = ProfileService.update_profile(
-                    request.user,
-                    serializer.validated_data
+            if not serializer.is_valid():
+                return ApiResponse.validation_error(
+                    serializer.errors,
+                    status_code=status.HTTP_400_BAD_REQUEST
                 )
 
-                # Invalidate cache
-                cache.delete(f'profile_{request.user.id}')
+            updated_user = ProfileService.update_profile(
+                request.user,
+                serializer.validated_data
+            )
 
-                response_serializer = ProfileSerializer(updated_user)
-                return ApiResponse.success(
-                    message=UserMessages.PROFILE_UPDATED,
-                    data=response_serializer.data
-                )
-            except Exception as e:
-                return ApiResponse.error(str(e))
-        return ApiResponse.validation_error(serializer.errors)
+            # Clear cache
+            cache.delete_many([
+                f'profile_{request.user.id}',
+                f'user_details_{request.user.id}'
+            ])
+
+            response_serializer = ProfileSerializer(updated_user)
+            return ApiResponse.success(
+                message=UserMessages.PROFILE_UPDATED,
+                data=response_serializer.data,
+                status_code=status.HTTP_200_OK
+            )
+
+        except ValidationError as e:
+            return ApiResponse.error(
+                str(e),
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Profile update error: {str(e)}")
+            return ApiResponse.error(
+                UserMessages.SOMETHING_WENT_WRONG,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
