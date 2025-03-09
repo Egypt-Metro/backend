@@ -10,7 +10,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from apps.trains.models import Train, TrainCar, Schedule
 from apps.stations.models import Station, Line
 from apps.trains.constants.choices import (
-    TrainStatus, CrowdLevel, Direction, 
+    TrainStatus, CrowdLevel, Direction,
     CARS_PER_TRAIN, MAX_SCHEDULES, CROWD_THRESHOLDS
 )
 
