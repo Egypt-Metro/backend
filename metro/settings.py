@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "rangefilter",  # Range filter for Django admin
     'sslserver',    # SSL server for development
     'django_extensions',  # Django extensions
+    'django_filters',  # Django filters
 
     # Project apps
     "apps.users.apps.UsersConfig",  # Users app
@@ -101,9 +102,13 @@ AI_MODEL_PATH = "path/to/your/trained/model"
 AI_MODEL_CONFIDENCE_THRESHOLD = 0.8
 
 # AI Service Configuration
-AI_SERVICE_URL = "http://your-ai-service-url/api"  # Your friend's AI service URL
-AI_SERVICE_API_KEY = "your-api-key"  # API key for authentication
-AI_SERVICE_TIMEOUT = 30  # seconds
+AI_SERVICE_CONFIG = {
+    'URL': 'http://localhost:8000',  # AI service URL
+    'ENDPOINTS': {
+        'PROCESS_IMAGE': '/process_image/'
+    },
+    'TIMEOUT': 30,  # seconds
+}
 
 # Email Configuration (Production-focused with Mailgun)
 EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
@@ -163,16 +168,17 @@ ALLOWED_HOSTS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
-    "https://backend-54v5.onrender.com",
+    "http://127.0.0.1:8000",    # Localhost
+    "http://localhost:8000",    # Localhost
+    "http://localhost:3000",    # Flutter frontend
+    "https://backend-54v5.onrender.com",    # Render backend
 ]
 
 # Add development URLs to CSRF trusted origins
 CSRF_TRUSTED_ORIGINS = [
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
-    "https://backend-54v5.onrender.com",
+    "http://127.0.0.1:8000",    # Localhost
+    "http://localhost:8000",    # Localhost
+    "https://backend-54v5.onrender.com",    # Render backend
 ]
 
 # CORS settings
@@ -349,15 +355,15 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.TokenAuthentication",
+        "rest_framework_simplejwt.authentication.JWTAuthentication",    # For JWT-based authentication
+        "rest_framework.authentication.TokenAuthentication",    # For token-based authentication
         "rest_framework.authentication.SessionAuthentication",  # For session-based authentication
-        "rest_framework.authentication.BasicAuthentication",
+        "rest_framework.authentication.BasicAuthentication",    # For basic authentication
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",  # Default to authenticated users
         "rest_framework.permissions.AllowAny",  # Allow any user
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',    # JWT authentication
     ),
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",  # Default renderer
@@ -366,22 +372,35 @@ REST_FRAMEWORK = {
         # 'drf_yasg.renderers.OpenAPIRenderer',   # OpenAPI renderer
     ],
     "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
-        "rest_framework.filters.SearchFilter",
-        "rest_framework.filters.OrderingFilter",
+        "django_filters.rest_framework.DjangoFilterBackend",    # Django filters backend
+        "rest_framework.filters.SearchFilter",  # Search filter
+        "rest_framework.filters.OrderingFilter",    # Ordering filter
     ],
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.UserRateThrottle",
-        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",   # User rate throttle
+        "rest_framework.throttling.AnonRateThrottle",   # Anonymous rate throttle
     ],
     "DEFAULT_THROTTLE_RATES": {
-        'anon': '100/day',
-        'user': '1000/day',
-        "station_lookup": "10/second",  # For specific station lookup endpoints
-        "route_planning": "30/minute",  # For route and trip planning APIs
-        "ticket_booking": "15/minute",  # For ticket booking and QR code generation
+        'anon': '100/day',  # Anonymous user rate limit (100 requests per day)
+        'user': '1000/day',  # Authenticated user rate limit (1000 requests per day)
+        "station_lookup": "10/second",  # For specific station lookup endpoints (10 requests per second)
+        "route_planning": "30/minute",  # For route and trip planning APIs (30 requests per minute)
+        "ticket_booking": "15/minute",  # For ticket booking and QR code generation (15 requests per minute)
     },
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",   # Default schema class
+}
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'Basic': {
+            'type': 'basic'
+        },
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    }
 }
 
 SIMPLE_JWT = {
