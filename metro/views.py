@@ -2,9 +2,10 @@
 
 import logging
 import os
-from datetime import datetime, timezone
-from typing import Dict, Any, Optional
 
+from typing import Dict, Any, Optional
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -18,7 +19,7 @@ API_CONFIG = {
     'NAME': 'Egypt Metro API',
     'DESCRIPTION': 'Backend API for Egypt Metro System',
     'ENVIRONMENT': os.getenv('ENVIRONMENT', 'development'),
-    'CONTACT_EMAIL': 'contact@metro.com',
+    'CONTACT_EMAIL': 'admin@metro.com',
 }
 
 # API start time (when server starts)
@@ -29,27 +30,64 @@ class APIStatus:
     """Class to manage API status and metadata"""
 
     @staticmethod
-    def get_uptime() -> Dict[str, int]:
-        """Calculate API uptime"""
-        current_time = datetime.now(timezone.utc)
-        delta = current_time - API_START_TIME
+    def format_datetime(dt=None):
+        """
+        Format datetime in Cairo, Egypt timezone with 12-hour format
 
-        return {
-            'days': delta.days,
-            'hours': delta.seconds // 3600,
-            'minutes': (delta.seconds % 3600) // 60,
-            'seconds': delta.seconds % 60
-        }
+        Args:
+            dt (datetime, optional): Datetime to format. Defaults to current time.
+
+        Returns:
+            str: Formatted datetime string
+        """
+        if dt is None:
+            dt = datetime.now(ZoneInfo('Africa/Cairo'))
+
+        # Convert to Cairo timezone if not already
+        cairo_time = dt.astimezone(ZoneInfo('Africa/Cairo'))
+
+        # Format: 3-20-2025 9:15:25 AM
+        return cairo_time.strftime('%m-%d-%Y %I:%M:%S %p')
+
+    @staticmethod
+    def get_uptime():
+        """
+        Calculate system uptime
+
+        Returns:
+            dict: Uptime breakdown with days, hours, minutes
+        """
+        try:
+            # Get system boot time
+            with open('/proc/uptime', 'r') as f:
+                uptime_seconds = float(f.readline().split()[0])
+
+            # Convert to timedelta
+            uptime_delta = timedelta(seconds=uptime_seconds)
+
+            # Break down into days, hours, minutes
+            days = uptime_delta.days
+            hours, remainder = divmod(uptime_delta.seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+
+            return {
+                'days': days,
+                'hours': hours,
+                'minutes': minutes
+            }
+        except Exception as e:
+            # Fallback for systems without /proc/uptime or errors
+            print(f"Uptime calculation error: {e}")
+            return {
+                'days': 0,
+                'hours': 0,
+                'minutes': 0
+            }
 
     @staticmethod
     def get_environment() -> str:
         """Get current environment"""
         return API_CONFIG['ENVIRONMENT']
-
-    @staticmethod
-    def format_datetime(dt: datetime) -> str:
-        """Format datetime for display"""
-        return dt.strftime("%Y-%m-%d %H:%M:%S %Z")
 
 
 class APIRoutes:
@@ -214,7 +252,7 @@ def home(request) -> HttpResponse:
     """Home endpoint with API overview"""
 
     # Get current status
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.now(ZoneInfo('Africa/Cairo'))
     uptime = APIStatus.get_uptime()
     environment = APIStatus.get_environment()
 
@@ -229,11 +267,14 @@ def home(request) -> HttpResponse:
         "status": "operational",
         "contact": API_CONFIG['CONTACT_EMAIL'],
         "documentation": {
-            "swagger": "/swagger/",
-            "redoc": "/redoc/",
-            "api_docs": "/api/docs/"
+            "Swagger UI": "/swagger/",
+            "ReDoc": "/redoc/",
+            "API Docs": "/api/docs/",
+            "Postman Collection": "/api/schema/",
+            "OpenAPI JSON": "/swagger.json"
         },
-        "routes": APIRoutes.get_routes()
+        "routes": APIRoutes.get_routes(),
+        "language": "en",
     }
 
     # Return HTML for browsers

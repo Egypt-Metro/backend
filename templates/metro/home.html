@@ -4,6 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ data.description }}">
+    <meta property="og:title" content="{{ data.name }} Documentation">
+    <meta property="og:type" content="website">
+    <meta property="og:description" content="{{ data.description }}">
+
+    <html lang="{{ data.language|default:'en' }}" dir="ltr">
     <title>{{ data.name }}</title>
     <!-- Add Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -192,6 +198,99 @@
                 margin-bottom: 1rem;
             }
         }
+
+        .particles-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-color: #f4f4f4;
+        }
+    
+        .documentation-section {
+            position: relative;
+            z-index: 1;
+        }
+
+        .doc-link-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.05);
+            padding: 8px;
+            border-radius: 6px;
+        }
+        
+        .doc-link-text {
+            font-size: 0.9rem;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 80%;
+        }
+        
+        .copy-link-btn {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        
+        .copy-link-btn:hover {
+            color: var(--primary-color);
+        }
+        
+        .external-link {
+            margin-left: 10px;
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        
+        .external-link:hover {
+            color: var(--primary-color);
+        }
+
+        /* Fallback for Font Awesome icons */
+        .fas, .far, .fab {
+            display: inline-block;
+            font-style: normal;
+            font-variant: normal;
+            text-rendering: auto;
+            line-height: 1;
+        }
+
+        /* Ensure icons have a minimum size */
+        .fas, .far, .fab {
+            min-width: 1em;
+            text-align: center;
+        }
+
+        .fas, .far, .fab {
+            display: inline-block;
+            width: 1.5em;
+            text-align: center;
+            margin-right: 0.5em;
+        }
+        
+        /* Increase icon visibility */
+        .route-item i, 
+        .status-item i, 
+        .documentation-section i {
+            color: var(--accent-color);
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+        
+        .route-item:hover i, 
+        .status-item:hover i, 
+        .documentation-section i:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -235,19 +334,30 @@
             </div>
         </section>
 
-        <section class="section" data-aos="fade-up">
+        <section class="section documentation-section" data-aos="fade-up">
             <h2><i class="fas fa-book"></i> Documentation</h2>
             <div class="route-list">
                 {% for name, url in data.documentation.items %}
                 <div class="route-item" data-aos="fade-up">
                     <h3>
-                        <i class="fas fa-file-alt"></i>
+                        <i class="fas fa-file-alt"></i> 
                         {{ name|title }}
+                        <a href="{{ url }}" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           aria-label="View {{ name|title }} Documentation"
+                           class="external-link">
+                            <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                        </a>
                     </h3>
-                    <a href="{{ url }}" target="_blank" class="btn">
-                        <i class="fas fa-external-link-alt"></i>
-                        View Documentation
-                    </a>
+                    <div class="doc-link-container">
+                        <span class="doc-link-text" id="doc-link-{{ loop.index }}">{{ url }}</span>
+                        <button class="copy-link-btn" 
+                                onclick="copyToClipboard('{{ url }}', this, 'doc-link-{{ loop.index }}')"
+                                aria-label="Copy documentation link">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -264,7 +374,7 @@
                 <div class="route-list">
                     {% for name, path in group.routes.items %}
                     <div class="route-item" data-aos="fade-up">
-                        <button class="copy-button" onclick="copyToClipboard('{{ path }}')">
+                        <button class="copy-button" onclick="copyToClipboard('{{ path }}', this)">
                             <i class="fas fa-copy"></i>
                         </button>
                         <h4>
@@ -280,7 +390,135 @@
         </section>
     </div>
 
+    <!-- Add Particles.js background -->
+    <div id="particles-js" class="particles-background"></div>
+
+    <!-- Add Particles.js library -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script>
+        // Add this function before the existing Particles.js script
+        function loadParticlesJS() {
+            if (!window.particlesJS) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js';
+                script.async = true;
+                script.onload = initParticles;
+                document.body.appendChild(script);
+            } else {
+                initParticles();
+            }
+        }
+
+        function initParticles() {
+            try {
+                particlesJS('particles-js', {
+                    particles: {
+                        number: {
+                            value: window.innerWidth < 768 ? 40 : 80,
+                            density: {
+                                enable: true,
+                                value_area: window.innerWidth < 768 ? 400 : 800
+                            }
+                        },
+                        // ... rest of configuration
+                    },
+                    // ... rest of configuration
+                });
+        
+                // Resize handler
+                window.addEventListener('resize', () => {
+                    particlesJS('particles-js', {
+                        particles: {
+                            number: {
+                                value: window.innerWidth < 768 ? 40 : 80
+                            }
+                        }
+                    });
+                });
+            } catch (error) {
+                console.warn('Particles.js initialization failed:', error);
+            }
+        }
+
+        // Replace existing event listener
+        document.addEventListener('DOMContentLoaded', loadParticlesJS);
+
+        // Particles.js background
+        document.addEventListener('DOMContentLoaded', function() {
+            particlesJS('particles-js', {
+                particles: {
+                    number: {
+                        value: 80,
+                        density: {
+                            enable: true,
+                            value_area: 800
+                        }
+                    },
+                    color: {
+                        value: '#3498db'
+                    },
+                    shape: {
+                        type: 'circle',
+                        stroke: {
+                            width: 0,
+                            color: '#000000'
+                        }
+                    },
+                    opacity: {
+                        value: 0.5,
+                        random: false,
+                        anim: {
+                            enable: false,
+                            speed: 1,
+                            opacity_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    size: {
+                        value: 3,
+                        random: true,
+                        anim: {
+                            enable: false,
+                            speed: 40,
+                            size_min: 0.1,
+                            sync: false
+                        }
+                    },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: '#3498db',
+                        opacity: 0.4,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 6,
+                        direction: 'none',
+                        random: false,
+                        straight: false,
+                        out_mode: 'out',
+                        bounce: false
+                    }
+                },
+                interactivity: {
+                    detect_on: 'canvas',
+                    events: {
+                        onhover: {
+                            enable: true,
+                            mode: 'repulse'
+                        },
+                        onclick: {
+                            enable: true,
+                            mode: 'push'
+                        },
+                        resize: true
+                    }
+                },
+                retina_detect: true
+            });
+        });
+
         // Initialize AOS
         AOS.init({
             duration: 800,
@@ -288,11 +526,102 @@
         });
 
         // Copy to clipboard function
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                showTooltip(event.target, 'Copied!');
-            });
+        function copyToClipboard(text, triggerElement, textElementId = null) {
+            // If a specific text element ID is provided, use its text content
+            if (textElementId) {
+                const textElement = document.getElementById(textElementId);
+                if (textElement) {
+                    text = textElement.textContent.trim();
+                }
+            }
+        
+            // Create a temporary textarea to copy text
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = text;
+            tempTextArea.style.position = 'fixed';
+            tempTextArea.style.left = '-9999px';
+            document.body.appendChild(tempTextArea);
+        
+            // Select and copy text
+            tempTextArea.select();
+            tempTextArea.setSelectionRange(0, 99999); // For mobile devices
+        
+            try {
+                // Modern browsers
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showCopyFeedback(triggerElement);
+                    }).catch(err => {
+                        console.error('Clipboard write failed', err);
+                        fallbackCopy(text, triggerElement);
+                    });
+                } else {
+                    // Fallback for older browsers
+                    fallbackCopy(text, triggerElement);
+                }
+            } catch (err) {
+                console.error('Copy failed', err);
+                fallbackCopy(text, triggerElement);
+            } finally {
+                // Clean up
+                document.body.removeChild(tempTextArea);
+            }
         }
+        
+        // Fallback copy method
+        function fallbackCopy(text, triggerElement) {
+            try {
+                document.execCommand('copy');
+                showCopyFeedback(triggerElement);
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+        }
+        
+        // Show copy feedback
+        function showCopyFeedback(element) {
+            // Add visual feedback
+            element.classList.add('copied');
+            
+            // Create tooltip
+            const tooltip = document.createElement('span');
+            tooltip.textContent = 'Copied!';
+            tooltip.classList.add('copy-tooltip');
+            element.appendChild(tooltip);
+        
+            // Remove feedback after a short delay
+            setTimeout(() => {
+                element.classList.remove('copied');
+                if (tooltip.parentElement) {
+                    element.removeChild(tooltip);
+                }
+            }, 2000);
+        }
+        
+        // Add CSS for copy feedback
+        const copyFeedbackStyle = document.createElement('style');
+        copyFeedbackStyle.textContent = `
+            .copy-link-btn.copied,
+            .copy-button.copied {
+                color: #2ecc71 !important;
+                transform: scale(1.2);
+            }
+        
+            .copy-tooltip {
+                position: absolute;
+                top: -30px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #333;
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.8em;
+                white-space: nowrap;
+                z-index: 10;
+            }
+        `;
+        document.head.appendChild(copyFeedbackStyle);
 
         // Show tooltip
         function showTooltip(element, text) {
@@ -317,6 +646,30 @@
 
         document.querySelectorAll('.section').forEach(section => {
             observer.observe(section);
+        });
+
+        window.addEventListener('load', () => {
+            const loadTime = performance.now();
+            console.log(`Page loaded in ${loadTime.toFixed(2)}ms`);
+            
+            // Performance tracking with more details
+            const performanceEntries = performance.getEntriesByType('navigation')[0];
+            if (performanceEntries) {
+                console.log({
+                    loadTime: loadTime,
+                    domInteractive: performanceEntries.domInteractive,
+                    domComplete: performanceEntries.domComplete,
+                    totalLoadTime: performanceEntries.loadEventEnd - performanceEntries.startTime
+                });
+            }
+            
+            // Optional: Send to analytics
+            if (window.analytics) {
+                window.analytics.track('Page Load', {
+                    loadTime: loadTime,
+                    environment: '{{ data.environment }}'
+                });
+            }
         });
     </script>
 </body>

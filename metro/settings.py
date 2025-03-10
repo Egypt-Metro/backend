@@ -98,8 +98,8 @@ ROOT_URLCONF = "metro.urls"  # Root URL configuration
 WSGI_APPLICATION = "metro.wsgi.application"  # WSGI application
 
 # AI Model Settings
-AI_MODEL_PATH = "path/to/your/trained/model"
-AI_MODEL_CONFIDENCE_THRESHOLD = 0.8
+# AI_MODEL_PATH = "path/to/your/trained/model"
+# AI_MODEL_CONFIDENCE_THRESHOLD = 0.8
 
 # AI Service Configuration
 AI_SERVICE_CONFIG = {

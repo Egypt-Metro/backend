@@ -22,7 +22,7 @@ from ...models.train import Train
 from ..serializers.train_serializer import TrainSerializer, TrainDetailSerializer
 from ..serializers.schedule_serializer import ScheduleSerializer
 from ..pagination import StandardResultsSetPagination
-from ..permissions import IsStaffOrReadOnly, CanUpdateCrowdLevel
+from ..permissions import CanUpdateCrowdLevel, IsStaffOrReadOnly
 from ..filters import TrainFilter
 import logging
 
@@ -301,8 +301,11 @@ class TrainViewSet(viewsets.ModelViewSet):
         try:
             car_number = int(car_number)
             car = get_object_or_404(train.cars, car_number=car_number)
-            service = CrowdDetectionService()
-            result = service.update_car_crowd_level(car, image_file.read())
+
+            # Use async method with sync wrapper
+            from asgiref.sync import async_to_sync
+            crowd_service = CrowdDetectionService()
+            result = async_to_sync(crowd_service.update_car_crowd_level)(car, image_file.read())
 
             if "error" in result:
                 return Response(result, status=status.HTTP_400_BAD_REQUEST)
