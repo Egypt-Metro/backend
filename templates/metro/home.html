@@ -1,0 +1,323 @@
+<!-- templates/metro/home.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ data.name }}</title>
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Add Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Add AOS for scroll animations -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Add particles.js -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <!-- Add GSAP for advanced animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Add Three.js for 3D effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <style>
+        {{ css|safe }}
+
+        /* Additional modern styling */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #2c3e50, #3498db);
+            --card-gradient: linear-gradient(135deg, #ffffff, #f8f9fa);
+            --animation-timing: 0.3s;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: var(--primary-gradient);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%);
+            background-size: 3px 3px;
+            animation: backgroundMove 20s linear infinite;
+        }
+
+        @keyframes backgroundMove {
+            from { background-position: 0 0; }
+            to { background-position: 100% 100%; }
+        }
+
+        .status-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .status-item {
+            background: rgba(255,255,255,0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .route-item {
+            background: var(--card-gradient);
+            border: none;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all var(--animation-timing) ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .route-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-color);
+            transition: width var(--animation-timing) ease;
+        }
+
+        .route-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .route-item:hover::before {
+            width: 100%;
+            opacity: 0.1;
+        }
+
+        .api-method {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .method-get { background: #61affe; color: white; }
+        .method-post { background: #49cc90; color: white; }
+        .method-put { background: #fca130; color: white; }
+        .method-delete { background: #f93e3e; color: white; }
+
+        .copy-button {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            background: transparent;
+            border: none;
+            color: var(--accent-color);
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity var(--animation-timing) ease;
+        }
+
+        .route-item:hover .copy-button {
+            opacity: 1;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity var(--animation-timing) ease;
+            pointer-events: none;
+        }
+
+        .status-badge {
+            background: var(--success-color);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .section {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .status-container {
+                flex-direction: column;
+            }
+
+            .route-item {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header" data-aos="fade-down">
+            <h1>
+                <i class="fas fa-train"></i> 
+                {{ data.name }}
+            </h1>
+            <div class="status-container">
+                <div class="status-item">
+                    <i class="fas fa-code-branch"></i>
+                    <span>Version {{ data.version }}</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-server"></i>
+                    <span>{{ data.environment }}</span>
+                </div>
+                <div class="status-badge">
+                    <i class="fas fa-check-circle"></i>
+                    <span>{{ data.status }}</span>
+                </div>
+            </div>
+        </header>
+
+        <section class="section" data-aos="fade-up">
+            <h2><i class="fas fa-info-circle"></i> System Status</h2>
+            <div class="status-container">
+                <div class="status-item">
+                    <i class="far fa-clock"></i>
+                    <span>{{ data.current_time }}</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-hourglass-half"></i>
+                    <span>Uptime: {{ data.uptime.days }}d {{ data.uptime.hours }}h {{ data.uptime.minutes }}m</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-envelope"></i>
+                    <a href="mailto:{{ data.contact }}">{{ data.contact }}</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" data-aos="fade-up">
+            <h2><i class="fas fa-book"></i> Documentation</h2>
+            <div class="route-list">
+                {% for name, url in data.documentation.items %}
+                <div class="route-item" data-aos="fade-up">
+                    <h3>
+                        <i class="fas fa-file-alt"></i>
+                        {{ name|title }}
+                    </h3>
+                    <a href="{{ url }}" target="_blank" class="btn">
+                        <i class="fas fa-external-link-alt"></i>
+                        View Documentation
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="section" data-aos="fade-up">
+            <h2><i class="fas fa-route"></i> API Routes</h2>
+            {% for group_name, group in data.routes.items %}
+            <div class="route-group" data-aos="fade-up">
+                <h3>
+                    <i class="fas fa-folder"></i>
+                    {{ group.title }}
+                </h3>
+                <div class="route-list">
+                    {% for name, path in group.routes.items %}
+                    <div class="route-item" data-aos="fade-up">
+                        <button class="copy-button" onclick="copyToClipboard('{{ path }}')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <h4>
+                            <span class="api-method method-get">GET</span>
+                            {{ name|title }}
+                        </h4>
+                        <code>{{ path }}</code>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+    </div>
+
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showTooltip(event.target, 'Copied!');
+            });
+        }
+
+        // Show tooltip
+        function showTooltip(element, text) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tooltip';
+            tooltip.textContent = text;
+            element.appendChild(tooltip);
+            setTimeout(() => tooltip.remove(), 2000);
+        }
+
+        // Intersection Observer for scroll animations
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            },
+            { threshold: 0.1 }
+        );
+
+        document.querySelectorAll('.section').forEach(section => {
+            observer.observe(section);
+        });
+    </script>
+</body>
+</html>

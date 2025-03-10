@@ -1,0 +1,127 @@
+/	metro.views.home	home
+/accounts/confirm-email/	allauth.account.views.email_verification_sent	account_email_verification_sent
+/accounts/confirm-email/<key>/	allauth.account.views.ConfirmEmailView	account_confirm_email
+/accounts/email/	allauth.account.views.EmailView	account_email
+/accounts/inactive/	allauth.account.views.AccountInactiveView	account_inactive
+/accounts/login/	allauth.account.views.LoginView	account_login
+/accounts/login/code/confirm/	allauth.account.views.ConfirmLoginCodeView	account_confirm_login_code
+/accounts/logout/	allauth.account.views.LogoutView	account_logout
+/accounts/password/change/	allauth.account.views.PasswordChangeView	account_change_password
+/accounts/password/reset/	allauth.account.views.PasswordResetView	account_reset_password
+/accounts/password/reset/done/	allauth.account.views.PasswordResetDoneView	account_reset_password_done
+/accounts/password/reset/key/<uidb36>-<key>/	allauth.account.views.PasswordResetFromKeyView	account_reset_password_from_key
+/accounts/password/reset/key/done/	allauth.account.views.PasswordResetFromKeyDoneView	account_reset_password_from_key_done
+/accounts/password/set/	allauth.account.views.PasswordSetView	account_set_password
+/accounts/reauthenticate/	allauth.account.views.ReauthenticateView	account_reauthenticate
+/accounts/signup/	allauth.account.views.SignupView	account_signup
+/admin/	django.contrib.admin.sites.index	admin:index
+/admin/<app_label>/	django.contrib.admin.sites.app_index	admin:app_list
+/admin/<url>	django.contrib.admin.sites.catch_all_view
+/admin/account/emailaddress/	django.contrib.admin.options.changelist_view	admin:account_emailaddress_changelist
+/admin/account/emailaddress/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/account/emailaddress/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:account_emailaddress_change
+/admin/account/emailaddress/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:account_emailaddress_delete
+/admin/account/emailaddress/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:account_emailaddress_history
+/admin/account/emailaddress/add/	django.contrib.admin.options.add_view	admin:account_emailaddress_add
+/admin/auth/group/	django.contrib.admin.options.changelist_view	admin:auth_group_changelist
+/admin/auth/group/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/auth/group/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:auth_group_change
+/admin/auth/group/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:auth_group_delete
+/admin/auth/group/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:auth_group_history
+/admin/auth/group/add/	django.contrib.admin.options.add_view	admin:auth_group_add
+/admin/autocomplete/	django.contrib.admin.sites.autocomplete_view	admin:autocomplete
+/admin/constance/config/	constance.admin.changelist_view	admin:constance_config_add
+/admin/constance/config/	constance.admin.changelist_view	admin:constance_config_changelist
+/admin/django_rest_passwordreset/resetpasswordtoken/	django.contrib.admin.options.changelist_view	admin:django_rest_passwordreset_resetpasswordtoken_changelist
+/admin/django_rest_passwordreset/resetpasswordtoken/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/django_rest_passwordreset/resetpasswordtoken/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:django_rest_passwordreset_resetpasswordtoken_change
+/admin/django_rest_passwordreset/resetpasswordtoken/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:django_rest_passwordreset_resetpasswordtoken_delete
+/admin/django_rest_passwordreset/resetpasswordtoken/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:django_rest_passwordreset_resetpasswordtoken_history
+/admin/django_rest_passwordreset/resetpasswordtoken/add/	django.contrib.admin.options.add_view	admin:django_rest_passwordreset_resetpasswordtoken_add
+/admin/jsi18n/	django.contrib.admin.sites.i18n_javascript	admin:jsi18n
+/admin/login/	django.contrib.admin.sites.login	admin:login
+/admin/login/	django.contrib.admin.sites.login	admin_login
+/admin/logout/	django.contrib.admin.sites.logout	admin:logout
+/admin/logout/	django.contrib.admin.sites.logout	admin_logout
+/admin/password_change/	django.contrib.admin.sites.password_change	admin:password_change
+/admin/password_change/done/	django.contrib.admin.sites.password_change_done	admin:password_change_done
+/admin/r/<int:content_type_id>/<path:object_id>/	django.contrib.contenttypes.views.shortcut	admin:view_on_site
+/admin/routes/route/	django.contrib.admin.options.changelist_view	admin:routes_route_changelist
+/admin/routes/route/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/routes/route/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:routes_route_change
+/admin/routes/route/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:routes_route_delete
+/admin/routes/route/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:routes_route_history
+/admin/routes/route/add/	django.contrib.admin.options.add_view	admin:routes_route_add
+/admin/routes/route/get-route-details/	apps.routes.admin.get_route_details	admin:get-route-details
+/admin/routes/route/search-stations/	apps.routes.admin.search_stations	admin:search-stations
+/admin/stations/line/	django.contrib.admin.options.changelist_view	admin:stations_line_changelist
+/admin/stations/line/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/stations/line/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:stations_line_change
+/admin/stations/line/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:stations_line_delete
+/admin/stations/line/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:stations_line_history
+/admin/stations/line/add/	django.contrib.admin.options.add_view	admin:stations_line_add
+/admin/stations/linestation/	django.contrib.admin.options.changelist_view	admin:stations_linestation_changelist
+/admin/stations/linestation/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/stations/linestation/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:stations_linestation_change
+/admin/stations/linestation/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:stations_linestation_delete
+/admin/stations/linestation/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:stations_linestation_history
+/admin/stations/linestation/add/	django.contrib.admin.options.add_view	admin:stations_linestation_add
+/admin/stations/station/	django.contrib.admin.options.changelist_view	admin:stations_station_changelist
+/admin/stations/station/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/stations/station/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:stations_station_change
+/admin/stations/station/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:stations_station_delete
+/admin/stations/station/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:stations_station_history
+/admin/stations/station/add/	django.contrib.admin.options.add_view	admin:stations_station_add
+/admin/trains/schedule/	django.contrib.admin.options.changelist_view	admin:trains_schedule_changelist
+/admin/trains/schedule/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/trains/schedule/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:trains_schedule_change
+/admin/trains/schedule/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:trains_schedule_delete
+/admin/trains/schedule/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:trains_schedule_history
+/admin/trains/schedule/add/	django.contrib.admin.options.add_view	admin:trains_schedule_add
+/admin/trains/train/	django.contrib.admin.options.changelist_view	admin:trains_train_changelist
+/admin/trains/train/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/trains/train/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:trains_train_change
+/admin/trains/train/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:trains_train_delete
+/admin/trains/train/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:trains_train_history
+/admin/trains/train/add/	django.contrib.admin.options.add_view	admin:trains_train_add
+/admin/trains/traincar/	django.contrib.admin.options.changelist_view	admin:trains_traincar_changelist
+/admin/trains/traincar/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/trains/traincar/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:trains_traincar_change
+/admin/trains/traincar/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:trains_traincar_delete
+/admin/trains/traincar/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:trains_traincar_history
+/admin/trains/traincar/add/	django.contrib.admin.options.add_view	admin:trains_traincar_add
+/admin/users/user/	django.contrib.admin.options.changelist_view	admin:users_user_changelist
+/admin/users/user/<id>/password/	django.contrib.auth.admin.user_change_password	admin:auth_user_password_change
+/admin/users/user/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/users/user/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:users_user_change
+/admin/users/user/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:users_user_delete
+/admin/users/user/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:users_user_history
+/admin/users/user/add/	django.contrib.auth.admin.add_view	admin:users_user_add
+/api/auth/password/reset/confirm/	apps.authentication.views.ResetPasswordView	password-reset-confirm
+/api/auth/password/reset/request/	apps.authentication.views.RequestPasswordResetView	password-reset-request
+/api/auth/password/reset/validate/	apps.authentication.views.ValidateTokenView	password-reset-validate
+/api/docs/	drf_spectacular.views.SpectacularSwaggerView	swagger-ui
+/api/routes/find/	apps.routes.views.RouteView	find_route
+/api/schema/	drf_spectacular.views.SpectacularAPIView	schema
+/api/stations/list/	apps.stations.views.StationListView	stations-list
+/api/stations/nearest/	apps.stations.views.NearestStationView	nearest-station
+/api/stations/trip/<int:start_station_id>/<int:end_station_id>/	apps.stations.views.TripDetailsView	trip-details
+/api/trains/	apps.trains.api.views.train_views.TrainViewSet	train-list
+/api/trains/	rest_framework.routers.APIRootView	api-root
+/api/trains/<drf_format_suffix:format>	rest_framework.routers.APIRootView	api-root
+/api/trains/<pk>/	apps.trains.api.views.train_views.TrainViewSet	train-detail
+/api/trains/<pk>\.<format>/	apps.trains.api.views.train_views.TrainViewSet	train-detail
+/api/trains/\.<format>/	apps.trains.api.views.train_views.TrainViewSet	train-list
+/api/users/login/	apps.users.api.views.auth.LoginView	users:login
+/api/users/profile/	apps.users.api.views.profile.UserProfileView	users:user-profile
+/api/users/profile/update/	apps.users.api.views.profile.UpdateUserView	users:update-profile
+/api/users/register/	apps.users.api.views.auth.RegisterView	users:register
+/api/users/superusers/	apps.users.api.views.base.get_superusers	users:get_superusers
+/api/users/test-auth/	apps.users.api.views.auth_test.test_auth	users:test-auth
+/api/users/token/refresh/	rest_framework_simplejwt.views.TokenRefreshView	users:token-refresh
+/favicon.ico	django.views.generic.base.RedirectView
+/health/	metro.views.health_check	health_check
+/redoc/	drf_yasg.views.SchemaView	schema-redoc
+/static/<path>	django.views.static.serve
+/swagger.json	drf_yasg.views.SchemaView	schema-json
+/swagger/	drf_yasg.views.SchemaView	schema-swagger-ui
