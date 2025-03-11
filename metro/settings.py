@@ -20,7 +20,6 @@ from datetime import timedelta  # Time delta for JWT tokens
 from pathlib import Path  # File path helper
 
 import dj_database_url  # type: ignore # Parse database URLs
-from corsheaders.defaults import default_headers  # Default headers for CORS
 from dotenv import load_dotenv  # Load environment variables from .env file
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -103,11 +102,13 @@ WSGI_APPLICATION = "metro.wsgi.application"  # WSGI application
 
 # AI Service Configuration
 AI_SERVICE_CONFIG = {
-    'URL': 'http://localhost:8000',  # AI service URL
+    'URL': 'https://55cf-102-43-33-165.ngrok-free.app',  # AI service URL
     'ENDPOINTS': {
         'PROCESS_IMAGE': '/process_image/'
     },
     'TIMEOUT': 30,  # seconds
+    'MAX_FILE_SIZE': 5 * 1024 * 1024,  # 5MB
+    'ALLOWED_EXTENSIONS': ['jpg', 'jpeg', 'png'],   # Allowed image extensions
 }
 
 # Email Configuration (Production-focused with Mailgun)
@@ -172,6 +173,16 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",    # Localhost
     "http://localhost:3000",    # Flutter frontend
     "https://backend-54v5.onrender.com",    # Render backend
+    "https://55cf-102-43-33-165.ngrok-free.app",    # AI Service
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
 ]
 
 # Add development URLs to CSRF trusted origins
@@ -182,10 +193,18 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # CORS settings
-CORS_ALLOW_HEADERS = list(default_headers) + [
-    "Authorization",  # Authorization header
-    "Content-Type",  # Content type header
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]
+
 CORS_ALLOW_CREDENTIALS = True  # Allow credentials
 
 # if ENVIRONMENT == "dev":

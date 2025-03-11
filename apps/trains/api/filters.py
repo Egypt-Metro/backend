@@ -16,13 +16,16 @@ class TrainFilter(filters.FilterSet):
     )
     has_camera = filters.BooleanFilter(method='filter_has_camera')
     crowd_level = filters.CharFilter(method='filter_crowd_level')
+    has_camera = filters.BooleanFilter(method='filter_has_camera')
 
     class Meta:
         model = Train
         fields = ['line', 'status', 'direction', 'has_ac', 'current_station']
 
     def filter_has_camera(self, queryset, name, value):
-        return queryset.filter(camera_car_number__isnull=not value)
+        if value:
+            return queryset.filter(camera_car_number__isnull=False)
+        return queryset.filter(camera_car_number__isnull=True)
 
     def filter_crowd_level(self, queryset, name, value):
         return queryset.filter(cars__crowd_level=value).distinct()

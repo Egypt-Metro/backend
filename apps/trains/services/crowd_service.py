@@ -1,3 +1,4 @@
+# apps/trains/services/crowd_service.py
 import httpx
 from django.conf import settings
 from typing import Dict, Any
@@ -15,34 +16,48 @@ class CrowdDetectionService:
         self.timeout = settings.AI_SERVICE_CONFIG['TIMEOUT']
 
     async def process_image(self, image_data: bytes) -> Dict[str, Any]:
-        """
-        Send image to AI service and get passenger count
-        """
         try:
             async with httpx.AsyncClient() as client:
-                files = {'file': ('image.jpg', image_data, 'image/jpeg')}
                 url = f"{self.ai_service_url}{self.process_image_endpoint}"
 
-                logger.info(f"Sending image to AI service: {url}")
+                # Log detailed request information
+                logger.info(f"Sending request to: {url}")
+                logger.info(f"Image data length: {len(image_data)} bytes")
 
-                response = await client.post(
-                    url,
-                    files=files,
-                    timeout=self.timeout
-                )
-                response.raise_for_status()
+                files = {'file': ('image.jpg', image_data, 'image/jpeg')}
 
-                result = response.json()
-                logger.info(f"AI service response: {result}")
+                try:
+                    response = await client.post(
+                        url,
+                        files=files,
+                        timeout=self.timeout
+                    )
 
-                return result
+                    # Log response details
+                    logger.info(f"Response Status: {response.status_code}")
+                    logger.info(f"Response Headers: {response.headers}")
 
-        except httpx.HTTPError as e:
-            logger.error(f"HTTP error processing image: {str(e)}")
-            return {"error": "AI service communication error", "details": str(e)}
+                    response.raise_for_status()
+                    result = response.json()
+
+                    logger.info(f"AI service response: {result}")
+                    return result
+
+                except httpx.HTTPStatusError as e:
+                    logger.error(f"HTTP Status Error: {e.response.status_code}")
+                    logger.error(f"Response Text: {e.response.text}")
+                    return {
+                        "error": "AI service HTTP error",
+                        "status_code": e.response.status_code,
+                        "details": e.response.text
+                    }
+
         except Exception as e:
-            logger.error(f"Error processing image: {str(e)}")
-            return {"error": "Internal processing error", "details": str(e)}
+            logger.error(f"Comprehensive error processing image: {str(e)}")
+            return {
+                "error": "Comprehensive AI service communication error",
+                "details": str(e)
+            }
 
     def calculate_crowd_level(self, passenger_count: int) -> str:
         """

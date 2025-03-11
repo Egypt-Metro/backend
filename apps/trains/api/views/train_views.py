@@ -22,7 +22,7 @@ from ...models.train import Train
 from ..serializers.train_serializer import TrainSerializer, TrainDetailSerializer
 from ..serializers.schedule_serializer import ScheduleSerializer
 from ..pagination import StandardResultsSetPagination
-from ..permissions import CanUpdateCrowdLevel, IsStaffOrReadOnly
+from ..permissions import IsStaffOrReadOnly, CanUpdateCrowdLevel
 from ..filters import TrainFilter
 import logging
 
@@ -68,14 +68,17 @@ class TrainViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """
-        Customize permissions based on action.
+        Customize permissions based on action with more granular control
         """
         public_actions = ['list', 'retrieve', 'get_schedules', 'debug_info', 'station_schedule']
+        staff_actions = ['update_crowd_level', 'update_location', 'create', 'destroy']
+
         if self.action in public_actions:
-            permission_classes = [AllowAny]
+            return [AllowAny()]
+        elif self.action in staff_actions:
+            return [IsAuthenticated(), CanUpdateCrowdLevel()]
         else:
-            permission_classes = [IsAuthenticated, IsStaffOrReadOnly]
-        return [permission() for permission in permission_classes]
+            return [IsAuthenticated(), IsStaffOrReadOnly()]
 
     def get_serializer_class(self):
         """Return appropriate serializer based on action"""
@@ -277,9 +280,15 @@ class TrainViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=['post'],
-        permission_classes=[IsAuthenticated, CanUpdateCrowdLevel]
+        permission_classes=[IsAuthenticated, CanUpdateCrowdLevel],
+        url_path='update-crowd-level'
     )
     def update_crowd_level(self, request, pk=None):
+        # Log authentication details
+        logger.info(f"User attempting to update crowd level: {request.user}")
+        logger.info(f"User authenticated: {request.user.is_authenticated}")
+        logger.info(f"User is staff: {request.user.is_staff}")
+
         """Update crowd level for a specific train car"""
         train = self.get_object()
         car_number = request.data.get('car_number')
