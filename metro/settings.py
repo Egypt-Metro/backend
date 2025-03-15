@@ -102,7 +102,7 @@ WSGI_APPLICATION = "metro.wsgi.application"  # WSGI application
 
 # AI Service Configuration
 AI_SERVICE_CONFIG = {
-    'URL': 'https://55cf-102-43-33-165.ngrok-free.app',  # AI service URL
+    'URL': 'https://ai-metro.onrender.com',  # AI service URL
     'ENDPOINTS': {
         'PROCESS_IMAGE': '/process_image/'
     },
@@ -110,6 +110,16 @@ AI_SERVICE_CONFIG = {
     'MAX_FILE_SIZE': 5 * 1024 * 1024,  # 5MB
     'ALLOWED_EXTENSIONS': ['jpg', 'jpeg', 'png'],   # Allowed image extensions
 }
+
+# Optional: Detailed file upload settings
+FILE_UPLOAD_HANDLERS = [
+    'django.core.files.uploadhandler.MemoryFileUploadHandler',
+    'django.core.files.uploadhandler.TemporaryFileUploadHandler',
+]
+
+# File Upload Settings
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 
 # Email Configuration (Production-focused with Mailgun)
 EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
@@ -173,7 +183,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8000",    # Localhost
     "http://localhost:3000",    # Flutter frontend
     "https://backend-54v5.onrender.com",    # Render backend
-    "https://55cf-102-43-33-165.ngrok-free.app",    # AI Service
+    "https://ai-metro.onrender.com",    # AI Service
 ]
 
 CORS_ALLOW_METHODS = [

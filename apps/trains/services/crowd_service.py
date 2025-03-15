@@ -1,67 +1,67 @@
 # apps/trains/services/crowd_service.py
-import httpx
-from django.conf import settings
-from typing import Dict, Any
 import logging
+from typing import Dict, Any, Optional
+
+from django.utils import timezone
+from django.db.models import Avg
+from django.conf import settings
+
 from ..models.train import TrainCar
 from ..constants.choices import CrowdLevel, CROWD_THRESHOLDS
+from .ai_service import AIService
 
 logger = logging.getLogger(__name__)
 
 
 class CrowdDetectionService:
+    """
+    Service for detecting and managing crowd levels in train cars
+
+    Responsibilities:
+    - Process images via AI service
+    - Calculate crowd levels
+    - Update train car crowd information
+    """
+
     def __init__(self):
-        self.ai_service_url = settings.AI_SERVICE_CONFIG['URL']
-        self.process_image_endpoint = settings.AI_SERVICE_CONFIG['ENDPOINTS']['PROCESS_IMAGE']
-        self.timeout = settings.AI_SERVICE_CONFIG['TIMEOUT']
+        """
+        Initialize CrowdDetectionService with AI service
+        """
+        self.ai_service = AIService()
+        self.max_file_size = settings.AI_SERVICE_CONFIG['MAX_FILE_SIZE']
+        self.allowed_extensions = settings.AI_SERVICE_CONFIG['ALLOWED_EXTENSIONS']
 
-    async def process_image(self, image_data: bytes) -> Dict[str, Any]:
+    def validate_image(self, image_data: bytes) -> bool:
+        """
+        Validate image before processing
+
+        Args:
+            image_data (bytes): Raw image data
+
+        Returns:
+            bool: Whether image is valid
+        """
         try:
-            async with httpx.AsyncClient() as client:
-                url = f"{self.ai_service_url}{self.process_image_endpoint}"
+            # Check file size
+            if len(image_data) > self.max_file_size:
+                logger.warning(f"Image exceeds max size of {self.max_file_size} bytes")
+                return False
 
-                # Log detailed request information
-                logger.info(f"Sending request to: {url}")
-                logger.info(f"Image data length: {len(image_data)} bytes")
-
-                files = {'file': ('image.jpg', image_data, 'image/jpeg')}
-
-                try:
-                    response = await client.post(
-                        url,
-                        files=files,
-                        timeout=self.timeout
-                    )
-
-                    # Log response details
-                    logger.info(f"Response Status: {response.status_code}")
-                    logger.info(f"Response Headers: {response.headers}")
-
-                    response.raise_for_status()
-                    result = response.json()
-
-                    logger.info(f"AI service response: {result}")
-                    return result
-
-                except httpx.HTTPStatusError as e:
-                    logger.error(f"HTTP Status Error: {e.response.status_code}")
-                    logger.error(f"Response Text: {e.response.text}")
-                    return {
-                        "error": "AI service HTTP error",
-                        "status_code": e.response.status_code,
-                        "details": e.response.text
-                    }
-
+            # Additional validation can be added here
+            return True
         except Exception as e:
-            logger.error(f"Comprehensive error processing image: {str(e)}")
-            return {
-                "error": "Comprehensive AI service communication error",
-                "details": str(e)
-            }
+            logger.error(f"Image validation error: {e}")
+            return False
 
     def calculate_crowd_level(self, passenger_count: int) -> str:
         """
-        Calculate crowd level based on passenger count
+        Determine crowd level based on passenger count
+
+        Args:
+            passenger_count (int): Number of passengers
+
+        Returns:
+            str: Crowd level (e.g., EMPTY, MODERATE, CROWDED, FULL)
         """
         try:
             for level, (min_count, max_count) in CROWD_THRESHOLDS.items():
@@ -69,7 +69,7 @@ class CrowdDetectionService:
                     return level
             return CrowdLevel.FULL
         except Exception as e:
-            logger.error(f"Error calculating crowd level: {str(e)}")
+            logger.error(f"Crowd level calculation error: {e}")
             return CrowdLevel.EMPTY
 
     async def update_car_crowd_level(
@@ -78,33 +78,64 @@ class CrowdDetectionService:
         image_data: bytes
     ) -> Dict[str, Any]:
         """
-        Process image and update car crowd level
+        Comprehensive method to update train car crowd level
+
+        Args:
+            train_car (TrainCar): Train car to update
+            image_data (bytes): Image data for crowd detection
+
+        Returns:
+            Dict with crowd detection results
         """
         try:
-            # Validate input
-            if not train_car or not image_data:
-                return {"error": "Invalid input parameters"}
+            # Input validation
+            if not train_car:
+                return {"error": "Invalid train car", "success": False}
 
-            # Process image with AI service
-            result = await self.process_image(image_data)
+            if not image_data:
+                return {"error": "No image provided", "success": False}
 
+            # Image validation
+            if not self.validate_image(image_data):
+                return {
+                    "error": "Invalid image",
+                    "success": False,
+                    "details": "Image failed validation checks"
+                }
+
+            # Process image via AI service
+            result = await self.ai_service.process_image(image_data)
+
+            # Check AI service response
             if "error" in result:
-                return result
+                logger.error(f"AI Service Error: {result}")
+                return {
+                    "success": False,
+                    "error": "AI service processing failed",
+                    "details": result.get('error', 'Unknown error')
+                }
 
+            # Extract passenger count
             passenger_count = result.get("message", 0)
 
             # Validate passenger count
             if not isinstance(passenger_count, int) or passenger_count < 0:
-                return {"error": "Invalid passenger count from AI service"}
+                return {
+                    "success": False,
+                    "error": "Invalid passenger count",
+                    "details": f"Received: {passenger_count}"
+                }
 
-            # Calculate and update crowd level
+            # Calculate crowd level
             crowd_level = self.calculate_crowd_level(passenger_count)
 
-            # Update train car
+            # Update train car details
             train_car.current_passengers = passenger_count
             train_car.crowd_level = crowd_level
+            train_car.last_updated = timezone.now()
             train_car.save()
 
+            # Prepare response
             response = {
                 "success": True,
                 "crowd_level": crowd_level,
@@ -114,13 +145,64 @@ class CrowdDetectionService:
                 "timestamp": train_car.last_updated.isoformat()
             }
 
-            logger.info(f"Successfully updated crowd level: {response}")
+            logger.info(f"Crowd level updated successfully: {response}")
             return response
 
         except Exception as e:
-            error_msg = f"Error updating crowd level: {str(e)}"
+            error_msg = f"Unexpected error in crowd detection: {e}"
             logger.error(error_msg)
             return {
                 "success": False,
-                "error": error_msg
+                "error": "Unexpected error",
+                "details": str(e)
             }
+
+    def get_crowd_trend(self, train_car: TrainCar, hours: int = 24) -> Optional[Dict]:
+        """
+        Analyze crowd level trends for a train car
+
+        Args:
+            train_car (TrainCar): Train car to analyze
+            hours (int): Hours of historical data to consider
+
+        Returns:
+            Dict with crowd trend information or None
+        """
+        try:
+            # Calculate time threshold
+            time_threshold = timezone.now() - timezone.timedelta(hours=hours)
+
+            # Get historical crowd data
+            historical_data = train_car.crowd_logs.filter(
+                timestamp__gte=time_threshold
+            ).order_by('timestamp')
+
+            if not historical_data.exists():
+                return None
+
+            # Analyze trends
+            trend_data = {
+                'average_passengers': historical_data.aggregate(Avg('passenger_count'))['passenger_count__avg'],
+                'peak_hours': self._find_peak_hours(historical_data),
+                'trend_direction': self._determine_trend_direction(historical_data)
+            }
+
+            return trend_data
+
+        except Exception as e:
+            logger.error(f"Error analyzing crowd trend: {e}")
+            return None
+
+    def _find_peak_hours(self, historical_data):
+        """
+        Find peak crowd hours from historical data
+        """
+        # Implementation depends on your specific requirements
+        pass
+
+    def _determine_trend_direction(self, historical_data):
+        """
+        Determine crowd trend direction
+        """
+        # Implementation depends on your specific requirements
+        pass
