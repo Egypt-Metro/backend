@@ -1,3 +1,5 @@
+# apps/dashboard/services/ai_service.py
+
 import io
 from PIL import Image
 import httpx
@@ -108,6 +110,10 @@ class AIService:
         Returns:
             Dict with processing results or error details
         """
+        logger.info("=" * 50)
+        logger.info("AI Service Image Processing")
+        logger.info(f"Image data length: {len(image_data)} bytes")
+
         # Validate image first
         if not await self.validate_image(image_data):
             return {

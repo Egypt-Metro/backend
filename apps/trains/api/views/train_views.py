@@ -1,6 +1,6 @@
 # apps/trains/api/views/train_views.py
 
-from django.conf import settings
+import traceback
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -16,6 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from apps.stations.models import Station
 from apps.trains.models.schedule import Schedule
+from apps.trains.utils.file_validator import FileValidator
 from ...services.schedule_service import ScheduleService
 from ...services.crowd_service import CrowdDetectionService
 from ...models.train import Train
@@ -275,141 +276,163 @@ class TrainViewSet(viewsets.ModelViewSet):
         url_path='update-crowd-level'
     )
     def update_crowd_level(self, request, pk=None):
-        """Comprehensive crowd level update with extensive logging"""
-        # Extremely detailed logging
+        """
+        Comprehensive crowd level update endpoint
+
+        Supports multiple input methods:
+        - Multipart form-data file upload
+        - File path as string
+        - Direct file object
+
+        Performs extensive validation and logging
+        """
+        # Comprehensive logging setup
         logger.info("=" * 50)
         logger.info("Crowd Level Update Request Received")
         logger.info("=" * 50)
 
-        # Log full request details
+        # Log request details
         logger.info(f"Request Method: {request.method}")
         logger.info(f"Content Type: {request.content_type}")
-
-        # Log all request data
-        logger.info("Request Data:")
-        for key, value in request.data.items():
-            logger.info(f"  {key}: {value}")
-
-        # Log all files
-        logger.info("Request Files:")
-        for key, file in request.FILES.items():
-            logger.info(f"  {key}: {file.name} (size: {file.size} bytes)")
-
-        # Log all headers
-        logger.info("Request Headers:")
-        for header, value in request.META.items():
-            if header.startswith('HTTP_'):
-                logger.info(f"  {header}: {value}")
-
-        # Multiple methods to extract data
-        car_number = (
-            request.data.get('car_number')
-            or request.POST.get('car_number')
-            or request.GET.get('car_number')
-        )
-
-        # Multiple methods to extract image
-        image_file = (
-            request.FILES.get('image')
-            or request.FILES.get('file')
-            or request.data.get('image')
-        )
-
-        # Comprehensive input validation with detailed logging
-        if not car_number:
-            logger.warning("No car number provided")
-            return Response(
-                {
-                    "error": "Car number is required",
-                    "details": {
-                        "request_data_keys": list(request.data.keys()),
-                        "request_method": request.method,
-                        "content_type": request.content_type
-                    }
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if not image_file:
-            logger.warning("No image file found")
-            return Response(
-                {
-                    "error": "Image file is required",
-                    "details": {
-                        "request_data_keys": list(request.data.keys()),
-                        "request_files_keys": list(request.FILES.keys()) if request.FILES else "No files",
-                        "content_type": request.content_type,
-                        "request_method": request.method,
-                        "suggestion": [
-                            "Ensure 'image' is the key for file upload in Postman",
-                            "Verify file is selected",
-                            "Check Postman form-data configuration"
-                        ]
-                    }
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        logger.info(f"Request Data Keys: {list(request.data.keys())}")
+        logger.info(f"Request Files Keys: {list(request.FILES.keys()) if request.FILES else 'No files'}")
 
         try:
-            # Validate file type and size
-            allowed_extensions = ['jpg', 'jpeg', 'png']
-            file_extension = image_file.name.split('.')[-1].lower()
+            # Extract car number with multiple source checks
+            car_number = None
+            for source in [request.data, request.POST, request.GET]:
+                car_number = source.get('car_number')
+                if car_number:
+                    logger.info(f"Car number found in {source}")
+                    break
 
-            if file_extension not in allowed_extensions:
+            # Validate car number
+            if not car_number:
                 return Response(
                     {
-                        "error": "Invalid file type",
-                        "details": f"Allowed types: {', '.join(allowed_extensions)}"
+                        "error": "Car number is required",
+                        "details": {
+                            "request_data_keys": list(request.data.keys()),
+                            "suggestion": "Provide car_number in request data"
+                        }
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Check file size
-            if image_file.size > settings.AI_SERVICE_CONFIG['MAX_FILE_SIZE']:
+            # Determine image source with comprehensive checks
+            image_input = None
+            image_sources = [
+                request.FILES.get('image'),
+                request.FILES.get('file'),
+                request.data.get('image')
+            ]
+
+            for idx, source in enumerate(image_sources):
+                if source:
+                    logger.info(f"Image found in source {idx}: {type(source)}")
+                    image_input = source
+                    break
+
+            # Validate image presence
+            if not image_input:
                 return Response(
                     {
-                        "error": "File too large",
-                        "details": f"Max file size is {settings.AI_SERVICE_CONFIG['MAX_FILE_SIZE'] / (1024 * 1024)} MB"
+                        "error": "Image is required",
+                        "details": {
+                            "request_data_keys": list(request.data.keys()),
+                            "request_files_keys": list(request.FILES.keys()) if request.FILES else "No files",
+                            "suggestions": [
+                                "Ensure 'image' is the key for file upload",
+                                "Verify file is selected",
+                                "Check form-data configuration"
+                            ]
+                        }
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Convert car_number to integer
-            car_number = int(car_number)
+            # Comprehensive file validation
+            file_validator = FileValidator()
+            is_valid, validated_file, error_message = file_validator.validate_file(image_input)
+
+            if not is_valid:
+                return Response(
+                    {
+                        "error": "File validation failed",
+                        "details": error_message
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Convert car number to integer
+            try:
+                car_number = int(car_number)
+            except ValueError:
+                return Response(
+                    {
+                        "error": "Invalid car number format",
+                        "details": "Car number must be an integer"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Get train and specific car
             train = self.get_object()
             car = get_object_or_404(train.cars, car_number=car_number)
 
-            # Log image details before processing
-            logger.info(f"Processing image: {image_file.name}")
-            logger.info(f"Image size: {image_file.size} bytes")
+            # Read file content
+            image_content = validated_file.read()
 
-            # Process image
+            # Log image processing details
+            logger.info(f"Processing image for Train {train.train_number}, Car {car.car_number}")
+            logger.info(f"Image size: {len(image_content)} bytes")
+
+            # Process image asynchronously
             from asgiref.sync import async_to_sync
             crowd_service = CrowdDetectionService()
-            result = async_to_sync(crowd_service.update_car_crowd_level)(car, image_file.read())
+            result = async_to_sync(crowd_service.update_car_crowd_level)(car, image_content)
 
-            if "error" in result:
-                logger.warning(f"Crowd service error: {result}")
-                return Response(result, status=status.HTTP_400_BAD_REQUEST)
+            # Close file if it was opened
+            if hasattr(validated_file, 'close'):
+                validated_file.close()
 
+            # Handle AI service response
+            if not result.get('success', False):
+                logger.warning(f"Crowd detection failed: {result}")
+                return Response(
+                    {
+                        "error": "Crowd detection failed",
+                        "details": result.get('details', 'Unknown error')
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Successful response
             logger.info("Crowd level update successful")
-            return Response(result)
-
-        except ValueError:
-            logger.error("Invalid car number format")
             return Response(
                 {
-                    "error": "Invalid car number format",
-                    "details": "Car number must be an integer"
-                },
-                status=status.HTTP_400_BAD_REQUEST
+                    "success": True,
+                    "crowd_level": result.get('crowd_level'),
+                    "passenger_count": result.get('passenger_count'),
+                    "train_number": train.train_number,
+                    "car_number": car.car_number
+                }
             )
+
         except Exception as e:
-            logger.error(f"Unexpected error updating crowd level: {str(e)}")
+            # Comprehensive error logging
+            error_details = {
+                'error_type': type(e).__name__,
+                'error_message': str(e),
+                'traceback': traceback.format_exc()
+            }
+
+            logger.error(f"Unexpected error in crowd level update: {error_details}")
+
             return Response(
                 {
                     'error': 'Failed to update crowd level',
-                    'details': str(e)
+                    'details': error_details
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )

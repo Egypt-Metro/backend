@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "apps.stations.apps.StationsConfig",  # Stations app
     "apps.routes.apps.RoutesConfig",  # Routes app
     "apps.trains.apps.TrainsConfig",  # Trains app
+    "apps.dashboard.apps.DashboardConfig",  # Dashboard app
     "apps.authentication.apps.AuthenticationConfig",    # Authentication app
 ]
 
@@ -123,6 +124,19 @@ FILE_UPLOAD_HANDLERS = [
 # File Upload Settings
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024  # 10 MB
+
+# Ensure BASE_DIR is defined
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Dashboard Configuration
+DASHBOARD_CONFIG = {
+    'REPORT_STORAGE_PATH': os.path.join(BASE_DIR, 'reports'),
+    'MAX_REPORT_RETENTION_DAYS': 90,
+    'ANALYTICS_CACHE_TIMEOUT': 86400,  # 24 hours
+}
+
+# Create the reports directory if it doesn't exist
+os.makedirs(DASHBOARD_CONFIG['REPORT_STORAGE_PATH'], exist_ok=True)
 
 # Email Configuration (Production-focused with Mailgun)
 EMAIL_BACKEND = 'anymail.backends.mailgun.EmailBackend'
