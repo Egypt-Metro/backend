@@ -4,6 +4,7 @@ import importlib
 import logging
 import os
 
+import platform
 import sys
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
@@ -12,7 +13,6 @@ from django.db import connection
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
-from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -314,23 +314,25 @@ def health_check(request):
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1")
-            checks['database'] = 'operational'
+            database_status = 'operational'
         except Exception as db_error:
-            checks['database'] = f'error: {str(db_error)}'
+            database_status = f'error: {str(db_error)}'
             logger.error(f"Database check failed: {db_error}")
 
-        # Basic settings check
-        checks['debug'] = settings.DEBUG
-        checks['allowed_hosts'] = settings.ALLOWED_HOSTS
+        # Combine dependency statuses and database status
+        all_statuses = list(dependency_checks.values()) + [database_status]
 
         # Comprehensive response
         response_data = {
             "status": "healthy" if all(
                 status == 'installed' or status == 'operational'
-                for status in checks.get('dependencies', {}).values() + [checks.get('database')]
+                for status in all_statuses
             ) else "partially_healthy",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "checks": checks
+            "checks": {
+                **checks,
+                "database": database_status
+            }
         }
 
         logger.info("Health check passed successfully")
@@ -359,21 +361,50 @@ def check_dependencies(request):
 
     for dep in check_list:
         try:
-            module = importlib.import_module(dep.replace('-', '_'))
+            # Handle different module naming conventions
+            module_name = dep.replace('-', '_')
+
+            # Special handling for some libraries
+            if module_name == 'djangorestframework':
+                module_name = 'rest_framework'
+
+            module = importlib.import_module(module_name)
+
+            # Try to get version
+            try:
+                version = module.__version__
+            except AttributeError:
+                try:
+                    version = getattr(module, 'VERSION', 'unknown')
+                    if isinstance(version, tuple):
+                        version = '.'.join(map(str, version))
+                except Exception:
+                    version = 'unknown'
+
             dependencies[dep] = {
                 'installed': True,
-                'version': getattr(module, '__version__', 'unknown')
+                'version': version
             }
         except ImportError:
             dependencies[dep] = {
                 'installed': False,
                 'version': None
             }
+        except Exception as e:
+            dependencies[dep] = {
+                'installed': False,
+                'error': str(e)
+            }
 
     return JsonResponse({
         'dependencies': dependencies,
         'python_version': sys.version,
-        'platform': sys.platform.platform()
+        'platform': platform.platform(),
+        'system': {
+            'os': platform.system(),
+            'release': platform.release(),
+            'machine': platform.machine()
+        }
     })
 
 
