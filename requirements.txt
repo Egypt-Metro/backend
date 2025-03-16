@@ -151,10 +151,10 @@ pytest-mock==3.14.0
 python-dateutil==2.9.0.post0
 python-decouple==3.8
 python-dotenv==1.0.1
-python-magic==0.4.27
-python-magic-bin==0.4.14
+python-magic==0.4.27 ; sys_platform == 'linux'
+python-magic-bin==0.4.14 ; sys_platform == 'win32'
 pytz==2024.2
-pywin32==308; platform_system == "Windows"
+pywin32==308 ; platform_system == "Windows"
 pywin32-ctypes==0.2.3
 PyYAML==6.0.2
 pyzmq==26.2.0
