@@ -30,13 +30,9 @@ services:
         value: ${RENDER_DEPLOY_TIMESTAMP}
       - key: PYTHON_VERSION          # Specify the Python version
         value: "3.11.10"
-      - key: MAILGUN_API_KEY
-        sync: false
-      - key: MAILGUN_DOMAIN
-        sync: false
     disk:                            # Persistent storage (optional)
       name: persistent-data
       mountPath: /var/lib/egypt-metro
       sizeGB: 1
-    healthCheckPath: "/health/"       # Optional, ensure health endpoint exists
-    autoDeploy: true                  # Optional, auto-deploy when code is pushed to Git
+    healthCheckPath: "/health/"
+    autoDeploy: true

@@ -1,8 +1,10 @@
 # metro/views.py
 
+import importlib
 import logging
 import os
 
+import sys
 from typing import Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -11,7 +13,6 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.template.loader import render_to_string
 from django.conf import settings
-from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
@@ -283,203 +284,97 @@ def home(request) -> HttpResponse:
 
 def health_check(request):
     """
-    Comprehensive health check endpoint for Render
-
-    Checks:
-    - Database connectivity
-    - Cache functionality
-    - Environment configuration
-    - Basic system resources
+    Robust health check endpoint with error handling
     """
     try:
-        # Database check
-        database_status = check_database_connection()
-
-        # Cache check
-        cache_status = check_cache_functionality()
-
-        # Environment checks
-        env_checks = check_environment_configuration()
-
-        # System resource checks
-        system_resources = check_system_resources()
-
-        # Prepare response
-        response_data = {
-            "status": "healthy",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "checks": {
-                "database": database_status,
-                "cache": cache_status,
-                "environment": env_checks,
-                "system_resources": system_resources,
-            },
-            "version": get_app_version(),
-            "deployment_info": get_deployment_info(),
+        # Comprehensive checks
+        checks = {
+            "python_version": sys.version,
+            "environment": os.environ.get('ENVIRONMENT', 'unknown'),
         }
 
-        # Log successful health check
-        logger.info("Health check passed successfully")
+        # Check critical dependencies
+        critical_dependencies = [
+            'django', 'psycopg2', 'djangorestframework',
+            'python-magic', 'pillow'
+        ]
 
+        dependency_checks = {}
+        for dep in critical_dependencies:
+            try:
+                importlib.import_module(dep.replace('-', '_'))
+                dependency_checks[dep] = 'installed'
+            except ImportError:
+                dependency_checks[dep] = 'missing'
+                logger.warning(f"Dependency not found: {dep}")
+
+        checks['dependencies'] = dependency_checks
+
+        # Database check
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+            checks['database'] = 'operational'
+        except Exception as db_error:
+            checks['database'] = f'error: {str(db_error)}'
+            logger.error(f"Database check failed: {db_error}")
+
+        # Basic settings check
+        checks['debug'] = settings.DEBUG
+        checks['allowed_hosts'] = settings.ALLOWED_HOSTS
+
+        # Comprehensive response
+        response_data = {
+            "status": "healthy" if all(
+                status == 'installed' or status == 'operational'
+                for status in checks.get('dependencies', {}).values() + [checks.get('database')]
+            ) else "partially_healthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "checks": checks
+        }
+
+        logger.info("Health check passed successfully")
         return JsonResponse(response_data)
 
     except Exception as e:
-        # Log detailed error
-        logger.error(f"Health check failed: {str(e)}", exc_info=True)
-
-        return JsonResponse(
-            {
-                "status": "unhealthy",
-                "error": str(e),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            },
-            status=500,
-        )
+        logger.error(f"Comprehensive health check failed: {e}", exc_info=True)
+        return JsonResponse({
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }, status=500)
 
 
-def check_database_connection():
+def check_dependencies(request):
     """
-    Check database connectivity
+    Comprehensive dependency check
     """
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-        return "operational"
-    except Exception as e:
-        logger.error(f"Database connection error: {str(e)}")
-        return f"error: {str(e)}"
+    dependencies = {}
 
+    # List of dependencies to check
+    check_list = [
+        'django', 'psycopg2', 'djangorestframework',
+        'python-magic', 'pillow', 'gunicorn'
+    ]
 
-def check_cache_functionality():
-    """
-    Verify cache is working
-    """
-    try:
-        # Try to set and get a test key
-        test_key = "health_check_test"
-        cache.set(test_key, "working", 10)  # 10-second timeout
-        value = cache.get(test_key)
-
-        if value != "working":
-            return "not responding"
-
-        return "operational"
-    except Exception as e:
-        logger.error(f"Cache check failed: {str(e)}")
-        return f"error: {str(e)}"
-
-
-def check_environment_configuration():
-    """
-    Check critical environment configurations
-    """
-    checks = {}
-
-    # Check critical settings
-    critical_settings = ["SECRET_KEY", "DEBUG", "ALLOWED_HOSTS", "DATABASE_URL"]
-
-    for setting in critical_settings:
+    for dep in check_list:
         try:
-            value = getattr(settings, setting, None)
-            checks[setting.lower()] = "configured" if value else "not set"
-        except Exception as e:
-            checks[setting.lower()] = f"error: {str(e)}"
+            module = importlib.import_module(dep.replace('-', '_'))
+            dependencies[dep] = {
+                'installed': True,
+                'version': getattr(module, '__version__', 'unknown')
+            }
+        except ImportError:
+            dependencies[dep] = {
+                'installed': False,
+                'version': None
+            }
 
-    return checks
-
-
-def check_system_resources():
-    """
-    Basic system resource checks
-    """
-    try:
-        # Check disk space
-        total, used, free = get_disk_usage()
-
-        return {
-            "disk_total": f"{total} GB",
-            "disk_used": f"{used} GB ({used / total * 100:.2f}%)",
-            "disk_free": f"{free} GB",
-            "memory": get_memory_usage(),
-        }
-    except Exception as e:
-        logger.error(f"System resource check failed: {str(e)}")
-        return {"error": str(e)}
-
-
-def get_disk_usage():
-    """
-    Get disk usage statistics
-    """
-    try:
-        import shutil
-
-        # Get the directory of the current script
-        directory = os.path.dirname(os.path.abspath(__file__))
-
-        # Get disk usage
-        total, used, free = shutil.disk_usage(directory)
-
-        # Convert to GB
-        return (
-            total // (1024 * 1024 * 1024),
-            used // (1024 * 1024 * 1024),
-            free // (1024 * 1024 * 1024),
-        )
-    except Exception as e:
-        logger.error(f"Disk usage check failed: {str(e)}")
-        return (0, 0, 0)
-
-
-def get_memory_usage():
-    """
-    Get memory usage
-    """
-    try:
-        import psutil
-
-        memory = psutil.virtual_memory()
-        return {
-            "total": f"{memory.total / (1024 * 1024 * 1024):.2f} GB",
-            "available": f"{memory.available / (1024 * 1024 * 1024):.2f} GB",
-            "used_percent": f"{memory.percent}%",
-        }
-    except ImportError:
-        return "psutil not available"
-    except Exception as e:
-        return f"error: {str(e)}"
-
-
-def get_app_version():
-    """
-    Get application version
-    """
-    try:
-        # You can replace this with your actual version tracking method
-        import subprocess
-
-        # Get latest git commit hash
-        commit_hash = (
-            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-            .decode("ascii")
-            .strip()
-        )
-
-        return commit_hash
-    except Exception:
-        # Fallback to a static version or environment variable
-        return os.environ.get("APP_VERSION", "unknown")
-
-
-def get_deployment_info():
-    """
-    Get deployment-specific information
-    """
-    return {
-        "environment": os.environ.get("ENVIRONMENT", "unknown"),
-        "python_version": os.environ.get("PYTHON_VERSION", "unknown"),
-        "deployed_at": os.environ.get("DEPLOYED_AT", "unknown"),
-    }
+    return JsonResponse({
+        'dependencies': dependencies,
+        'python_version': sys.version,
+        'platform': sys.platform.platform()
+    })
 
 
 def custom_404(request, exception: Optional[Exception] = None) -> JsonResponse:

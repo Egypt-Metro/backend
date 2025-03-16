@@ -32,7 +32,7 @@ from rest_framework.permissions import AllowAny
 
 from metro import settings
 
-from .views import health_check, home
+from .views import check_dependencies, health_check, home
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -90,6 +90,7 @@ urlpatterns = [
     path("api/auth/", include("apps.authentication.urls")),  # Authentication
     # Miscellaneous
     path("health/", health_check, name="health_check"),  # Health check
+    path('dependencies/', check_dependencies, name='check_dependencies'),  # Check dependencies
     # Documentation
     path("swagger.json", schema_view.without_ui(cache_timeout=0), name="schema-json"),  # Swagger JSON
     path(
