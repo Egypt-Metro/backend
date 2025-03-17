@@ -108,11 +108,11 @@ AI_SERVICE_CONFIG = {
         'PROCESS_IMAGE': '/process_image/',      # Image processing endpoint
         'HEALTH_CHECK': '/health'   # Health check endpoint
     },
-    'TIMEOUT': 30,  # seconds
+    'TIMEOUT': 30,  # 10 minutes
     'MAX_FILE_SIZE': 5 * 1024 * 1024,  # 5MB
     'ALLOWED_EXTENSIONS': ['jpg', 'jpeg', 'png'],   # Allowed image extensions
     'RETRY_ATTEMPTS': 3,    # Number of retry attempts
-    'RETRY_BACKOFF_FACTOR': 0.3     # Backoff factor for retries
+    'RETRY_BACKOFF_FACTOR': 0.5     # Backoff factor for retries
 }
 
 # Optional: Detailed file upload settings
@@ -432,6 +432,7 @@ REST_FRAMEWORK = {
         "station_lookup": "10/second",  # For specific station lookup endpoints (10 requests per second)
         "route_planning": "30/minute",  # For route and trip planning APIs (30 requests per minute)
         "ticket_booking": "15/minute",  # For ticket booking and QR code generation (15 requests per minute)
+        'image_upload': '50/hour',  # Image upload rate limit (50 requests per hour)
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",   # Default schema class
 }

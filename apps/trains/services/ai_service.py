@@ -1,4 +1,4 @@
-# apps/dashboard/services/ai_service.py
+# apps/trains/services/ai_service.py
 
 import io
 from PIL import Image
@@ -8,6 +8,7 @@ from django.conf import settings
 from typing import Dict, Any
 import logging
 import asyncio
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,12 @@ class AIService:
         self.allowed_extensions = settings.AI_SERVICE_CONFIG["ALLOWED_EXTENSIONS"]
         self.retry_attempts = settings.AI_SERVICE_CONFIG.get("RETRY_ATTEMPTS", 3)
         self.retry_backoff = settings.AI_SERVICE_CONFIG.get("RETRY_BACKOFF_FACTOR", 0.3)
+        self.health_check_endpoints = [
+            f"{self.base_url}{settings.AI_SERVICE_CONFIG['ENDPOINTS']['HEALTH_CHECK']}",
+            f"{self.base_url}/health",
+            f"{self.base_url}/",
+            f"{self.base_url}/status",
+        ]
 
     async def validate_image(self, image_data: bytes) -> bool:
         """
@@ -67,49 +74,53 @@ class AIService:
 
     async def check_service_health(self, client: httpx.AsyncClient) -> bool:
         """
-        Comprehensive health check for AI service
-
-        Args:
-            client (httpx.AsyncClient): HTTP client to use for health check
-
-        Returns:
-            bool: Whether service is healthy
+        Comprehensive health check for AI service with enhanced validation
         """
-        health_endpoints = [
-            f"{self.base_url}/health",
-            f"{self.base_url}/",
-            f"{self.base_url}/status",
-        ]
-
-        for endpoint in health_endpoints:
+        for endpoint in self.health_check_endpoints:
             try:
-                response = await client.get(endpoint, timeout=10.0)
-                logger.info(f"Health check on {endpoint}: {response.status_code}")
+                logger.info(f"Attempting health check on: {endpoint}")
 
-                # Accept 200 or 204 as valid responses
+                # Increase timeout for health checks
+                response = await client.get(
+                    endpoint,
+                    timeout=httpx.Timeout(30.0, connect=15.0)
+                )
+
+                logger.info(f"Health check response for {endpoint}: {response.status_code}")
+
+                # More flexible status code checking
                 if response.status_code in [200, 204]:
-                    # Optional: Parse response for additional info
                     try:
+                        # Parse and validate health response
                         health_data = response.json()
-                        logger.info(f"Health check details: {health_data}")
-                    except Exception:
-                        pass
-                    return True
+
+                        # Validate health response structure
+                        if isinstance(health_data, dict):
+                            # Check for key indicators of operational status
+                            if health_data.get('status') == 'operational' or \
+                               health_data.get('model_loaded') is True:
+                                logger.info(f"Health check successful: {health_data}")
+                                return True
+
+                        logger.warning(f"Incomplete health check data: {health_data}")
+                    except json.JSONDecodeError:
+                        logger.warning(f"Unable to parse health check response from {endpoint}")
+
+                logger.warning(f"Unsuccessful health check on {endpoint}: {response.status_code}")
+
+            except (httpx.ConnectError, httpx.RequestError) as conn_err:
+                logger.error(f"Connection error during health check on {endpoint}: {conn_err}")
             except Exception as e:
-                logger.warning(f"Health check failed for {endpoint}: {e}")
+                logger.error(f"Unexpected error during health check on {endpoint}: {e}")
 
         return False
 
     async def process_image(self, image_data: bytes) -> Dict[str, Any]:
         """
         Comprehensive image processing with advanced error handling and retry mechanism
-
-        Args:
-            image_data (bytes): Image data to process
-
-        Returns:
-            Dict with processing results or error details
         """
+        start_time = asyncio.get_event_loop().time()
+
         logger.info("=" * 50)
         logger.info("AI Service Image Processing")
         logger.info(f"Image data length: {len(image_data)} bytes")
@@ -126,27 +137,30 @@ class AIService:
                 ],
             }
 
-        # Construct URLs
-        url = (
-            f"{self.base_url}{settings.AI_SERVICE_CONFIG['ENDPOINTS']['PROCESS_IMAGE']}"
-        )
-
-        # Logging connection attempt
+        # Construct processing URL
+        url = f"{self.base_url}{settings.AI_SERVICE_CONFIG['ENDPOINTS']['PROCESS_IMAGE']}"
         logger.info(f"Attempting AI service connection: {url}")
 
         # Retry mechanism with exponential backoff
         for attempt in range(self.retry_attempts):
             try:
                 async with httpx.AsyncClient(
-                    timeout=httpx.Timeout(30.0, connect=10.0)
+                    timeout=httpx.Timeout(self.timeout, connect=10.0)
                 ) as client:
                     # Comprehensive health check
-                    if not await self.check_service_health(client):
+                    health_check_start = asyncio.get_event_loop().time()
+                    health_check_result = await self.check_service_health(client)
+                    health_check_time = asyncio.get_event_loop().time() - health_check_start
+
+                    logger.info(f"Health check time: {health_check_time:.2f} seconds")
+
+                    if not health_check_result:
                         return {
                             "error": "AI service unavailable",
-                            "details": "Service health check failed",
+                            "details": "Comprehensive health check failed",
                             "attempt": attempt + 1,
                             "max_attempts": self.retry_attempts,
+                            "health_check_time": health_check_time
                         }
 
                     # Prepare image for upload
@@ -155,9 +169,12 @@ class AIService:
                     # Send image to AI service
                     response = await client.post(url, files=files, timeout=self.timeout)
 
+                    # Performance logging
+                    processing_time = asyncio.get_event_loop().time() - start_time
+                    logger.info(f"Image processing time: {processing_time:.2f} seconds")
+
                     # Detailed logging
                     logger.info(f"Response Status: {response.status_code}")
-                    logger.info(f"Response Headers: {response.headers}")
 
                     # Validate response
                     try:
@@ -223,57 +240,3 @@ class AIService:
             "error": "All connection attempts to AI service failed",
             "details": "Maximum retry attempts exhausted",
         }
-
-    def debug_connection(self) -> Dict[str, Any]:
-        """
-        Comprehensive debugging method for AI service connection
-
-        Returns:
-            Dict with detailed connection diagnostics
-        """
-        import socket
-        import ssl
-
-        debug_info = {
-            "service_url": self.base_url,
-            "max_file_size": f"{self.max_file_size / (1024 * 1024)} MB",
-            "allowed_extensions": self.allowed_extensions,
-            "network_diagnostics": {},
-        }
-
-        try:
-            # Parse URL
-            from urllib.parse import urlparse
-
-            parsed_url = urlparse(self.base_url)
-
-            # DNS Resolution
-            try:
-                ip_addresses = socket.gethostbyname_ex(parsed_url.hostname)
-                debug_info["network_diagnostics"]["dns_resolution"] = {
-                    "hostname": parsed_url.hostname,
-                    "ip_addresses": ip_addresses[2],
-                }
-            except Exception as dns_err:
-                debug_info["network_diagnostics"]["dns_resolution_error"] = str(dns_err)
-
-            # SSL/TLS Check
-            try:
-                context = ssl.create_default_context()
-                with socket.create_connection(
-                    (parsed_url.hostname, parsed_url.port or 443)
-                ) as sock:
-                    with context.wrap_socket(
-                        sock, server_hostname=parsed_url.hostname
-                    ) as secure_sock:
-                        debug_info["network_diagnostics"]["ssl_check"] = {
-                            "protocol": secure_sock.version(),
-                            "cipher": secure_sock.cipher(),
-                        }
-            except Exception as ssl_err:
-                debug_info["network_diagnostics"]["ssl_error"] = str(ssl_err)
-
-        except Exception as e:
-            debug_info["debug_error"] = str(e)
-
-        return debug_info

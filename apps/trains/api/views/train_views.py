@@ -1,6 +1,5 @@
 # apps/trains/api/views/train_views.py
 
-import traceback
 from django.utils import timezone
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -278,33 +277,30 @@ class TrainViewSet(viewsets.ModelViewSet):
     def update_crowd_level(self, request, pk=None):
         """
         Comprehensive crowd level update endpoint
-
-        Supports multiple input methods:
-        - Multipart form-data file upload
-        - File path as string
-        - Direct file object
-
-        Performs extensive validation and logging
         """
-        # Comprehensive logging setup
-        logger.info("=" * 50)
-        logger.info("Crowd Level Update Request Received")
-        logger.info("=" * 50)
-
-        # Log request details
-        logger.info(f"Request Method: {request.method}")
-        logger.info(f"Content Type: {request.content_type}")
-        logger.info(f"Request Data Keys: {list(request.data.keys())}")
-        logger.info(f"Request Files Keys: {list(request.FILES.keys()) if request.FILES else 'No files'}")
-
         try:
-            # Extract car number with multiple source checks
-            car_number = None
-            for source in [request.data, request.POST, request.GET]:
-                car_number = source.get('car_number')
-                if car_number:
-                    logger.info(f"Car number found in {source}")
-                    break
+            # Comprehensive logging for debugging
+            logger.info("=" * 50)
+            logger.info("Crowd Level Update Request Received")
+            logger.info(f"Request Method: {request.method}")
+            logger.info(f"Content Type: {request.content_type}")
+            logger.info(f"Request DATA keys: {list(request.data.keys())}")
+            logger.info(f"Request FILES keys: {list(request.FILES.keys()) if request.FILES else 'No files'}")
+            logger.info(f"Raw POST data: {request.POST}")
+
+            # Multiple ways to extract car number
+            car_number = (
+                request.data.get('car_number')
+                or request.POST.get('car_number')
+                or request.GET.get('car_number')
+            )
+
+            # Multiple ways to extract image
+            image_input = (
+                request.FILES.get('image')
+                or request.FILES.get('file')
+                or request.data.get('image')
+            )
 
             # Validate car number
             if not car_number:
@@ -313,27 +309,14 @@ class TrainViewSet(viewsets.ModelViewSet):
                         "error": "Car number is required",
                         "details": {
                             "request_data_keys": list(request.data.keys()),
+                            "request_files_keys": list(request.FILES.keys()) if request.FILES else "No files",
                             "suggestion": "Provide car_number in request data"
                         }
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Determine image source with comprehensive checks
-            image_input = None
-            image_sources = [
-                request.FILES.get('image'),
-                request.FILES.get('file'),
-                request.data.get('image')
-            ]
-
-            for idx, source in enumerate(image_sources):
-                if source:
-                    logger.info(f"Image found in source {idx}: {type(source)}")
-                    image_input = source
-                    break
-
-            # Validate image presence
+            # Validate image
             if not image_input:
                 return Response(
                     {
@@ -390,7 +373,24 @@ class TrainViewSet(viewsets.ModelViewSet):
             # Process image asynchronously
             from asgiref.sync import async_to_sync
             crowd_service = CrowdDetectionService()
-            result = async_to_sync(crowd_service.update_car_crowd_level)(car, image_content)
+
+            try:
+                result = async_to_sync(crowd_service.update_car_crowd_level)(car, image_content)
+            except Exception as async_error:
+                logger.error(f"Async crowd level update error: {async_error}", exc_info=True)
+                return Response(
+                    {
+                        "error": "Crowd detection process failed",
+                        "details": str(async_error),
+                        "suggestions": [
+                            "Verify AI service availability",
+                            "Check network connectivity",
+                            "Retry the request",
+                            "Contact system administrator"
+                        ]
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE
+                )
 
             # Close file if it was opened
             if hasattr(validated_file, 'close'):
@@ -402,7 +402,8 @@ class TrainViewSet(viewsets.ModelViewSet):
                 return Response(
                     {
                         "error": "Crowd detection failed",
-                        "details": result.get('details', 'Unknown error')
+                        "details": result.get('details', 'Unknown error'),
+                        "suggestions": result.get('fallback_suggestion', [])
                     },
                     status=status.HTTP_400_BAD_REQUEST
                 )
@@ -421,18 +422,16 @@ class TrainViewSet(viewsets.ModelViewSet):
 
         except Exception as e:
             # Comprehensive error logging
-            error_details = {
-                'error_type': type(e).__name__,
-                'error_message': str(e),
-                'traceback': traceback.format_exc()
-            }
-
-            logger.error(f"Unexpected error in crowd level update: {error_details}")
-
+            logger.error(f"Unexpected error in crowd level update: {e}", exc_info=True)
             return Response(
                 {
-                    'error': 'Failed to update crowd level',
-                    'details': error_details
+                    'error': 'Comprehensive crowd level update failure',
+                    'details': str(e),
+                    'suggestions': [
+                        "Check system logs",
+                        "Verify AI service status",
+                        "Retry the request"
+                    ]
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
