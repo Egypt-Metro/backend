@@ -108,11 +108,12 @@ AI_SERVICE_CONFIG = {
         'PROCESS_IMAGE': '/process_image/',      # Image processing endpoint
         'HEALTH_CHECK': '/health'   # Health check endpoint
     },
-    'TIMEOUT': 30,  # 10 minutes
+    'TIMEOUT': 600,  # 10 minutes
     'MAX_FILE_SIZE': 5 * 1024 * 1024,  # 5MB
-    'ALLOWED_EXTENSIONS': ['jpg', 'jpeg', 'png'],   # Allowed image extensions
-    'RETRY_ATTEMPTS': 3,    # Number of retry attempts
-    'RETRY_BACKOFF_FACTOR': 0.5     # Backoff factor for retries
+    'ALLOWED_EXTENSIONS': ['jpg', 'jpeg', 'png'],
+    'RETRY_ATTEMPTS': 5,    # Number of retry attempts
+    'RETRY_BACKOFF_FACTOR': 2.0,     # Backoff factor for retries
+    'HEALTH_CHECK_TIMEOUT': 10  # Timeout for health check requests
 }
 
 # Optional: Detailed file upload settings
