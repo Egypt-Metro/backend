@@ -30,9 +30,9 @@ services:
         value: ${RENDER_DEPLOY_TIMESTAMP}
       - key: PYTHON_VERSION          # Specify the Python version
         value: "3.11.10"
-    disk:                            # Persistent storage (optional)
-      name: persistent-data
-      mountPath: /var/lib/egypt-metro
+    disk:
+      name: uploads
+      mountPath: /uploads
       sizeGB: 1
     healthCheckPath: "/health/"
     autoDeploy: true

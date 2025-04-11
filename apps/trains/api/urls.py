@@ -53,4 +53,9 @@ urlpatterns = [
         TrainViewSet.as_view({'post': 'update_location'}),
         name='update-location'
     ),
+    path(
+        '<int:pk>/crowd-status/',
+        TrainViewSet.as_view({'get': 'get_crowd_status'}),
+        name='crowd-status'
+    ),
 ]

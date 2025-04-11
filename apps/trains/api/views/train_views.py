@@ -1,6 +1,7 @@
 # apps/trains/api/views/train_views.py
 
 from django.utils import timezone
+from datetime import timedelta
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -77,6 +78,7 @@ class TrainViewSet(viewsets.ModelViewSet):
             "get_schedules",
             "debug_info",
             "station_schedule",
+            "get_crowd_status",
         ]
         staff_actions = ["update_crowd_level", "update_location", "create", "destroy"]
 
@@ -432,6 +434,55 @@ class TrainViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+            
+    @action(
+        detail=True,
+        methods=['get'],
+        permission_classes=[AllowAny],
+        url_path='crowd-status'
+    )
+    def get_crowd_status(self, request, pk=None):
+        """
+        Get the latest crowd status for a specific train or car.
+        Optional query param: car_number
+        """
+        try:
+            train = self.get_object()
+            car_number = request.query_params.get('car_number')
+
+            threshold_time = timezone.now() - timedelta(hours=1)
+
+            if car_number:
+                car = train.cars.filter(car_number=car_number, last_updated__gte=threshold_time).first()
+            else:
+                car = train.cars.filter(last_updated__gte=threshold_time).order_by('-last_updated').first()
+
+            if not car:
+                return Response({
+                    "success": False,
+                    "message": "No recent crowd data available",
+                    "train_number": train.train_number,
+                    "crowd_level": "UNKNOWN",
+                    "current_passengers": 0,
+                    "timestamp": None
+                }, status=status.HTTP_404_NOT_FOUND)
+
+            return Response({
+                "success": True,
+                "train_number": train.train_number,
+                "car_number": car.car_number,
+                "crowd_level": car.crowd_level,
+                "current_passengers": car.current_passengers,
+                "timestamp": car.last_updated.isoformat()
+            })
+
+        except Exception as e:
+            return Response({
+                "success": False,
+                "error": str(e),
+                "crowd_level": "UNKNOWN",
+                "current_passengers": 0
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @swagger_auto_schema(
         operation_description="Get API debug information",
