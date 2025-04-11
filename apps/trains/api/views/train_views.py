@@ -79,13 +79,14 @@ class TrainViewSet(viewsets.ModelViewSet):
             "debug_info",
             "station_schedule",
             "get_crowd_status",
+            "update_crowd_level",
         ]
-        staff_actions = ["update_crowd_level", "update_location", "create", "destroy"]
+        staff_actions = ["update_location", "create", "destroy"]
 
         if self.action in public_actions:
             return [AllowAny()]
         elif self.action in staff_actions:
-            return [IsAuthenticated(), CanUpdateCrowdLevel()]
+            return [IsAuthenticated()]
         else:
             return [IsAuthenticated(), IsStaffOrReadOnly()]
 
@@ -274,7 +275,7 @@ class TrainViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=['post'],
-        permission_classes=[IsAuthenticated, CanUpdateCrowdLevel],
+        permission_classes=[AllowAny],
         url_path='update-crowd-level'
     )
     def update_crowd_level(self, request, pk=None):
