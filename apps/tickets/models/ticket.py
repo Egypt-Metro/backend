@@ -17,7 +17,7 @@ class Ticket(models.Model):
     ticket_number = models.CharField(
         max_length=50,
         unique=True,
-        default=generate_ticket_number,  # Use function instead of lambda
+        default=generate_ticket_number,
         editable=False
     )
     uuid = models.UUIDField(
@@ -35,27 +35,44 @@ class Ticket(models.Model):
     )
 
     # Ticket Details
-    price_category = models.CharField(
+    ticket_type = models.CharField(
         max_length=20,
-        choices=TicketChoices.PRICE_CATEGORIES,
-        db_index=True
+        choices=TicketChoices.get_ticket_type_choices(),
+        default='BASIC',
+        db_index=True,
+        help_text="Type of ticket",
+        verbose_name="Ticket Type"
     )
     price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        validators=[MinValueValidator(0)]
+        validators=[MinValueValidator(0)],
+        help_text="Price of the ticket",
+        verbose_name="Ticket Price"
     )
     status = models.CharField(
         max_length=15,
         choices=TicketChoices.STATUS,
-        default='PENDING',
+        default='ACTIVE',
         db_index=True
+    )
+    color = models.CharField(
+        max_length=10,
+        choices=TicketChoices.TICKET_COLORS,
+        db_index=True
+    )
+
+    max_stations = models.IntegerField(
+        validators=[MinValueValidator(1)],
+        help_text="Maximum number of stations allowed for this ticket"
     )
 
     # Station Information
     entry_station = models.ForeignKey(
         'stations.Station',
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         related_name='ticket_entries'
     )
     exit_station = models.ForeignKey(
@@ -107,5 +124,13 @@ class Ticket(models.Model):
             raise models.ValidationError("Valid until date must be in the future")
 
     def save(self, *args, **kwargs):
+        if not self.pk:  # New ticket
+            # Set default values from ticket type
+            ticket_config = TicketChoices.TICKET_TYPES.get(self.ticket_type)
+            if ticket_config:
+                self.price = ticket_config['price']
+                self.color = ticket_config['color']
+                self.max_stations = ticket_config['max_stations']
+
         self.full_clean()
         super().save(*args, **kwargs)

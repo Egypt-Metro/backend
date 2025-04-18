@@ -1,13 +1,12 @@
 from datetime import timedelta
-from typing import Dict, Optional, Tuple
+from typing import Dict, Tuple
 from django.utils import timezone
 from django.db import transaction
 from django.core.exceptions import ValidationError
 
 from ..models import Ticket
-from ..utils.price_calculator import calculate_ticket_price
+from ..constants.choices import TicketChoices
 from .qr_service import QRService
-from apps.stations.models import Station
 from apps.routes.services.route_service import MetroRouteService
 
 
@@ -20,60 +19,33 @@ class TicketService:
     def create_ticket(
         self,
         user,
-        entry_station_id: int,
-        exit_station_id: Optional[int] = None
+        ticket_type: str,
     ) -> Ticket:
         """
-        Creates a new ticket with calculated price based on route
+        Creates a new ticket based on ticket type without entry/exit stations
 
         Args:
             user: User creating the ticket
-            entry_station_id: ID of entry station
-            exit_station_id: Optional ID of exit station
+            ticket_type: Type of ticket (BASIC, STANDARD, PREMIUM, VIP)
 
         Returns:
             Created Ticket instance
 
         Raises:
-            ValidationError: If station IDs are invalid or no valid route exists
+            ValidationError: If ticket type is invalid
         """
-        # Add validation for station IDs
-        if not isinstance(entry_station_id, int) or entry_station_id <= 0:
-            raise ValidationError("Invalid entry station ID")
-        if exit_station_id and (not isinstance(exit_station_id, int) or exit_station_id <= 0):
-            raise ValidationError("Invalid exit station ID")
+        ticket_details = TicketChoices.TICKET_TYPES.get(ticket_type)
+        if not ticket_details:
+            raise ValidationError("Invalid ticket type")
 
-        try:
-            entry_station = Station.objects.get(id=entry_station_id)
-        except Station.DoesNotExist:
-            raise ValidationError("Entry station not found")
-
-        exit_station = None
-        route_data = None
-
-        if exit_station_id:
-            try:
-                exit_station = Station.objects.get(id=exit_station_id)
-                route_data = self.route_service.find_route(entry_station_id, exit_station_id)
-
-                if not route_data:
-                    raise ValidationError("No valid route found between stations")
-            except Station.DoesNotExist:
-                raise ValidationError("Exit station not found")
-
-        # Calculate initial price and category
-        stations_count = route_data['num_stations'] if route_data else 9
-        price, category = calculate_ticket_price(stations_count)
-
-        # Create ticket
+        # Create ticket with initial values
         ticket = Ticket.objects.create(
             user=user,
-            entry_station=entry_station,
-            exit_station=exit_station,
-            ticket_type='SINGLE',
-            price_category=category,
-            price=price,
+            price_category=ticket_details['category'],
+            price=ticket_details['price'],
             status='ACTIVE',
+            color=ticket_details['color'],
+            max_stations=ticket_details['max_stations'],
             valid_until=timezone.now() + timedelta(days=1)
         )
 
@@ -82,8 +54,7 @@ class TicketService:
             'id': ticket.id,
             'ticket_number': ticket.ticket_number,
             'user_id': user.id,
-            'entry_station': entry_station.name,
-            'exit_station': exit_station.name if exit_station else None,
+            'ticket_type': ticket_type,
             'created_at': ticket.created_at.isoformat(),
             'valid_until': ticket.valid_until.isoformat()
         }
@@ -98,7 +69,7 @@ class TicketService:
 
     @transaction.atomic
     def validate_entry(self, ticket_number: str, station_id: int) -> Dict:
-        """Validates ticket at entry gate"""
+        """Validates ticket at entry gate and records start station"""
         try:
             ticket = Ticket.objects.select_for_update().get(
                 ticket_number=ticket_number,
@@ -113,12 +84,14 @@ class TicketService:
                     'message': 'Ticket has expired'
                 }
 
-            if ticket.entry_station_id != station_id:
+            if ticket.entry_station_id:
                 return {
                     'is_valid': False,
-                    'message': 'Invalid entry station'
+                    'message': 'Ticket already used for entry'
                 }
 
+            # Record entry station and time
+            ticket.entry_station_id = station_id
             ticket.entry_time = timezone.now()
             ticket.status = 'IN_USE'
             ticket.save()
@@ -136,12 +109,18 @@ class TicketService:
 
     @transaction.atomic
     def validate_exit(self, ticket_number: str, station_id: int) -> Dict:
-        """Validates ticket at exit gate"""
+        """Validates ticket at exit gate and handles potential upgrades"""
         try:
             ticket = Ticket.objects.select_for_update().get(
                 ticket_number=ticket_number,
                 status='IN_USE'
             )
+
+            if not ticket.entry_station_id:
+                return {
+                    'is_valid': False,
+                    'message': 'No entry station recorded'
+                }
 
             # Get actual route taken
             actual_route = self.route_service.find_route(
@@ -157,18 +136,24 @@ class TicketService:
 
             # Check if route is within ticket's limit
             stations_count = actual_route['num_stations']
-            max_stations = int(ticket.price_category.split('_')[0])
 
-            if stations_count > max_stations:
-                new_price, _ = calculate_ticket_price(stations_count)
-                price_difference = new_price - ticket.price
+            if stations_count > ticket.max_stations:
+                # Find next suitable ticket type
+                next_ticket = TicketChoices.get_next_ticket_type(stations_count)
 
+                if next_ticket:
+                    price_difference = next_ticket['price'] - ticket.price
+                    return {
+                        'is_valid': False,
+                        'message': 'Ticket needs upgrade',
+                        'upgrade_required': True,
+                        'upgrade_price': price_difference,
+                        'new_ticket_type': next_ticket['name'],
+                        'stations_count': stations_count
+                    }
                 return {
                     'is_valid': False,
-                    'message': 'Ticket needs upgrade',
-                    'upgrade_required': True,
-                    'upgrade_price': price_difference,
-                    'stations_count': stations_count
+                    'message': 'Route exceeds maximum allowed stations'
                 }
 
             # Valid exit
@@ -188,33 +173,41 @@ class TicketService:
                 'message': 'Invalid ticket'
             }
 
+    @transaction.atomic
     def upgrade_ticket(
         self,
         ticket_number: str,
-        new_station_count: int,
+        new_ticket_type: str,
         payment_confirmed: bool = False
     ) -> Tuple[bool, Dict]:
         """
-        Upgrades a ticket to cover more stations
+        Upgrades a ticket to a higher type
         """
         if not payment_confirmed:
             return False, {'message': 'Payment required for upgrade'}
 
-        with transaction.atomic():
+        try:
             ticket = Ticket.objects.select_for_update().get(
                 ticket_number=ticket_number
             )
 
-            new_price, new_category = calculate_ticket_price(new_station_count)
+            new_ticket_details = TicketChoices.TICKET_TYPES.get(new_ticket_type)
+            if not new_ticket_details:
+                return False, {'message': 'Invalid ticket type for upgrade'}
 
-            # Update ticket
-            ticket.price = new_price
-            ticket.price_category = new_category
+            # Update ticket with new type details
+            ticket.price = new_ticket_details['price']
+            ticket.price_category = new_ticket_details['category']
+            ticket.color = new_ticket_details['color']
+            ticket.max_stations = new_ticket_details['max_stations']
             ticket.status = 'ACTIVE'
             ticket.save()
 
             return True, {
                 'message': 'Ticket upgraded successfully',
-                'new_price': new_price,
-                'new_category': new_category
+                'new_ticket_type': new_ticket_type,
+                'new_price': new_ticket_details['price']
             }
+
+        except Ticket.DoesNotExist:
+            return False, {'message': 'Ticket not found'}

@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction
+
+from apps.tickets.constants.choices import TicketChoices
 from ..serializers.ticket_serializers import (
     TicketSerializer,
 )
@@ -15,24 +17,29 @@ class TicketViewSet(viewsets.ModelViewSet):
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated]
     ticket_service = TicketService()
-    http_method_names = ['get', 'post', 'patch']  # Restrict to these methods
+    http_method_names = ['get', 'post', 'patch']
 
     def get_queryset(self):
         return Ticket.objects.filter(user=self.request.user)
 
+    @action(detail=False, methods=['get'])
+    def available_types(self, request):
+        """Get available ticket types"""
+        return Response(TicketChoices.TICKET_TYPES)
+
     @transaction.atomic
     def create(self, request):
-        """Create a new ticket"""
+        """Create new ticket(s)"""
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid(raise_exception=True):
             try:
-                ticket = self.ticket_service.create_ticket(
+                tickets = self.ticket_service.create_ticket(
                     user=request.user,
-                    entry_station_id=serializer.validated_data['entry_station'].id,
-                    exit_station_id=serializer.validated_data.get('exit_station', {}).get('id')
+                    ticket_type=serializer.validated_data['ticket_type'],
+                    quantity=serializer.validated_data.get('quantity', 1)
                 )
                 return Response(
-                    self.get_serializer(ticket).data,
+                    self.get_serializer(tickets, many=True).data,
                     status=status.HTTP_201_CREATED
                 )
             except ValueError as e:
@@ -57,7 +64,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             ticket.ticket_number,
             station_id
         )
-        return Response(result)
+        return Response(result, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def validate_exit(self, request, pk=None):
@@ -75,7 +82,10 @@ class TicketViewSet(viewsets.ModelViewSet):
             ticket.ticket_number,
             station_id
         )
-        return Response(result)
+        return Response(
+            result,
+            status=status.HTTP_200_OK if result['is_valid'] else status.HTTP_402_PAYMENT_REQUIRED
+        )
 
     @action(detail=True, methods=['post'])
     def upgrade(self, request, pk=None):

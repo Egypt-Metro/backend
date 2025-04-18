@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from rangefilter.filters import DateRangeFilter
 from ..models.ticket import Ticket
+from ..constants.choices import TicketChoices
 
 
 @admin.register(Ticket)
@@ -11,8 +12,10 @@ class TicketAdmin(admin.ModelAdmin):
     list_display = [
         'ticket_number',
         'user',
+        'ticket_type_colored',
         'status_colored',
         'price',
+        'max_stations',
         'entry_station',
         'exit_station',
         'valid_until',
@@ -20,9 +23,10 @@ class TicketAdmin(admin.ModelAdmin):
         'created_at'
     ]
     list_filter = [
+        'ticket_type',
         'status',
-        'price_category',
         'entry_station',
+        'color',
         ('valid_until', DateRangeFilter),
         ('created_at', DateRangeFilter)
     ]
@@ -54,8 +58,11 @@ class TicketAdmin(admin.ModelAdmin):
         }),
         ('Ticket Details', {
             'fields': (
-                'price_category',
+                'ticket_type',
+                'quantity',
                 'price',
+                'color',
+                'max_stations',
                 'status'
             )
         }),
@@ -85,6 +92,8 @@ class TicketAdmin(admin.ModelAdmin):
 
     def is_active(self, obj):
         """Check if ticket is still active"""
+        if not obj.valid_until:
+            return False
         return obj.valid_until > timezone.now()
     is_active.boolean = True
     is_active.short_description = 'Active'
@@ -95,27 +104,61 @@ class TicketAdmin(admin.ModelAdmin):
             'ACTIVE': 'green',
             'IN_USE': 'blue',
             'USED': 'grey',
+            'USED_UPGRADED': 'purple',
             'EXPIRED': 'red',
             'CANCELLED': 'red',
-            'PENDING': 'orange'
+            'PENDING': 'orange',
+            'REFUNDED': 'brown'
         }
         return format_html(
-            '<span style="color: {};">{}</span>',
+            '<span style="color: {}; font-weight: bold;">{}</span>',
             colors.get(obj.status, 'black'),
             obj.get_status_display()
         )
     status_colored.short_description = 'Status'
+
+    def ticket_type_colored(self, obj):
+        """Display ticket type with its designated color"""
+        ticket_colors = {
+            'BASIC': 'gold',
+            'STANDARD': 'green',
+            'PREMIUM': 'red',
+            'VIP': 'blue'
+        }
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{}</span>',
+            ticket_colors.get(obj.ticket_type, 'black'),
+            TicketChoices.TICKET_TYPES[obj.ticket_type]['name']
+        )
+    ticket_type_colored.short_description = 'Ticket Type'
 
     def qr_code_display(self, obj):
         """Display QR code in admin"""
         if obj.qr_code:
             return format_html(
                 '<div style="text-align: center;">'
-                '<img src="data:image/png;base64,{}" width="150" height="150" style="border: 1px solid #ddd; padding: 5px;"/>'
+                '<img src="data:image/png;base64,{}" width="150" height="150" '
+                'style="border: 1px solid #ddd; padding: 5px; border-radius: 4px;"/>'
                 '</div>',
                 obj.qr_code
             )
         return format_html(
-            '<div style="color: #999; text-align: center;">No QR Code</div>'
+            '<div style="color: #999; text-align: center; padding: 10px;">'
+            'No QR Code Available</div>'
         )
     qr_code_display.short_description = 'QR Code'
+
+    def get_queryset(self, request):
+        """Optimize queryset for admin list view"""
+        return super().get_queryset(request).select_related(
+            'user',
+            'entry_station',
+            'exit_station'
+        )
+
+    def save_model(self, request, obj, form, change):
+        """Record the user who made the change"""
+        if not change:  # If this is a new ticket
+            if not obj.user:
+                obj.user = request.user
+        super().save_model(request, obj, form, change)

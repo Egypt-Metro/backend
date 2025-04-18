@@ -1,73 +1,102 @@
 import qrcode
 import json
 import hashlib
+import logging
 from typing import Dict, Tuple
 from io import BytesIO
 from base64 import b64encode
 from django.utils import timezone
+from ..constants.choices import TicketChoices
+
+logger = logging.getLogger(__name__)
 
 
 class QRService:
-    @staticmethod
-    def generate_ticket_qr(ticket_data: Dict) -> Tuple[str, str]:
+    """Service for handling QR code generation and validation for tickets"""
+
+    QR_VERSION = 1
+    QR_BOX_SIZE = 10
+    QR_BORDER = 4
+    QR_ERROR_CORRECTION = qrcode.constants.ERROR_CORRECT_H
+    QR_VALIDITY_DAYS = 1
+
+    @classmethod
+    def generate_ticket_qr(cls, ticket_data: Dict) -> Tuple[str, str]:
         """
         Generate QR code and validation hash for a ticket
 
         Args:
-            ticket_data: Dictionary containing ticket information:
+            ticket_data: Dictionary containing:
                 - ticket_number: Unique ticket identifier
                 - user_id: ID of the ticket owner
-                - entry_station: Entry station name
-                - exit_station: Exit station name (optional)
+                - ticket_type: Type of ticket (BASIC, STANDARD, etc.)
                 - price_category: Ticket price category
+                - max_stations: Maximum allowed stations
+                - color: Ticket color
+                - status: Current ticket status
+                - entry_station: Entry station name (optional)
+                - exit_station: Exit station name (optional)
                 - valid_until: Ticket validity timestamp
 
         Returns:
-            tuple: (qr_code_base64, validation_hash)
+            Tuple[str, str]: (qr_code_base64, validation_hash)
+
+        Raises:
+            ValueError: If required ticket data is missing
         """
-        # Add timestamp to ticket data
-        ticket_data['generated_at'] = timezone.now().isoformat()
+        try:
+            # Validate required fields
+            required_fields = ['ticket_number', 'user_id', 'ticket_type', 'valid_until']
+            if not all(field in ticket_data for field in required_fields):
+                missing = [f for f in required_fields if f not in ticket_data]
+                raise ValueError(f"Missing required ticket data: {', '.join(missing)}")
 
-        # Generate validation hash
-        validation_hash = QRService._generate_validation_hash(ticket_data)
+            # Add metadata
+            validation_data = {
+                'ticket_number': ticket_data['ticket_number'],
+                'user_id': ticket_data['user_id'],
+                'ticket_type': ticket_data['ticket_type'],
+                'valid_until': ticket_data['valid_until'],
+                'generated_at': cls.CURRENT_TIME,
+                'generated_by': cls.CURRENT_USER
+            }
 
-        # Add validation hash to ticket data
-        ticket_data['validation_hash'] = validation_hash
+            # Generate validation hash
+            validation_hash = cls._generate_validation_hash(validation_data)
 
-        # Generate QR code
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_H,
-            box_size=10,
-            border=4
-        )
-        qr.add_data(json.dumps(ticket_data))
-        qr.make(fit=True)
+            # Prepare complete QR data
+            qr_data = {
+                **ticket_data,
+                **validation_data,
+                'validation_hash': validation_hash,
+                'ticket_details': TicketChoices.TICKET_TYPES[ticket_data['ticket_type']]
+            }
 
-        # Create QR code image and convert to base64
-        img = qr.make_image(fill_color="black", back_color="white")
-        buffer = BytesIO()
-        img.save(buffer, format='PNG')
-        qr_base64 = b64encode(buffer.getvalue()).decode()
+            # Generate QR code
+            qr = qrcode.QRCode(
+                version=cls.QR_VERSION,
+                error_correction=cls.QR_ERROR_CORRECTION,
+                box_size=cls.QR_BOX_SIZE,
+                border=cls.QR_BORDER
+            )
+            qr.add_data(json.dumps(qr_data))
+            qr.make(fit=True)
 
-        return qr_base64, validation_hash
+            # Create QR code image
+            img = qr.make_image(fill_color="black", back_color="white")
+            buffer = BytesIO()
+            img.save(buffer, format='PNG')
+            qr_base64 = b64encode(buffer.getvalue()).decode()
 
-    @staticmethod
-    def _generate_validation_hash(ticket_data: Dict) -> str:
-        """
-        Generate validation hash for ticket data
-        Uses a combination of ticket number, user ID, station, and timestamp
-        """
-        hash_input = (
-            f"{ticket_data['ticket_number']}:"
-            f"{ticket_data['user_id']}:"
-            f"{ticket_data['entry_station']}:"
-            f"{ticket_data['generated_at']}"
-        )
-        return hashlib.sha256(hash_input.encode()).hexdigest()
+            logger.info(f"Generated QR code for ticket {ticket_data['ticket_number']}")
+            return qr_base64, validation_hash
 
-    @staticmethod
-    def validate_qr(qr_data: str, stored_hash: str) -> Tuple[bool, Dict]:
+        except Exception as e:
+            logger.error(f"Error generating QR code: {str(e)}")
+            raise ValueError(f"Failed to generate QR code: {str(e)}")
+
+    @classmethod
+    def validate_qr(cls, qr_data: str, stored_hash: str) -> Tuple[bool, Dict]:
         """
         Validate QR code data against stored hash
 
@@ -76,57 +105,101 @@ class QRService:
             stored_hash: Previously generated validation hash
 
         Returns:
-            tuple: (is_valid: bool, ticket_data: Dict)
+            Tuple[bool, Dict]: (is_valid, result_data)
         """
         try:
             # Parse QR data
             ticket_data = json.loads(qr_data)
 
-            # Verify timestamp hasn't been tampered with
-            generated_at = timezone.datetime.fromisoformat(ticket_data['generated_at'])
-            if timezone.now() - generated_at > timezone.timedelta(days=1):
+            # Verify required fields
+            required_fields = [
+                'ticket_number', 'user_id', 'ticket_type',
+                'valid_until', 'generated_at', 'validation_hash'
+            ]
+            if not all(field in ticket_data for field in required_fields):
+                return False, {"error": "Invalid QR code format"}
+
+            # Verify ticket type
+            if ticket_data['ticket_type'] not in TicketChoices.TICKET_TYPES:
+                return False, {"error": "Invalid ticket type"}
+
+            # Verify timestamp
+            generated_at = timezone.datetime.strptime(
+                ticket_data['generated_at'],
+                "%Y-%m-%d %H:%M:%S"
+            )
+            if timezone.now() - generated_at > timezone.timedelta(days=cls.QR_VALIDITY_DAYS):
                 return False, {"error": "QR code has expired"}
 
-            # Regenerate hash and compare
-            generated_hash = QRService._generate_validation_hash(ticket_data)
+            # Regenerate and verify hash
+            validation_data = {
+                'ticket_number': ticket_data['ticket_number'],
+                'user_id': ticket_data['user_id'],
+                'ticket_type': ticket_data['ticket_type'],
+                'valid_until': ticket_data['valid_until'],
+                'generated_at': ticket_data['generated_at'],
+                'generated_by': ticket_data.get('generated_by', cls.CURRENT_USER)
+            }
+            generated_hash = cls._generate_validation_hash(validation_data)
+
             if generated_hash != stored_hash:
                 return False, {"error": "Invalid QR code"}
 
             return True, ticket_data
 
-        except (json.JSONDecodeError, KeyError, ValueError):
-            return False, {"error": "Malformed QR code"}
+        except json.JSONDecodeError:
+            return False, {"error": "Malformed QR code data"}
+        except (KeyError, ValueError) as e:
+            return False, {"error": f"Invalid QR code format: {str(e)}"}
+        except Exception as e:
+            logger.error(f"Error validating QR code: {str(e)}")
+            return False, {"error": "QR code validation failed"}
+
+    @classmethod
+    def _generate_validation_hash(cls, data: Dict) -> str:
+        """
+        Generate validation hash for ticket data
+        Uses SHA256 with ticket data and metadata
+        """
+        try:
+            hash_input = (
+                f"{data['ticket_number']}:"
+                f"{data['user_id']}:"
+                f"{data['ticket_type']}:"
+                f"{data['valid_until']}:"
+                f"{data['generated_at']}:"
+                f"{data['generated_by']}"
+            )
+            return hashlib.sha256(hash_input.encode()).hexdigest()
+        except KeyError as e:
+            raise ValueError(f"Missing required field for hash generation: {str(e)}")
 
     @staticmethod
     def get_qr_image_url(qr_code_base64: str) -> str:
-        """
-        Get data URL for QR code image
-
-        Args:
-            qr_code_base64: Base64 encoded QR code image
-
-        Returns:
-            str: Data URL for the QR code image
-        """
+        """Get data URL for QR code image"""
+        if not qr_code_base64:
+            return ''
         return f"data:image/png;base64,{qr_code_base64}"
 
-    @staticmethod
-    def create_ticket_qr_data(ticket) -> Dict:
-        """
-        Create standardized ticket data for QR code generation
+    @classmethod
+    def create_ticket_qr_data(cls, ticket) -> Dict:
+        """Create standardized ticket data for QR code generation"""
+        ticket_type_details = TicketChoices.TICKET_TYPES[ticket.ticket_type]
 
-        Args:
-            ticket: Ticket model instance
-
-        Returns:
-            Dict: Structured ticket data for QR code
-        """
         return {
             'ticket_number': ticket.ticket_number,
             'user_id': ticket.user_id,
-            'entry_station': ticket.entry_station.name,
-            'exit_station': ticket.exit_station.name if ticket.exit_station else None,
+            'ticket_type': ticket.ticket_type,
             'price_category': ticket.price_category,
+            'max_stations': ticket.max_stations,
+            'color': ticket.color,
+            'status': ticket.status,
+            'entry_station': ticket.entry_station.name if ticket.entry_station else None,
+            'exit_station': ticket.exit_station.name if ticket.exit_station else None,
             'valid_until': ticket.valid_until.isoformat(),
-            'status': ticket.status
+            'ticket_details': {
+                'name': ticket_type_details['name'],
+                'description': ticket_type_details['description'],
+                'price': float(ticket.price)
+            }
         }

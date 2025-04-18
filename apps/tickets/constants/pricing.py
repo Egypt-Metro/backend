@@ -1,11 +1,38 @@
+from typing import Dict, Optional
+from apps.tickets.constants.choices import TicketChoices
+
+
 class TicketPricing:
-    # Ticket pricing based on number of stations
-    STATION_PRICES = {
-        9: 8,    # Up to 9 stations: 8 EGP
-        16: 10,  # Up to 16 stations: 10 EGP
-        23: 15,  # Up to 23 stations: 15 EGP
-        39: 20,  # Up to 39 stations: 20 EGP
-    }
+    @classmethod
+    def get_ticket_details(cls, ticket_type: str) -> Optional[Dict]:
+        """Get all details for a ticket type"""
+        return TicketChoices.TICKET_TYPES.get(ticket_type)
+
+    @classmethod
+    def calculate_upgrade_details(cls, stations_count: int) -> Optional[Dict]:
+        """Calculate upgrade details based on stations count"""
+        next_type, next_details = TicketChoices.get_next_ticket_type(stations_count)
+        if not next_type:
+            return None
+
+        current_type = None
+        for type_name, details in TicketChoices.TICKET_TYPES.items():
+            if details['max_stations'] >= stations_count:
+                current_type = type_name
+                break
+
+        if not current_type:
+            return None
+
+        current_details = TicketChoices.TICKET_TYPES[current_type]
+
+        return {
+            'next_ticket_type': next_type,
+            'price_difference': next_details['price'] - current_details['price'],
+            'new_max_stations': next_details['max_stations'],
+            'new_color': next_details['color'],
+            'current_stations': stations_count
+        }
 
 
 class SubscriptionPricing:

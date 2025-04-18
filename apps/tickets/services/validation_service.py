@@ -2,58 +2,59 @@ from django.utils import timezone
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from typing import Dict
+
+from apps.tickets.constants.choices import TicketChoices
+from apps.tickets.services.hardware_service import HardwareService
 from ..models.ticket import Ticket
 from .qr_service import QRService
 from apps.routes.services.route_service import MetroRouteService
-from ..utils.price_calculator import calculate_ticket_price
 
 
 class ValidationService:
     route_service = MetroRouteService()
     qr_service = QRService()
+    hardware_service = HardwareService()
 
     @classmethod
     @transaction.atomic
     def validate_entry(cls, ticket_number: str, station_id: int) -> Dict:
         """
-        Validate ticket at entry gate
-        Raises ValidationError if station_id is invalid
+        Validate ticket at entry gate and sends result to hardware
         """
         if not isinstance(station_id, int) or station_id <= 0:
             raise ValidationError("Invalid station ID")
 
         try:
             ticket = Ticket.objects.select_for_update().get(
-                ticket_number=ticket_number
+                ticket_number=ticket_number,
+                status='ACTIVE'
             )
-
-            # Status validation
-            if ticket.status != 'ACTIVE':
-                return {
-                    'is_valid': False,
-                    'message': f'Ticket is {ticket.status.lower()}'
-                }
 
             # Expiration validation
             if ticket.valid_until < timezone.now():
                 ticket.status = 'EXPIRED'
                 ticket.save(update_fields=['status'])
+                cls.hardware_service.send_validation_result(False)
                 return {
                     'is_valid': False,
                     'message': 'Ticket has expired'
                 }
 
-            # Station validation
-            if ticket.entry_station_id != station_id:
+            if ticket.entry_station_id:
+                cls.hardware_service.send_validation_result(False)
                 return {
                     'is_valid': False,
-                    'message': 'Invalid entry station'
+                    'message': 'Ticket already used for entry'
                 }
 
             # Record entry
+            ticket.entry_station_id = station_id
             ticket.entry_time = timezone.now()
             ticket.status = 'IN_USE'
-            ticket.save(update_fields=['entry_time', 'status'])
+            ticket.save()
+
+            # Send success to hardware
+            cls.hardware_service.send_validation_result(True)
 
             return {
                 'is_valid': True,
@@ -63,6 +64,7 @@ class ValidationService:
             }
 
         except Ticket.DoesNotExist:
+            cls.hardware_service.send_validation_result(False)
             return {
                 'is_valid': False,
                 'message': 'Invalid ticket'
@@ -72,8 +74,7 @@ class ValidationService:
     @transaction.atomic
     def validate_exit(cls, ticket_number: str, station_id: int) -> Dict:
         """
-        Validate ticket at exit gate
-        Raises ValidationError if station_id is invalid
+        Validate ticket at exit gate and sends result to hardware
         """
         if not isinstance(station_id, int) or station_id <= 0:
             raise ValidationError("Invalid station ID")
@@ -84,6 +85,13 @@ class ValidationService:
                 status='IN_USE'
             )
 
+            if not ticket.entry_station_id:
+                cls.hardware_service.send_validation_result(False)
+                return {
+                    'is_valid': False,
+                    'message': 'No entry station recorded'
+                }
+
             # Validate route
             route_data = cls.route_service.find_route(
                 ticket.entry_station_id,
@@ -91,34 +99,45 @@ class ValidationService:
             )
 
             if not route_data:
+                cls.hardware_service.send_validation_result(False)
                 return {
                     'is_valid': False,
                     'message': 'Invalid route'
                 }
 
-            # Check stations count
+            # Check if route is within ticket's limit
             stations_count = route_data['num_stations']
-            max_stations = int(ticket.price_category.split('_')[0])
 
-            if stations_count > max_stations:
-                new_price, new_category = calculate_ticket_price(stations_count)
-                price_difference = new_price - ticket.price
+            if stations_count > ticket.max_stations:
+                # Find next suitable ticket type
+                next_ticket = TicketChoices.get_next_ticket_type(stations_count)
 
+                if next_ticket:
+                    price_difference = next_ticket['price'] - ticket.price
+                    cls.hardware_service.send_validation_result(False)
+                    return {
+                        'is_valid': False,
+                        'message': 'Ticket needs upgrade',
+                        'upgrade_required': True,
+                        'upgrade_price': price_difference,
+                        'new_ticket_type': next_ticket['name'],
+                        'stations_count': stations_count
+                    }
+
+                cls.hardware_service.send_validation_result(False)
                 return {
                     'is_valid': False,
-                    'message': 'Ticket needs upgrade',
-                    'upgrade_required': True,
-                    'upgrade_price': price_difference,
-                    'stations_count': stations_count,
-                    'current_category': ticket.price_category,
-                    'new_category': new_category
+                    'message': 'Route exceeds maximum allowed stations'
                 }
 
             # Record exit
             ticket.exit_station_id = station_id
             ticket.exit_time = timezone.now()
             ticket.status = 'USED'
-            ticket.save(update_fields=['exit_station_id', 'exit_time', 'status'])
+            ticket.save()
+
+            # Send success to hardware
+            cls.hardware_service.send_validation_result(True)
 
             return {
                 'is_valid': True,
@@ -129,6 +148,7 @@ class ValidationService:
             }
 
         except Ticket.DoesNotExist:
+            cls.hardware_service.send_validation_result(False)
             return {
                 'is_valid': False,
                 'message': 'Invalid ticket'
@@ -196,21 +216,27 @@ class ValidationService:
             }
 
         stations_count = route_data['num_stations']
-        max_stations = int(ticket.price_category.split('_')[0])
 
-        if stations_count > max_stations:
-            new_price, new_category = calculate_ticket_price(stations_count)
-            price_difference = new_price - ticket.price
+        if stations_count > ticket.max_stations:
+            next_type, next_details = TicketChoices.get_next_ticket_type(stations_count)
+
+            if next_type:
+                price_difference = next_details['price'] - ticket.price
+                return {
+                    'is_valid': False,
+                    'message': 'Ticket needs upgrade',
+                    'upgrade_required': True,
+                    'upgrade_price': price_difference,
+                    'stations_count': stations_count,
+                    'current_type': ticket.ticket_type,
+                    'next_type': next_type,
+                    'next_max_stations': next_details['max_stations'],
+                    'route': route_data
+                }
 
             return {
                 'is_valid': False,
-                'message': 'Ticket needs upgrade',
-                'upgrade_required': True,
-                'upgrade_price': price_difference,
-                'stations_count': stations_count,
-                'current_category': ticket.price_category,
-                'new_category': new_category,
-                'route': route_data
+                'message': 'Route exceeds maximum allowed stations'
             }
 
         return {
