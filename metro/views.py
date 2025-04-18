@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 # API Configuration
 API_CONFIG = {
     "VERSION": "1.0.0",  # Define version here instead of using settings
-    "NAME": "Egypt Metro API",
-    "DESCRIPTION": "Backend API for Egypt Metro System",
+    "NAME": "Egypt Metro",
+    "DESCRIPTION": "Egypt Metro Backend",
     "ENVIRONMENT": os.getenv("ENVIRONMENT", "development"),
     "CONTACT_EMAIL": "admin@metro.com",
 }

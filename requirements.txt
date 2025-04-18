@@ -158,6 +158,7 @@ pywin32==308 ; platform_system == "Windows"
 pywin32-ctypes==0.2.3
 PyYAML==6.0.2
 pyzmq==26.2.0
+qrcode==8.1
 RapidFuzz==3.12.1
 redis==5.2.1
 referencing==0.36.2

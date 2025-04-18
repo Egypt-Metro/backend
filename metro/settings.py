@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "apps.stations.apps.StationsConfig",  # Stations app
     "apps.routes.apps.RoutesConfig",  # Routes app
     "apps.trains.apps.TrainsConfig",  # Trains app
+    "apps.tickets.apps.TicketsConfig",  # Tickets app
     "apps.dashboard.apps.DashboardConfig",  # Dashboard app
     "apps.authentication.apps.AuthenticationConfig",    # Authentication app
 ]

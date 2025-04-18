@@ -86,6 +86,7 @@ urlpatterns = [
             namespace='train-api'
         )
     ),  # Trains
+    path('api/tickets/', include('apps.tickets.api.urls')),  # Tickets
     path("api/dashboard/", include("apps.dashboard.urls")),  # Admin Dashboard
     path("api/auth/", include("apps.authentication.urls")),  # Authentication
     # Miscellaneous
