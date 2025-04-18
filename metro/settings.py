@@ -410,8 +410,6 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",  # Default to authenticated users
-        "rest_framework.permissions.AllowAny",  # Allow any user
-        'rest_framework_simplejwt.authentication.JWTAuthentication',    # JWT authentication
     ),
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",  # Default renderer

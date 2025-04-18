@@ -20,52 +20,61 @@ class TicketService:
         self,
         user,
         ticket_type: str,
+        quantity: int = 1  # Add quantity parameter with default value
     ) -> Ticket:
         """
-        Creates a new ticket based on ticket type without entry/exit stations
+        Creates new ticket(s) based on ticket type without entry/exit stations
 
         Args:
             user: User creating the ticket
             ticket_type: Type of ticket (BASIC, STANDARD, PREMIUM, VIP)
+            quantity: Number of tickets to create (default=1)
 
         Returns:
-            Created Ticket instance
+            Single Ticket instance or list of Ticket instances
 
         Raises:
-            ValidationError: If ticket type is invalid
+            ValidationError: If ticket type is invalid or quantity < 1
         """
+        if quantity < 1:
+            raise ValidationError("Quantity must be at least 1")
+
         ticket_details = TicketChoices.TICKET_TYPES.get(ticket_type)
         if not ticket_details:
             raise ValidationError("Invalid ticket type")
 
-        # Create ticket with initial values
-        ticket = Ticket.objects.create(
-            user=user,
-            price_category=ticket_details['category'],
-            price=ticket_details['price'],
-            status='ACTIVE',
-            color=ticket_details['color'],
-            max_stations=ticket_details['max_stations'],
-            valid_until=timezone.now() + timedelta(days=1)
-        )
+        tickets = []
+        for _ in range(quantity):
+            # Create ticket with initial values
+            ticket = Ticket.objects.create(
+                user=user,
+                ticket_type=ticket_type,
+                price=ticket_details['price'],
+                status='ACTIVE',
+                color=ticket_details['color'],
+                max_stations=ticket_details['max_stations'],
+                valid_until=timezone.now() + timedelta(days=1)
+            )
 
-        # Generate QR code data
-        ticket_data = {
-            'id': ticket.id,
-            'ticket_number': ticket.ticket_number,
-            'user_id': user.id,
-            'ticket_type': ticket_type,
-            'created_at': ticket.created_at.isoformat(),
-            'valid_until': ticket.valid_until.isoformat()
-        }
+            # Generate QR code data
+            ticket_data = {
+                'id': ticket.id,
+                'ticket_number': ticket.ticket_number,
+                'user_id': user.id,
+                'ticket_type': ticket_type,
+                'created_at': ticket.created_at.isoformat(),
+                'valid_until': ticket.valid_until.isoformat()
+            }
 
-        # Generate and save QR code
-        qr_code, validation_hash = self.qr_service.generate_ticket_qr(ticket_data)
-        ticket.qr_code = qr_code
-        ticket.validation_hash = validation_hash
-        ticket.save(update_fields=['qr_code', 'validation_hash'])
+            # Generate and save QR code
+            qr_code, validation_hash = self.qr_service.generate_ticket_qr(ticket_data)
+            ticket.qr_code = qr_code
+            ticket.validation_hash = validation_hash
+            ticket.save(update_fields=['qr_code', 'validation_hash'])
 
-        return ticket
+            tickets.append(ticket)
+
+        return tickets if quantity > 1 else tickets[0]
 
     @transaction.atomic
     def validate_entry(self, ticket_number: str, station_id: int) -> Dict:

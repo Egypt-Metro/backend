@@ -7,6 +7,8 @@ from io import BytesIO
 from base64 import b64encode
 from django.utils import timezone
 from ..constants.choices import TicketChoices
+from django.conf import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -19,65 +21,62 @@ class QRService:
     QR_BORDER = 4
     QR_ERROR_CORRECTION = qrcode.constants.ERROR_CORRECT_H
     QR_VALIDITY_DAYS = 1
+    DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
-    @classmethod
-    def generate_ticket_qr(cls, ticket_data: Dict) -> Tuple[str, str]:
+    def __init__(self, current_user=None):
+        """
+        Initialize QR service
+        """
+        self.current_user = current_user
+        self.current_time = timezone.now()
+
+    def generate_ticket_qr(self, ticket_data: Dict) -> Tuple[str, str]:
         """
         Generate QR code and validation hash for a ticket
 
         Args:
-            ticket_data: Dictionary containing:
-                - ticket_number: Unique ticket identifier
-                - user_id: ID of the ticket owner
-                - ticket_type: Type of ticket (BASIC, STANDARD, etc.)
-                - price_category: Ticket price category
-                - max_stations: Maximum allowed stations
-                - color: Ticket color
-                - status: Current ticket status
-                - entry_station: Entry station name (optional)
-                - exit_station: Exit station name (optional)
-                - valid_until: Ticket validity timestamp
+            ticket_data: Dictionary containing ticket information
 
         Returns:
             Tuple[str, str]: (qr_code_base64, validation_hash)
-
-        Raises:
-            ValueError: If required ticket data is missing
         """
         try:
             # Validate required fields
-            required_fields = ['ticket_number', 'user_id', 'ticket_type', 'valid_until']
+            required_fields = ['ticket_number', 'user_id', 'ticket_type']
             if not all(field in ticket_data for field in required_fields):
                 missing = [f for f in required_fields if f not in ticket_data]
                 raise ValueError(f"Missing required ticket data: {', '.join(missing)}")
 
-            # Add metadata
+            # Add metadata with proper timezone handling
+            current_time = self.current_time.strftime(self.DATE_FORMAT)
+            username = getattr(self.current_user, 'username', 'system')
+
             validation_data = {
                 'ticket_number': ticket_data['ticket_number'],
                 'user_id': ticket_data['user_id'],
                 'ticket_type': ticket_data['ticket_type'],
-                'valid_until': ticket_data['valid_until'],
-                'generated_at': cls.CURRENT_TIME,
-                'generated_by': cls.CURRENT_USER
+                'generated_at': current_time,
+                'generated_by': username
             }
 
             # Generate validation hash
-            validation_hash = cls._generate_validation_hash(validation_data)
+            validation_hash = self._generate_validation_hash(validation_data)
 
             # Prepare complete QR data
             qr_data = {
                 **ticket_data,
-                **validation_data,
+                'generated_at': current_time,
+                'generated_by': username,
                 'validation_hash': validation_hash,
-                'ticket_details': TicketChoices.TICKET_TYPES[ticket_data['ticket_type']]
+                'timezone': settings.TIME_ZONE
             }
 
             # Generate QR code
             qr = qrcode.QRCode(
-                version=cls.QR_VERSION,
-                error_correction=cls.QR_ERROR_CORRECTION,
-                box_size=cls.QR_BOX_SIZE,
-                border=cls.QR_BORDER
+                version=self.QR_VERSION,
+                error_correction=self.QR_ERROR_CORRECTION,
+                box_size=self.QR_BOX_SIZE,
+                border=self.QR_BORDER
             )
             qr.add_data(json.dumps(qr_data))
             qr.make(fit=True)
@@ -88,7 +87,10 @@ class QRService:
             img.save(buffer, format='PNG')
             qr_base64 = b64encode(buffer.getvalue()).decode()
 
-            logger.info(f"Generated QR code for ticket {ticket_data['ticket_number']}")
+            logger.info(
+                f"Generated QR code for ticket {ticket_data['ticket_number']} "
+                f"by user {username} at {current_time}"
+            )
             return qr_base64, validation_hash
 
         except Exception as e:
@@ -114,7 +116,7 @@ class QRService:
             # Verify required fields
             required_fields = [
                 'ticket_number', 'user_id', 'ticket_type',
-                'valid_until', 'generated_at', 'validation_hash'
+                'generated_at', 'validation_hash'
             ]
             if not all(field in ticket_data for field in required_fields):
                 return False, {"error": "Invalid QR code format"}
@@ -136,9 +138,8 @@ class QRService:
                 'ticket_number': ticket_data['ticket_number'],
                 'user_id': ticket_data['user_id'],
                 'ticket_type': ticket_data['ticket_type'],
-                'valid_until': ticket_data['valid_until'],
                 'generated_at': ticket_data['generated_at'],
-                'generated_by': ticket_data.get('generated_by', cls.CURRENT_USER)
+                'generated_by': ticket_data.get('generated_by', 'system')
             }
             generated_hash = cls._generate_validation_hash(validation_data)
 
@@ -155,18 +156,14 @@ class QRService:
             logger.error(f"Error validating QR code: {str(e)}")
             return False, {"error": "QR code validation failed"}
 
-    @classmethod
-    def _generate_validation_hash(cls, data: Dict) -> str:
-        """
-        Generate validation hash for ticket data
-        Uses SHA256 with ticket data and metadata
-        """
+    @staticmethod
+    def _generate_validation_hash(data: Dict) -> str:
+        """Generate validation hash for ticket data"""
         try:
             hash_input = (
                 f"{data['ticket_number']}:"
                 f"{data['user_id']}:"
                 f"{data['ticket_type']}:"
-                f"{data['valid_until']}:"
                 f"{data['generated_at']}:"
                 f"{data['generated_by']}"
             )
@@ -185,12 +182,10 @@ class QRService:
     def create_ticket_qr_data(cls, ticket) -> Dict:
         """Create standardized ticket data for QR code generation"""
         ticket_type_details = TicketChoices.TICKET_TYPES[ticket.ticket_type]
-
         return {
             'ticket_number': ticket.ticket_number,
             'user_id': ticket.user_id,
             'ticket_type': ticket.ticket_type,
-            'price_category': ticket.price_category,
             'max_stations': ticket.max_stations,
             'color': ticket.color,
             'status': ticket.status,

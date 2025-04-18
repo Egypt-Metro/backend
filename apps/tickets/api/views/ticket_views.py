@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
 from apps.tickets.constants.choices import TicketChoices
@@ -18,14 +19,19 @@ class TicketViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     ticket_service = TicketService()
     http_method_names = ['get', 'post', 'patch']
+    queryset = Ticket.objects.none()
 
     def get_queryset(self):
         return Ticket.objects.filter(user=self.request.user)
 
-    @action(detail=False, methods=['get'])
-    def available_types(self, request):
-        """Get available ticket types"""
-        return Response(TicketChoices.TICKET_TYPES)
+    @action(detail=False, methods=['get'], url_path='types')
+    def types(self, request):
+        """Get ticket types"""
+        return Response({
+            "success": True,
+            "data": TicketChoices.TICKET_TYPES,
+            "message": "Ticket types retrieved successfully"
+        })
 
     @transaction.atomic
     def create(self, request):
@@ -38,15 +44,21 @@ class TicketViewSet(viewsets.ModelViewSet):
                     ticket_type=serializer.validated_data['ticket_type'],
                     quantity=serializer.validated_data.get('quantity', 1)
                 )
-                return Response(
-                    self.get_serializer(tickets, many=True).data,
-                    status=status.HTTP_201_CREATED
-                )
-            except ValueError as e:
-                return Response(
-                    {'error': str(e)},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+
+                # Convert single ticket to list for consistent serialization
+                tickets_list = tickets if isinstance(tickets, list) else [tickets]
+
+                return Response({
+                    'success': True,
+                    'data': self.get_serializer(tickets_list, many=True).data,
+                    'message': f"Successfully created {len(tickets_list)} ticket(s)",
+                }, status=status.HTTP_201_CREATED)
+            except ValidationError as e:
+                return Response({
+                    'success': False,
+                    'error': str(e),
+                    'message': 'Failed to create ticket',
+                }, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def validate_entry(self, request, pk=None):

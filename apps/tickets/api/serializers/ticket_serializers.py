@@ -37,10 +37,10 @@ class TicketSerializer(serializers.ModelSerializer):
             'exit_station_details',
             'entry_time',
             'exit_time',
-            'qr_code_url',
             'valid_until',
             'created_at',
-            'ticket_details'
+            'ticket_details',
+            'qr_code_url'
         ]
         read_only_fields = [
             'id',
