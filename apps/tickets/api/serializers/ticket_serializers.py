@@ -104,3 +104,10 @@ class TicketUpgradeSerializer(serializers.Serializer):
         required=True
     )
     payment_confirmed = serializers.BooleanField(default=False)
+
+
+class TicketListQueryParamsSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(
+        choices=['ACTIVE', 'IN_USE', 'USED', 'EXPIRED', 'ALL'],
+        required=False
+    )

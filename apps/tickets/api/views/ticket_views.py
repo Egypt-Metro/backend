@@ -3,7 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
-from django.db import transaction
+from django.db import transaction, models
+from django.utils import timezone
 
 from apps.tickets.constants.choices import TicketChoices
 from ..serializers.ticket_serializers import (
@@ -22,7 +23,85 @@ class TicketViewSet(viewsets.ModelViewSet):
     queryset = Ticket.objects.none()
 
     def get_queryset(self):
-        return Ticket.objects.filter(user=self.request.user)
+        """Get and filter tickets for the current user with automatic expiry handling"""
+        # Get current time
+        now = timezone.now()
+        # Get base queryset for the current user
+        queryset = Ticket.objects.filter(user=self.request.user)
+        # Update expired tickets (do this first to ensure accurate status)
+        expired_tickets = queryset.filter(
+            valid_until__lt=now,
+            status='ACTIVE'
+        )
+        if expired_tickets.exists():
+            expired_tickets.update(status='EXPIRED')
+        # Get status filter from request params
+        status = self.request.query_params.get('status', None)
+        # Apply status filtering
+        if status and status.upper() != 'ALL':
+            queryset = queryset.filter(status=status.upper())
+        elif not status:
+            # By default, show active and in-use tickets
+            queryset = queryset.filter(status__in=['ACTIVE', 'IN_USE'])
+        return queryset.order_by('-created_at')
+
+    @action(detail=False, methods=['get'], url_path='sync')
+    def sync_tickets(self, request):
+        """
+        Sync tickets after login - retrieves active and in-use tickets
+        """
+        now = timezone.now()
+
+        # Get user's valid tickets (active or in-use)
+        valid_tickets = Ticket.objects.filter(
+            user=request.user
+        ).filter(
+            models.Q(status='ACTIVE', valid_until__gte=now)
+            | models.Q(status='IN_USE')
+        ).select_related('entry_station', 'exit_station').order_by('-created_at')
+
+        return Response({
+            "success": True,
+            "data": self.get_serializer(valid_tickets, many=True).data,
+            "count": valid_tickets.count(),
+            "message": f"Successfully synced {valid_tickets.count()} tickets"
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='dashboard')
+    def dashboard(self, request):
+        """Get user's ticket dashboard summary"""
+        now = timezone.now()
+
+        # Active tickets (valid and not used)
+        active_tickets = Ticket.objects.filter(
+            user=request.user,
+            status='ACTIVE',
+            valid_until__gte=now
+        ).order_by('-created_at')
+
+        # In-use tickets (entered but not exited)
+        in_use_tickets = Ticket.objects.filter(
+            user=request.user,
+            status='IN_USE'
+        )
+
+        # Recent used tickets
+        recent_used = Ticket.objects.filter(
+            user=request.user,
+            status='USED',
+            exit_time__gte=now - timezone.timedelta(days=7)
+        ).order_by('-exit_time')[:5]
+        return Response({
+            "success": True,
+            "data": {
+                "active_tickets": self.get_serializer(active_tickets, many=True).data,
+                "in_use_tickets": self.get_serializer(in_use_tickets, many=True).data,
+                "recent_used": self.get_serializer(recent_used, many=True).data,
+                "active_count": active_tickets.count(),
+                "in_use_count": in_use_tickets.count()
+            },
+            "message": "User tickets dashboard retrieved successfully"
+        })
 
     @action(detail=False, methods=['get'], url_path='types')
     def types(self, request):
