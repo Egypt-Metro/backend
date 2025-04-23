@@ -4,23 +4,18 @@ from django.utils import timezone
 from django.utils.html import format_html
 from rangefilter.filters import DateRangeFilter
 from ..models.ticket import Ticket
-from ..constants.choices import TicketChoices
 
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     list_display = [
         'ticket_number',
-        'user',
+        'get_username',
         'ticket_type_colored',
         'status_colored',
-        'price',
-        'max_stations',
         'entry_station',
         'exit_station',
-        'valid_until',
         'is_active',
-        'created_at'
     ]
     list_filter = [
         'ticket_type',
@@ -59,7 +54,6 @@ class TicketAdmin(admin.ModelAdmin):
         ('Ticket Details', {
             'fields': (
                 'ticket_type',
-                'quantity',
                 'price',
                 'color',
                 'max_stations',
@@ -89,6 +83,12 @@ class TicketAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         })
     )
+
+    def get_username(self, obj):
+        """Get username of ticket owner"""
+        return obj.user.username if obj.user else '-'
+    get_username.short_description = 'Username'
+    get_username.admin_order_field = 'user__username'
 
     def is_active(self, obj):
         """Check if ticket is still active"""
@@ -128,7 +128,7 @@ class TicketAdmin(admin.ModelAdmin):
         return format_html(
             '<span style="color: {}; font-weight: bold;">{}</span>',
             ticket_colors.get(obj.ticket_type, 'black'),
-            TicketChoices.TICKET_TYPES[obj.ticket_type]['name']
+            obj.ticket_type
         )
     ticket_type_colored.short_description = 'Ticket Type'
 

@@ -200,3 +200,71 @@ class TicketViewSet(viewsets.ModelViewSet):
         if success:
             return Response(result)
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='validate-scan')
+    @transaction.atomic
+    def validate_scan(self, request):
+        """
+        Unified endpoint to handle both entry and exit scans
+        """
+        ticket_number = request.data.get('ticket_number')
+        station_id = request.data.get('station_id')
+
+        # Validate input
+        if not ticket_number or not station_id:
+            return Response(
+                {'error': 'Ticket number and station ID are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        try:
+            # Get ticket with select_for_update to prevent race conditions
+            ticket = Ticket.objects.select_for_update().get(ticket_number=ticket_number)
+
+            # Check expiration first
+            if ticket.valid_until < timezone.now() and ticket.status == 'ACTIVE':
+                ticket.status = 'EXPIRED'
+                ticket.save(update_fields=['status'])
+                return Response({
+                    'is_valid': False,
+                    'message': 'Ticket has expired'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Determine scan type based on current ticket state
+            if ticket.status == 'ACTIVE' and not ticket.entry_station_id:
+                result = ValidationService.validate_entry(ticket_number, station_id)
+                return Response({
+                    **result,
+                    'scan_type': 'ENTRY'
+                }, status=status.HTTP_200_OK)
+
+            elif ticket.status == 'IN_USE' and ticket.entry_station_id and not ticket.exit_station_id:
+                result = ValidationService.validate_exit(ticket_number, station_id)
+                status_code = self.get_status_code(result)
+                return Response({
+                    **result,
+                    'scan_type': 'EXIT'
+                }, status=status_code)
+
+            else:
+                return Response({
+                    'is_valid': False,
+                    'message': f'Ticket is in invalid state for scanning: {ticket.status}',
+                    'current_status': ticket.status,
+                    'has_entry': bool(ticket.entry_station_id),
+                    'has_exit': bool(ticket.exit_station_id)
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        except Ticket.DoesNotExist:
+            return Response({
+                'is_valid': False,
+                'message': 'Invalid ticket'
+            }, status=status.HTTP_404_NOT_FOUND)
+
+    @staticmethod
+    def get_status_code(result):
+        if result['is_valid']:
+            return status.HTTP_200_OK
+        elif result.get('upgrade_required'):
+            return status.HTTP_402_PAYMENT_REQUIRED
+        else:
+            return status.HTTP_400_BAD_REQUEST
