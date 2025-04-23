@@ -79,10 +79,15 @@ class TicketChoices:
 
 
 class SubscriptionChoices:
+    MONTHLY_DAYS = 30
+    QUARTERLY_DAYS = 90
+    ANNUAL_DAYS = 365
+    TRIPS_PER_DAY = 2
+
     TYPES = [
-        ('MONTHLY', 'Monthly'),
-        ('QUARTERLY', 'Quarterly'),
-        ('ANNUAL', 'Annual'),
+        ('MONTHLY', 'Monthly Subscription'),
+        ('QUARTERLY', 'Quarterly Subscription'),
+        ('ANNUAL', 'Annual Subscription'),
     ]
 
     ZONES = [(i, f'{i} Zone{"s" if i > 1 else ""}') for i in range(1, 7)]

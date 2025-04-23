@@ -1,20 +1,22 @@
+# apps/tickets/api/serializers/subscription_serializers.py
 from rest_framework import serializers
 from django.utils import timezone
-from ...models.subscription import Subscription
+from ...models.subscription import UserSubscription, SubscriptionPlan
 from ...constants.pricing import ZONE_STATIONS
 
 
 class BaseSubscriptionSerializer(serializers.ModelSerializer):
     """Base serializer with common subscription fields"""
-    subscription_type_display = serializers.CharField(
-        source='get_subscription_type_display',
-        read_only=True
-    )
+    subscription_type = serializers.CharField(source='plan.type', read_only=True)
+    subscription_type_display = serializers.SerializerMethodField()
+    zones_count = serializers.SerializerMethodField()
+    price = serializers.DecimalField(source='plan.price', max_digits=10, decimal_places=2, read_only=True)
     days_remaining = serializers.SerializerMethodField()
+    covered_zones = serializers.SerializerMethodField()
     covered_stations = serializers.SerializerMethodField()
 
     class Meta:
-        model = Subscription
+        model = UserSubscription
         fields = [
             'id',
             'subscription_type',
@@ -24,6 +26,7 @@ class BaseSubscriptionSerializer(serializers.ModelSerializer):
             'start_date',
             'end_date',
             'is_active',
+            'status',
             'covered_zones',
             'covered_stations',
             'days_remaining',
@@ -36,17 +39,50 @@ class BaseSubscriptionSerializer(serializers.ModelSerializer):
             'created_at'
         ]
 
+    def get_subscription_type_display(self, obj):
+        """Get display name for subscription type"""
+        subscription_types = dict(SubscriptionPlan.SUBSCRIPTION_TYPE_CHOICES)
+        return subscription_types.get(obj.plan.type, '')
+
+    def get_zones_count(self, obj):
+        """Get zones count from plan"""
+        if obj.plan.zones:
+            return obj.plan.zones
+        elif obj.plan.type == 'ANNUAL':
+            # For annual plans, count is based on lines
+            lines = obj.plan.lines or []
+            return 2 if len(lines) <= 2 else 3  # 2 for Lines 1&2, 3 for all lines
+        return None
+
     def get_days_remaining(self, obj):
+        """Get days remaining for active subscription"""
         if obj.is_active and obj.end_date:
             today = timezone.now().date()
             if today <= obj.end_date:
                 return (obj.end_date - today).days
         return 0
 
+    def get_covered_zones(self, obj):
+        """Get zones covered by the subscription"""
+        if obj.plan.zones:
+            # For monthly/quarterly, zones are numeric
+            return list(range(1, obj.plan.zones + 1))
+        elif obj.plan.type == 'ANNUAL':
+            # For annual, cover all zones connected to the lines in the plan
+            lines = obj.plan.lines or []
+            if any('Third Line' in line for line in lines):
+                # All lines cover all zones
+                return list(range(1, 11))
+            else:
+                # Lines 1 & 2 cover zones 1-9
+                return list(range(1, 10))
+        return []
+
     def get_covered_stations(self, obj):
         """Returns list of station names covered by subscription"""
         stations = []
-        for zone in obj.covered_zones:
+        covered_zones = self.get_covered_zones(obj)
+        for zone in covered_zones:
             if zone in ZONE_STATIONS:
                 stations.extend(ZONE_STATIONS[zone])
         return sorted(stations)
@@ -70,12 +106,13 @@ class SubscriptionDetailSerializer(BaseSubscriptionSerializer):
     pass
 
 
-class SubscriptionCreateSerializer(BaseSubscriptionSerializer):
+class SubscriptionCreateSerializer(serializers.Serializer):
     """Serializer for creating new subscriptions"""
+    subscription_type = serializers.ChoiceField(choices=SubscriptionPlan.SUBSCRIPTION_TYPE_CHOICES)
+    zones_count = serializers.IntegerField(min_value=1, max_value=6)
     payment_confirmation = serializers.BooleanField(write_only=True)
-
-    class Meta(BaseSubscriptionSerializer.Meta):
-        fields = BaseSubscriptionSerializer.Meta.fields + ['payment_confirmation']
+    start_station_id = serializers.IntegerField(required=False, allow_null=True)
+    end_station_id = serializers.IntegerField(required=False, allow_null=True)
 
     def validate(self, data):
         """Validate subscription data"""

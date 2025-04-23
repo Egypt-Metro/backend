@@ -1,3 +1,4 @@
+# apps/tickets/api/views/subscription_views.py
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,13 +11,15 @@ from ..serializers.subscription_serializers import (
     SubscriptionCreateSerializer,
     SubscriptionValidationSerializer
 )
-from ...models.subscription import Subscription
+from ...models.subscription import UserSubscription
 from ...services.subscription_service import SubscriptionService
+from ...services.subscription_qr_service import SubscriptionQRService
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     subscription_service = SubscriptionService()
+    qr_service = SubscriptionQRService()
     http_method_names = ['get', 'post', 'patch']  # Restrict to these methods
 
     def get_serializer_class(self):
@@ -31,7 +34,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Filter subscriptions by user and optional active status"""
-        queryset = Subscription.objects.filter(user=self.request.user)
+        queryset = UserSubscription.objects.filter(user=self.request.user)
 
         if self.action == 'list':
             is_active = self.request.query_params.get('active')
@@ -39,15 +42,15 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
                 is_active = is_active.lower() == 'true'
                 if is_active:
                     queryset = queryset.filter(
-                        is_active=True,
+                        status='ACTIVE',
                         end_date__gte=timezone.now().date()
                     )
                 else:
                     queryset = queryset.filter(
-                        is_active=False
+                        status__in=['EXPIRED', 'CANCELLED']
                     )
 
-        return queryset.select_related('user')
+        return queryset.select_related('user', 'plan')
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -56,11 +59,17 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
 
         try:
+            # Updated to pass the optional station IDs when provided
+            start_station_id = serializer.validated_data.get('start_station_id')
+            end_station_id = serializer.validated_data.get('end_station_id')
+
             subscription = self.subscription_service.create_subscription(
                 user=request.user,
                 subscription_type=serializer.validated_data['subscription_type'],
                 zones_count=serializer.validated_data['zones_count'],
-                payment_confirmed=serializer.validated_data['payment_confirmation']
+                payment_confirmed=serializer.validated_data['payment_confirmation'],
+                start_station_id=start_station_id,
+                end_station_id=end_station_id
             )
 
             response_serializer = SubscriptionDetailSerializer(subscription)
@@ -79,7 +88,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     def active(self, request):
         """Get user's current active subscription"""
         active_sub = self.get_queryset().filter(
-            is_active=True,
+            status='ACTIVE',
             end_date__gte=timezone.now().date()
         ).first()
 
@@ -126,8 +135,8 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        subscription.is_active = False
-        subscription.save(update_fields=['is_active', 'updated_at'])
+        subscription.status = 'CANCELLED'
+        subscription.save(update_fields=['status', 'updated_at'])
 
         return Response(
             SubscriptionDetailSerializer(subscription).data,
@@ -143,3 +152,36 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_405_METHOD_NOT_ALLOWED
         )
+
+    @action(detail=True, methods=['get'])
+    def qr_code(self, request, pk=None):
+        """Generate QR code for a subscription"""
+        subscription = self.get_object()
+
+        if not subscription.is_active:
+            return Response(
+                {'error': 'Cannot generate QR code for inactive subscription'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        qr_service = SubscriptionQRService(current_user=request.user)
+        qr_data = qr_service.create_subscription_qr_data(subscription)
+
+        try:
+            qr_code_base64, validation_hash = qr_service.generate_subscription_qr(qr_data)
+
+            # Optionally store the hash in the database for later verification
+            # subscription.qr_validation_hash = validation_hash
+            # subscription.save(update_fields=['qr_validation_hash'])
+
+            return Response({
+                'qr_code': qr_code_base64,
+                'qr_image_url': qr_service.get_qr_image_url(qr_code_base64),
+                'subscription_id': subscription.id
+            })
+
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
