@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class QRService:
     """Service for handling QR code generation and validation for tickets"""
 
-    QR_VERSION = 1
+    QR_VERSION = 4
     QR_BOX_SIZE = 10
     QR_BORDER = 4
     QR_ERROR_CORRECTION = qrcode.constants.ERROR_CORRECT_H
@@ -41,10 +41,22 @@ class QRService:
                 missing = [f for f in required_fields if f not in ticket_data]
                 raise ValueError(f"Missing required ticket data: {', '.join(missing)}")
 
-            # Get user's token
+            # Add detailed token logging
             from rest_framework.authtoken.models import Token
             user_id = ticket_data['user_id']
-            user_token, _ = Token.objects.get_or_create(user_id=user_id)
+
+            logger.info(f"Attempting to get/create token for user_id: {user_id}")
+
+            try:
+                user_token, created = Token.objects.get_or_create(user_id=user_id)
+                logger.info(f"Token for user {user_id}: {user_token.key[:5]}...{user_token.key[-5:]} (Created: {created})")
+            except Exception as token_error:
+                logger.error(f"Failed to get/create token for user {user_id}: {str(token_error)}")
+                # Create a temporary token to avoid breaking QR generation
+                import uuid
+                temp_token_key = f"temp_{uuid.uuid4().hex[:10]}"
+                logger.warning(f"Using temporary token key: {temp_token_key}")
+                user_token = type('obj', (object,), {'key': temp_token_key})
 
             # Add metadata with proper timezone handling
             current_time = self.current_time.strftime(self.DATE_FORMAT)
@@ -71,6 +83,10 @@ class QRService:
                 'auth_token': user_token.key
             }
 
+            # Log QR data keys (without exposing sensitive values)
+            logger.info(f"QR data keys: {list(qr_data.keys())}")
+            logger.info(f"Auth token included in QR: {'auth_token' in qr_data}")
+
             # Generate QR code
             qr = qrcode.QRCode(
                 version=self.QR_VERSION,
@@ -78,7 +94,12 @@ class QRService:
                 box_size=self.QR_BOX_SIZE,
                 border=self.QR_BORDER
             )
-            qr.add_data(json.dumps(qr_data))
+
+            # Convert to JSON and log the length
+            qr_json = json.dumps(qr_data)
+            logger.info(f"QR JSON length: {len(qr_json)} characters")
+
+            qr.add_data(qr_json)
             qr.make(fit=True)
 
             # Create QR code image
@@ -88,8 +109,8 @@ class QRService:
             qr_base64 = b64encode(buffer.getvalue()).decode()
 
             logger.info(
-                f"Generated QR code for ticket {ticket_data['ticket_number']} "
-                f"by user {username} at {current_time}"
+                f"Successfully generated QR code for ticket {ticket_data['ticket_number']} "
+                f"by user {username} with token inclusion"
             )
             return qr_base64, validation_hash
 

@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django.db import transaction, models
 from django.utils import timezone
+import json
 
 from apps.tickets.constants.choices import TicketChoices
 from ..serializers.ticket_serializers import (
@@ -295,3 +296,44 @@ class TicketViewSet(viewsets.ModelViewSet):
             request.data['exit_time'] = timezone.now()
 
         return super().partial_update(request, *args, **kwargs)
+
+    @action(detail=True, methods=['get'], url_path='debug')
+    def debug_ticket_qr(self, request, pk=None):
+        """Debug endpoint to verify QR code contents"""
+        ticket = self.get_object()
+
+        try:
+            # Extract raw data to verify contents
+            import base64
+            from io import BytesIO
+            from PIL import Image
+            from pyzbar.pyzbar import decode
+
+            # Convert base64 to image
+            image_data = base64.b64decode(ticket.qr_code)
+            image = Image.open(BytesIO(image_data))
+
+            # Decode QR code directly
+            decoded_objects = decode(image)
+            if not decoded_objects:
+                return Response({'error': 'Could not decode QR code'}, status=400)
+
+            # Parse the decoded data
+            raw_data = decoded_objects[0].data.decode('utf-8')
+            qr_data = json.loads(raw_data)
+
+            # Safely mask the auth token
+            if 'auth_token' in qr_data:
+                token = qr_data['auth_token']
+                qr_data['auth_token'] = f"{token[:5]}...{token[-5:]}"
+
+            return Response({
+                'success': True,
+                'qr_keys': list(qr_data.keys()),
+                'contains_auth_token': 'auth_token' in qr_data,
+                'token_snippet': qr_data.get('auth_token', 'Not found'),
+                'data_length': len(raw_data),
+                'ticket_number': ticket.ticket_number
+            })
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
