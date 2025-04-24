@@ -79,7 +79,7 @@ google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.1
 gprof2dot==2024.6.6
 gunicorn==23.0.0
-h11==0.14.0
+h11==0.16.0
 httpcore==0.16.3
 httplib2==0.22.0
 httpx==0.23.3
