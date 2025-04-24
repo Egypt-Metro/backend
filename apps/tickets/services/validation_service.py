@@ -109,26 +109,48 @@ class ValidationService:
             stations_count = route_data['num_stations']
 
             if stations_count > ticket.max_stations:
-                # Find next suitable ticket type
-                next_ticket = TicketChoices.get_next_ticket_type(stations_count)
+                try:
+                    # Find next suitable ticket type
+                    next_ticket = TicketChoices.get_next_ticket_type(stations_count)
 
-                if next_ticket:
-                    price_difference = next_ticket['price'] - ticket.price
+                    if next_ticket:
+                        # Handle different return types (could be dict or tuple)
+                        if isinstance(next_ticket, tuple) and len(next_ticket) == 2:
+                            next_ticket_type, next_ticket_details = next_ticket
+                            price_difference = next_ticket_details['price'] - ticket.price
+                            new_ticket_type_name = next_ticket_type
+                        else:
+                            # Assuming it's a dictionary
+                            price_difference = next_ticket['price'] - ticket.price
+                            new_ticket_type_name = next_ticket['name']
+
+                        cls.hardware_service.send_validation_result(False)
+                        return {
+                            'is_valid': False,
+                            'message': 'Ticket needs upgrade',
+                            'upgrade_required': True,
+                            'upgrade_price': price_difference,
+                            'new_ticket_type': new_ticket_type_name,
+                            'stations_count': stations_count,
+                            'max_stations': ticket.max_stations
+                        }
+                    else:
+                        cls.hardware_service.send_validation_result(False)
+                        return {
+                            'is_valid': False,
+                            'message': 'Route exceeds maximum allowed stations and no upgrade available'
+                        }
+                except Exception as e:
+                    # Log the exception for debugging
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error processing ticket upgrade: {str(e)}")
+
                     cls.hardware_service.send_validation_result(False)
                     return {
                         'is_valid': False,
-                        'message': 'Ticket needs upgrade',
-                        'upgrade_required': True,
-                        'upgrade_price': price_difference,
-                        'new_ticket_type': next_ticket['name'],
-                        'stations_count': stations_count
+                        'message': 'Unable to process ticket upgrade'
                     }
-
-                cls.hardware_service.send_validation_result(False)
-                return {
-                    'is_valid': False,
-                    'message': 'Route exceeds maximum allowed stations'
-                }
 
             # Record exit
             ticket.exit_station_id = station_id
