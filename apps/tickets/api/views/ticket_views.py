@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import ValidationError
 from django.db import transaction, models
 from django.utils import timezone
@@ -17,7 +17,7 @@ from ...services.validation_service import ValidationService
 
 class TicketViewSet(viewsets.ModelViewSet):
     serializer_class = TicketSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     ticket_service = TicketService()
     http_method_names = ['get', 'post', 'patch']
     queryset = Ticket.objects.none()
@@ -201,7 +201,7 @@ class TicketViewSet(viewsets.ModelViewSet):
             return Response(result)
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], url_path='validate-scan')
+    @action(detail=False, methods=['post'], url_path='validate-scan', permission_classes=[AllowAny])
     @transaction.atomic
     def validate_scan(self, request):
         """
