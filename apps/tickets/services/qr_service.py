@@ -41,24 +41,29 @@ class QRService:
                 missing = [f for f in required_fields if f not in ticket_data]
                 raise ValueError(f"Missing required ticket data: {', '.join(missing)}")
 
-            # Add detailed token logging
-            from rest_framework.authtoken.models import Token
+            # Get JWT token instead of Auth Token
+            from rest_framework_simplejwt.tokens import RefreshToken
+            from django.contrib.auth import get_user_model
+
+            User = get_user_model()
             user_id = ticket_data['user_id']
 
-            logger.info(f"Attempting to get/create token for user_id: {user_id}")
+            logger.info(f"Attempting to generate JWT for user_id: {user_id}")
 
             try:
-                user_token, created = Token.objects.get_or_create(user_id=user_id)
-                logger.info(f"Token for user {user_id}: {user_token.key[:5]}...{user_token.key[-5:]} (Created: {created})")
+                user = User.objects.get(id=user_id)
+                # Generate a fresh token that lasts longer (adjust token lifetime in settings.py)
+                refresh = RefreshToken.for_user(user)
+                access_token = str(refresh.access_token)
+                logger.info(f"JWT generated for user {user_id} (first 10 chars): {access_token[:10]}...")
             except Exception as token_error:
-                logger.error(f"Failed to get/create token for user {user_id}: {str(token_error)}")
+                logger.error(f"Failed to generate JWT for user {user_id}: {str(token_error)}")
                 # Create a temporary token to avoid breaking QR generation
                 import uuid
-                temp_token_key = f"temp_{uuid.uuid4().hex[:10]}"
-                logger.warning(f"Using temporary token key: {temp_token_key}")
-                user_token = type('obj', (object,), {'key': temp_token_key})
+                access_token = f"temp_{uuid.uuid4().hex[:10]}"
+                logger.warning(f"Using temporary token: {access_token[:10]}...")
 
-            # Add metadata with proper timezone handling
+            # Rest of your existing code
             current_time = self.current_time.strftime(self.DATE_FORMAT)
             username = getattr(self.current_user, 'username', 'system')
 
@@ -73,19 +78,20 @@ class QRService:
             # Generate validation hash
             validation_hash = self._generate_validation_hash(validation_data)
 
-            # Prepare complete QR data
+            # Prepare complete QR data with JWT token
             qr_data = {
                 **ticket_data,
                 'generated_at': current_time,
                 'generated_by': username,
                 'validation_hash': validation_hash,
                 'timezone': settings.TIME_ZONE,
-                'auth_token': user_token.key
+                'auth_token': access_token  # JWT token
             }
 
             # Log QR data keys (without exposing sensitive values)
             logger.info(f"QR data keys: {list(qr_data.keys())}")
-            logger.info(f"Auth token included in QR: {'auth_token' in qr_data}")
+            logger.info(f"JWT token included in QR: {'auth_token' in qr_data}")
+            logger.info(f"JWT token length: {len(access_token)}")
 
             # Generate QR code
             qr = qrcode.QRCode(
@@ -110,7 +116,7 @@ class QRService:
 
             logger.info(
                 f"Successfully generated QR code for ticket {ticket_data['ticket_number']} "
-                f"by user {username} with token inclusion"
+                f"by user {username} with JWT inclusion"
             )
             return qr_base64, validation_hash
 

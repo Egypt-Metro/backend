@@ -3,7 +3,6 @@ from typing import Dict, Tuple
 from django.utils import timezone
 from django.db import transaction
 from django.core.exceptions import ValidationError
-from rest_framework.authtoken.models import Token
 
 from ..models import Ticket
 from ..constants.choices import TicketChoices
@@ -30,7 +29,7 @@ class TicketService:
         if not ticket_details:
             raise ValidationError("Invalid ticket type")
 
-        user_token, _ = Token.objects.get_or_create(user_id=user.id)
+        # Don't generate token here - it will be generated in qr_service.py
 
         tickets = []
         for _ in range(quantity):
@@ -53,7 +52,7 @@ class TicketService:
                 'ticket_type': ticket_type,
                 'created_at': ticket.created_at.isoformat(),
                 'valid_until': ticket.valid_until.isoformat(),
-                'auth_token': user_token.key
+                # Don't add token here - will be added in qr_service.py
             }
 
             # Generate and save QR code
