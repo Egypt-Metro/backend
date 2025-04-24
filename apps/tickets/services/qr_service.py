@@ -33,12 +33,6 @@ class QRService:
     def generate_ticket_qr(self, ticket_data: Dict) -> Tuple[str, str]:
         """
         Generate QR code and validation hash for a ticket
-
-        Args:
-            ticket_data: Dictionary containing ticket information
-
-        Returns:
-            Tuple[str, str]: (qr_code_base64, validation_hash)
         """
         try:
             # Validate required fields
@@ -46,6 +40,11 @@ class QRService:
             if not all(field in ticket_data for field in required_fields):
                 missing = [f for f in required_fields if f not in ticket_data]
                 raise ValueError(f"Missing required ticket data: {', '.join(missing)}")
+
+            # Get user's token
+            from rest_framework.authtoken.models import Token
+            user_id = ticket_data['user_id']
+            user_token, _ = Token.objects.get_or_create(user_id=user_id)
 
             # Add metadata with proper timezone handling
             current_time = self.current_time.strftime(self.DATE_FORMAT)
@@ -68,7 +67,8 @@ class QRService:
                 'generated_at': current_time,
                 'generated_by': username,
                 'validation_hash': validation_hash,
-                'timezone': settings.TIME_ZONE
+                'timezone': settings.TIME_ZONE,
+                'auth_token': user_token.key
             }
 
             # Generate QR code
@@ -101,13 +101,6 @@ class QRService:
     def validate_qr(cls, qr_data: str, stored_hash: str) -> Tuple[bool, Dict]:
         """
         Validate QR code data against stored hash
-
-        Args:
-            qr_data: JSON string containing ticket data
-            stored_hash: Previously generated validation hash
-
-        Returns:
-            Tuple[bool, Dict]: (is_valid, result_data)
         """
         try:
             # Parse QR data

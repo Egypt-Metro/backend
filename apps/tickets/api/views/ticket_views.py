@@ -268,3 +268,30 @@ class TicketViewSet(viewsets.ModelViewSet):
             return status.HTTP_402_PAYMENT_REQUIRED
         else:
             return status.HTTP_400_BAD_REQUEST
+
+    def partial_update(self, request, *args, **kwargs):
+        """Handle updates for entry/exit station IDs"""
+        instance = self.get_object()
+
+        # Basic validation for status transitions
+        new_status = request.data.get('status')
+        if new_status:
+            if new_status == 'IN_USE' and instance.status != 'ACTIVE':
+                return Response(
+                    {'error': 'Can only change to IN_USE from ACTIVE status'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if new_status == 'USED' and instance.status != 'IN_USE':
+                return Response(
+                    {'error': 'Can only change to USED from IN_USE status'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Handle entry and exit times automatically
+        if 'entry_station_id' in request.data and not instance.entry_time:
+            request.data['entry_time'] = timezone.now()
+
+        if 'exit_station_id' in request.data and not instance.exit_time:
+            request.data['exit_time'] = timezone.now()
+
+        return super().partial_update(request, *args, **kwargs)

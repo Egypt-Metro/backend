@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     # "allauth.socialaccount.providers.google",  # Google OAuth provider
     "rest_framework",  # REST framework
     "rest_framework_simplejwt",  # JWT authentication
+    'rest_framework.authtoken',  # Token authentication
     "corsheaders",  # CORS headers
     "drf_yasg",  # Swagger
     "constance",  # Dynamic settings

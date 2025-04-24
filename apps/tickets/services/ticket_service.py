@@ -20,22 +20,8 @@ class TicketService:
         self,
         user,
         ticket_type: str,
-        quantity: int = 1  # Add quantity parameter with default value
+        quantity: int = 1
     ) -> Ticket:
-        """
-        Creates new ticket(s) based on ticket type without entry/exit stations
-
-        Args:
-            user: User creating the ticket
-            ticket_type: Type of ticket (BASIC, STANDARD, PREMIUM, VIP)
-            quantity: Number of tickets to create (default=1)
-
-        Returns:
-            Single Ticket instance or list of Ticket instances
-
-        Raises:
-            ValidationError: If ticket type is invalid or quantity < 1
-        """
         if quantity < 1:
             raise ValidationError("Quantity must be at least 1")
 
