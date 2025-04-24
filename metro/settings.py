@@ -98,9 +98,8 @@ MIDDLEWARE = [
 ROOT_URLCONF = "metro.urls"  # Root URL configuration
 WSGI_APPLICATION = "metro.wsgi.application"  # WSGI application
 
-# AI Model Settings
-# AI_MODEL_PATH = "path/to/your/trained/model"
-# AI_MODEL_CONFIDENCE_THRESHOLD = 0.8
+# Single API key for all scanners
+SCANNER_API_KEY = "egypt_metro_scanner_123456"  # API key for scanner devices
 
 # AI Service Configuration
 AI_SERVICE_CONFIG = {
