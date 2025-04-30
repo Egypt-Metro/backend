@@ -32,7 +32,7 @@ class QRService:
 
     def generate_ticket_qr(self, ticket_data: Dict) -> Tuple[str, str]:
         """
-        Generate QR code and validation hash for a ticket with proper JWT implementation
+        Generate QR code and validation hash for a ticket
         """
         try:
             # Validate required fields
@@ -41,55 +41,10 @@ class QRService:
                 missing = [f for f in required_fields if f not in ticket_data]
                 raise ValueError(f"Missing required ticket data: {', '.join(missing)}")
 
-            # Import necessary modules
-            from rest_framework_simplejwt.tokens import RefreshToken
-            from django.contrib.auth import get_user_model
-            from datetime import timedelta
-
-            User = get_user_model()
-            user_id = ticket_data['user_id']
-
-            logger.info(f"Attempting to generate JWT for user_id: {user_id}")
-
-            try:
-                user = User.objects.get(id=user_id)
-
-                # Create a refresh token for the user
-                refresh = RefreshToken.for_user(user)
-
-                # Customize the token with ticket-specific claims for better security
-                refresh.payload.update({
-                    'ticket_number': ticket_data['ticket_number'],
-                    'ticket_type': ticket_data['ticket_type'],
-                    'qr_purpose': 'metro_ticket_validation'
-                })
-
-                # Set token expiry to match the ticket validity period
-                refresh.access_token.set_exp(lifetime=timedelta(days=1))
-
-                # Get the access token as a string
-                access_token = str(refresh.access_token)
-
-                # Basic validation of token format
-                if not (access_token.startswith('ey') and access_token.count('.') == 2):
-                    logger.error(f"Generated token does not match JWT format: {access_token[:10]}...")
-                    raise ValueError("Generated token is not in valid JWT format")
-
-                logger.info(f"Valid JWT token generated for user {user_id}, token length: {len(access_token)}")
-
-            except User.DoesNotExist:
-                logger.error(f"User {user_id} not found")
-                raise ValueError(f"User with ID {user_id} does not exist")
-
-            except Exception as token_error:
-                logger.error(f"Failed to generate JWT token: {str(token_error)}", exc_info=True)
-                raise ValueError(f"JWT token generation failed: {str(token_error)}")
-
-            # Add metadata
+            # Add metadata with proper timezone handling
             current_time = self.current_time.strftime(self.DATE_FORMAT)
             username = getattr(self.current_user, 'username', 'system')
 
-            # Prepare validation data
             validation_data = {
                 'ticket_number': ticket_data['ticket_number'],
                 'user_id': ticket_data['user_id'],
@@ -101,39 +56,23 @@ class QRService:
             # Generate validation hash
             validation_hash = self._generate_validation_hash(validation_data)
 
-            # Prepare QR data with JWT token
+            # Prepare complete QR data
             qr_data = {
                 **ticket_data,
                 'generated_at': current_time,
                 'generated_by': username,
                 'validation_hash': validation_hash,
-                'timezone': settings.TIME_ZONE,
-                'auth_token': access_token,  # Store the full JWT token
-                'token_type': 'JWT'  # Explicitly indicate token type
+                'timezone': settings.TIME_ZONE
             }
 
-            # Log info about QR data
-            logger.info(f"QR data prepared with fields: {list(qr_data.keys())}")
-            logger.info(f"JWT token included (length: {len(access_token)})")
-
-            # Generate QR code - possibly increase version if data is large
-            qr_json = json.dumps(qr_data)
-            json_size = len(qr_json)
-
-            # Check if we need to adjust QR code version based on data size
-            qr_version = self.QR_VERSION
-            if json_size > 800:  # Version 4 limit with high error correction
-                qr_version = 6  # Increase to version 6 for larger data
-                logger.warning(f"Increasing QR version to 6 due to large data size ({json_size} bytes)")
-
+            # Generate QR code
             qr = qrcode.QRCode(
-                version=qr_version,
+                version=self.QR_VERSION,
                 error_correction=self.QR_ERROR_CORRECTION,
                 box_size=self.QR_BOX_SIZE,
                 border=self.QR_BORDER
             )
-
-            qr.add_data(qr_json)
+            qr.add_data(json.dumps(qr_data))
             qr.make(fit=True)
 
             # Create QR code image
@@ -142,11 +81,14 @@ class QRService:
             img.save(buffer, format='PNG')
             qr_base64 = b64encode(buffer.getvalue()).decode()
 
-            logger.info(f"QR code successfully generated for ticket {ticket_data['ticket_number']}")
+            logger.info(
+                f"Generated QR code for ticket {ticket_data['ticket_number']} "
+                f"by user {username} at {current_time}"
+            )
             return qr_base64, validation_hash
 
         except Exception as e:
-            logger.error(f"QR code generation failed: {str(e)}", exc_info=True)
+            logger.error(f"Error generating QR code: {str(e)}")
             raise ValueError(f"Failed to generate QR code: {str(e)}")
 
     @classmethod

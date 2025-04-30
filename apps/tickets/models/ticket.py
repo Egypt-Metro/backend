@@ -61,10 +61,15 @@ class Ticket(models.Model):
         choices=TicketChoices.TICKET_COLORS,
         db_index=True
     )
-
     max_stations = models.IntegerField(
         validators=[MinValueValidator(1)],
         help_text="Maximum number of stations allowed for this ticket"
+    )
+
+    # Upgrade status
+    upgrade_required = models.BooleanField(
+        default=False,
+        help_text="Indicates ticket to be upgraded"
     )
 
     # Station Information

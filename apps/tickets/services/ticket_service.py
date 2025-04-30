@@ -52,7 +52,6 @@ class TicketService:
                 'ticket_type': ticket_type,
                 'created_at': ticket.created_at.isoformat(),
                 'valid_until': ticket.valid_until.isoformat(),
-                # Don't add token here - will be added in qr_service.py
             }
 
             # Generate and save QR code
@@ -141,13 +140,17 @@ class TicketService:
 
                 if next_ticket:
                     price_difference = next_ticket['price'] - ticket.price
+                    ticket.upgrade_required = True
+                    ticket.save(update_fields=['upgrade_required'])
                     return {
                         'is_valid': False,
-                        'message': 'Ticket needs upgrade',
                         'upgrade_required': True,
-                        'upgrade_price': price_difference,
+                        'stations_count': stations_count,
+                        'max_stations': ticket.max_stations,
                         'new_ticket_type': next_ticket['name'],
-                        'stations_count': stations_count
+                        'upgrade_price': price_difference,
+                        'stations_count': stations_count,
+                        'message': 'Ticket needs upgrade'
                     }
                 return {
                     'is_valid': False,
@@ -199,7 +202,15 @@ class TicketService:
             ticket.color = new_ticket_details['color']
             ticket.max_stations = new_ticket_details['max_stations']
             ticket.status = 'ACTIVE'
-            ticket.save()
+            ticket.upgrade_required = False
+            ticket.save(update_fields=[
+                'price',
+                'price_category',
+                'color',
+                'max_stations',
+                'status',
+                'upgrade_required'
+            ])
 
             return True, {
                 'message': 'Ticket upgraded successfully',
