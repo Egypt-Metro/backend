@@ -16,14 +16,14 @@ class TicketAdmin(admin.ModelAdmin):
         'entry_station',
         'exit_station',
         'is_active',
-        'upgrade_required',
+        'needs_upgrade',
     ]
     list_filter = [
         'ticket_type',
         'status',
         'entry_station',
         'color',
-        'upgrade_required',
+        'needs_upgrade',
         ('valid_until', DateRangeFilter),
         ('created_at', DateRangeFilter)
     ]
@@ -60,7 +60,7 @@ class TicketAdmin(admin.ModelAdmin):
                 'color',
                 'max_stations',
                 'status',
-                'upgrade_required'
+                'needs_upgrade'
             )
         }),
         ('Station Information', {

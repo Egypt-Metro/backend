@@ -67,9 +67,13 @@ class Ticket(models.Model):
     )
 
     # Upgrade status
-    upgrade_required = models.BooleanField(
-        default=False,
-        help_text="Indicates ticket to be upgraded"
+    needs_upgrade = models.BooleanField(default=False, help_text="Flag indicating this ticket needs upgrading")
+    temp_exit_station = models.ForeignKey(
+        'stations.Station',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='temp_ticket_exits'
     )
 
     # Station Information

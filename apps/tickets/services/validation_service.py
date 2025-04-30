@@ -114,6 +114,11 @@ class ValidationService:
                     next_ticket = TicketChoices.get_next_ticket_type(stations_count)
 
                     if next_ticket:
+                        # Set needs_upgrade flag and temporary exit station
+                        ticket.needs_upgrade = True
+                        ticket.temp_exit_station_id = station_id
+                        ticket.save(update_fields=['needs_upgrade', 'temp_exit_station_id'])
+
                         # Handle different return types (could be dict or tuple)
                         if isinstance(next_ticket, tuple) and len(next_ticket) == 2:
                             next_ticket_type, next_ticket_details = next_ticket
@@ -124,18 +129,16 @@ class ValidationService:
                             price_difference = next_ticket['price'] - ticket.price
                             new_ticket_type_name = next_ticket['name']
 
-                        ticket.upgrade_required = True
-                        ticket.save(update_fields=['upgrade_required'])
-
                         cls.hardware_service.send_validation_result(False)
                         return {
                             'is_valid': False,
                             'message': 'Ticket needs upgrade',
-                            'upgrade_required': True,
+                            'needs_upgrade': True,
                             'upgrade_price': price_difference,
                             'new_ticket_type': new_ticket_type_name,
                             'stations_count': stations_count,
-                            'max_stations': ticket.max_stations
+                            'max_stations': ticket.max_stations,
+                            'redirect_to_metro_app': True
                         }
                     else:
                         cls.hardware_service.send_validation_result(False)
@@ -250,7 +253,7 @@ class ValidationService:
                 return {
                     'is_valid': False,
                     'message': 'Ticket needs upgrade',
-                    'upgrade_required': True,
+                    'needs_upgrade': True,
                     'upgrade_price': price_difference,
                     'stations_count': stations_count,
                     'current_type': ticket.ticket_type,

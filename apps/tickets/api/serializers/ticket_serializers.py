@@ -21,7 +21,7 @@ class TicketSerializer(serializers.ModelSerializer):
     entry_station_details = StationSerializer(source='entry_station', read_only=True)
     exit_station_details = StationSerializer(source='exit_station', read_only=True)
     ticket_details = serializers.SerializerMethodField()
-    upgrade_required = serializers.BooleanField(read_only=True)
+    needs_upgrade = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Ticket
@@ -38,7 +38,7 @@ class TicketSerializer(serializers.ModelSerializer):
             'exit_station_details',
             'entry_time',
             'exit_time',
-            'upgrade_required',
+            'needs_upgrade',
             'valid_until',
             'created_at',
             'ticket_details',

@@ -29,8 +29,6 @@ class TicketService:
         if not ticket_details:
             raise ValidationError("Invalid ticket type")
 
-        # Don't generate token here - it will be generated in qr_service.py
-
         tickets = []
         for _ in range(quantity):
             # Create ticket with initial values
@@ -140,12 +138,12 @@ class TicketService:
 
                 if next_ticket:
                     price_difference = next_ticket['price'] - ticket.price
-                    ticket.upgrade_required = True
+                    ticket.needs_upgrade = True
                     ticket.test_exit_station_id = station_id
-                    ticket.save(update_fields=['upgrade_required', 'test_exit_station_id'])
+                    ticket.save(update_fields=['needs_upgrade', 'test_exit_station_id'])
                     return {
                         'is_valid': False,
-                        'upgrade_required': True,
+                        'needs_upgrade': True,
                         'stations_count': stations_count,
                         'max_stations': ticket.max_stations,
                         'new_ticket_type': next_ticket['name'],
@@ -198,20 +196,11 @@ class TicketService:
                 return False, {'message': 'Invalid ticket type for upgrade'}
 
             # Update ticket with new type details
+            ticket.ticket_type = new_ticket_type
             ticket.price = new_ticket_details['price']
-            ticket.price_category = new_ticket_details['category']
             ticket.color = new_ticket_details['color']
             ticket.max_stations = new_ticket_details['max_stations']
-            ticket.status = 'ACTIVE'
-            ticket.upgrade_required = False
-            ticket.save(update_fields=[
-                'price',
-                'price_category',
-                'color',
-                'max_stations',
-                'status',
-                'upgrade_required'
-            ])
+            ticket.save()
 
             return True, {
                 'message': 'Ticket upgraded successfully',

@@ -198,6 +198,22 @@ class TicketViewSet(viewsets.ModelViewSet):
         )
 
         if success:
+            # Reset upgrade flags if successful
+            ticket.needs_upgrade = False
+
+            # If we have a temp_exit_station, finalize the exit
+            if ticket.temp_exit_station_id:
+                ticket.exit_station_id = ticket.temp_exit_station_id
+                ticket.temp_exit_station_id = None
+                ticket.exit_time = timezone.now()
+                ticket.status = 'USED'
+                ticket.save(update_fields=[
+                    'needs_upgrade', 'exit_station_id',
+                    'temp_exit_station_id', 'exit_time', 'status'
+                ])
+            else:
+                ticket.save(update_fields=['needs_upgrade'])
+
             return Response(result)
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
@@ -260,11 +276,64 @@ class TicketViewSet(viewsets.ModelViewSet):
                 'message': 'Invalid ticket'
             }, status=status.HTTP_404_NOT_FOUND)
 
+    @action(detail=False, methods=['get'], url_path='pending-upgrades')
+    def check_pending_upgrades(self, request):
+        """
+        Check for tickets that need upgrading for the current user
+        """
+        # Get tickets that need upgrading (marked with special status)
+        pending_upgrades = Ticket.objects.filter(
+            user=request.user,
+            status='IN_USE',
+            needs_upgrade=True
+        ).select_related('entry_station', 'temp_exit_station').order_by('-updated_at')
+
+        if not pending_upgrades.exists():
+            return Response({
+                "has_pending_upgrades": False,
+                "message": "No pending ticket upgrades"
+            })
+
+        # Get the most recent ticket needing upgrade
+        ticket = pending_upgrades.first()
+
+        # Calculate upgrade details
+        route_data = self.ticket_service.route_service.find_route(
+            ticket.entry_station_id,
+            ticket.temp_exit_station_id
+        )
+
+        if not route_data:
+            return Response({
+                "has_pending_upgrades": False,
+                "message": "Invalid route data"
+            })
+
+        stations_count = route_data['num_stations']
+        next_ticket_type, next_ticket_details = TicketChoices.get_next_ticket_type(stations_count)
+
+        price_difference = next_ticket_details['price'] - ticket.price
+
+        return Response({
+            "has_pending_upgrades": True,
+            "ticket": self.get_serializer(ticket).data,
+            "upgrade_details": {
+                "ticket_number": ticket.ticket_number,
+                "stations_count": stations_count,
+                "max_stations": ticket.max_stations,
+                "new_ticket_type": next_ticket_type,
+                "upgrade_price": price_difference,
+                "entry_station": ticket.entry_station.name,
+                "temp_exit_station": ticket.temp_exit_station.name,
+            },
+            "message": "Ticket requires upgrade to exit"
+        })
+
     @staticmethod
     def get_status_code(result):
         if result['is_valid']:
             return status.HTTP_200_OK
-        elif result.get('upgrade_required'):
+        elif result.get('needs_upgrade'):
             return status.HTTP_402_PAYMENT_REQUIRED
         else:
             return status.HTTP_400_BAD_REQUEST
