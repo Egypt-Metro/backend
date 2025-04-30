@@ -141,7 +141,8 @@ class TicketService:
                 if next_ticket:
                     price_difference = next_ticket['price'] - ticket.price
                     ticket.upgrade_required = True
-                    ticket.save(update_fields=['upgrade_required'])
+                    ticket.test_exit_station_id = station_id
+                    ticket.save(update_fields=['upgrade_required', 'test_exit_station_id'])
                     return {
                         'is_valid': False,
                         'upgrade_required': True,
