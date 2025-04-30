@@ -20,7 +20,7 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     subscription_service = SubscriptionService()
     qr_service = SubscriptionQRService()
-    http_method_names = ['get', 'post', 'patch']  # Restrict to these methods
+    http_method_names = ['get', 'post', 'patch']
 
     def get_serializer_class(self):
         """Return appropriate serializer based on action"""
