@@ -124,6 +124,9 @@ class ValidationService:
                             price_difference = next_ticket['price'] - ticket.price
                             new_ticket_type_name = next_ticket['name']
 
+                        ticket.upgrade_required = True
+                        ticket.save(update_fields=['upgrade_required'])
+
                         cls.hardware_service.send_validation_result(False)
                         return {
                             'is_valid': False,

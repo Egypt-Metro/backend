@@ -8,8 +8,8 @@ from .views.subscription_views import SubscriptionViewSet
 app_name = 'tickets'
 
 router = DefaultRouter()
-router.register(r'', TicketViewSet, basename='ticket')
 router.register(r'subscriptions', SubscriptionViewSet, basename='subscription')
+router.register(r'', TicketViewSet, basename='ticket')
 
 urlpatterns = [
     path('', include(router.urls)),

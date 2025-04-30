@@ -33,12 +33,6 @@ class SubscriptionQRService:
     def generate_subscription_qr(self, subscription_data: Dict) -> Tuple[str, str]:
         """
         Generate QR code and validation hash for a subscription
-
-        Args:
-            subscription_data: Dictionary containing subscription information
-
-        Returns:
-            Tuple[str, str]: (qr_code_base64, validation_hash)
         """
         try:
             # Validate required fields
@@ -69,7 +63,7 @@ class SubscriptionQRService:
                 'generated_by': username,
                 'validation_hash': validation_hash,
                 'timezone': settings.TIME_ZONE,
-                'qr_type': 'subscription'  # Add QR type to distinguish from other QR codes
+                'qr_type': 'subscription'
             }
 
             # Generate QR code
@@ -102,13 +96,6 @@ class SubscriptionQRService:
     def validate_qr(cls, qr_data: str, stored_hash: str) -> Tuple[bool, Dict]:
         """
         Validate QR code data against stored hash
-
-        Args:
-            qr_data: JSON string containing subscription data
-            stored_hash: Previously generated validation hash
-
-        Returns:
-            Tuple[bool, Dict]: (is_valid, result_data)
         """
         try:
             # Parse QR data
