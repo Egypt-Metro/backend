@@ -43,7 +43,6 @@ class UserSubscription(models.Model):
     end_date = models.DateField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ACTIVE')
 
-    # Optional fields for user's regular journey
     start_station = models.ForeignKey(
         'stations.Station',
         on_delete=models.SET_NULL,
@@ -55,6 +54,12 @@ class UserSubscription(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         related_name='subscription_ends'
+    )
+
+    covered_zones = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Specific zone numbers covered by this subscription"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)

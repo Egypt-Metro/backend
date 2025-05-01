@@ -64,18 +64,20 @@ class BaseSubscriptionSerializer(serializers.ModelSerializer):
 
     def get_covered_zones(self, obj):
         """Get zones covered by the subscription"""
-        if obj.plan.zones:
-            # For monthly/quarterly, zones are numeric
-            return list(range(1, obj.plan.zones + 1))
-        elif obj.plan.type == 'ANNUAL':
-            # For annual, cover all zones connected to the lines in the plan
+        # Use stored zones if available
+        if hasattr(obj, 'covered_zones') and obj.covered_zones:
+            return obj.covered_zones
+
+        # Fall back to previous logic if no stored zones
+        if obj.plan.type == 'ANNUAL':
             lines = obj.plan.lines or []
             if any('Third Line' in line for line in lines):
-                # All lines cover all zones
-                return list(range(1, 11))
+                return list(range(1, 11))  # All lines cover all zones
             else:
-                # Lines 1 & 2 cover zones 1-9
-                return list(range(1, 10))
+                return list(range(1, 10))  # Lines 1&2 cover zones 1-9
+        elif obj.plan.zones:
+            return list(range(1, obj.plan.zones + 1))
+
         return []
 
     def get_covered_stations(self, obj):

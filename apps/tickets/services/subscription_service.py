@@ -191,17 +191,15 @@ class SubscriptionService:
 
     @transaction.atomic
     def create_subscription(self, user, subscription_type, zones_count, payment_confirmed=False, start_station_id=None, end_station_id=None):
-        """Creates a new subscription"""
         if not payment_confirmed:
             raise ValueError("Payment must be confirmed")
 
         try:
-            # Calculate price based on subscription type and zones
+            # Annual subscription logic remains unchanged
             if subscription_type == 'ANNUAL':
                 lines = ['First Line', 'Second Line'] if zones_count == 2 else ['First Line', 'Second Line', 'Third Line']
                 price = SubscriptionPricing.ANNUAL['LINES_1_2'] if zones_count == 2 else SubscriptionPricing.ANNUAL['ALL_LINES']
 
-                # Create or get subscription plan
                 plan_name = 'Annual Lines 1&2' if zones_count == 2 else 'Annual All Lines'
                 plan, _ = SubscriptionPlan.objects.get_or_create(
                     type=subscription_type,
@@ -212,22 +210,27 @@ class SubscriptionService:
                         'description': f'Annual subscription for {", ".join(lines)}'
                     }
                 )
+
+                # For annual subscriptions, set covered zones based on lines
+                if any('Third Line' in line for line in lines):
+                    actual_covered_zones = list(range(1, 11))  # All lines cover all zones
+                else:
+                    actual_covered_zones = list(range(1, 10))  # Lines 1&2 cover zones 1-9
+
             else:
-                # For MONTHLY and QUARTERLY
+                # Monthly/Quarterly subscription logic
                 if subscription_type == 'MONTHLY':
                     price_mapping = SubscriptionPricing.MONTHLY
                 else:  # QUARTERLY
                     price_mapping = SubscriptionPricing.QUARTERLY
 
-                # Determine price category
                 price_category = self.get_price_category(zones_count)
                 if not price_category:
                     raise ValueError(f"Invalid zones count: {zones_count}")
 
                 price = price_mapping.get(price_category)
-
-                # Create or get subscription plan
                 plan_name = f"{subscription_type.capitalize()} {zones_count} Zone{'s' if zones_count > 1 else ''}"
+
                 plan, _ = SubscriptionPlan.objects.get_or_create(
                     type=subscription_type,
                     zones=zones_count,
@@ -237,6 +240,22 @@ class SubscriptionService:
                         'description': f"{subscription_type.capitalize()} subscription for {zones_count} zone{'s' if zones_count > 1 else ''}"
                     }
                 )
+
+                # Calculate actual covered zones if stations are provided
+                actual_covered_zones = None
+                if start_station_id and end_station_id:
+                    start_zone = self.get_station_zone(start_station_id)
+                    end_zone = self.get_station_zone(end_station_id)
+
+                    if start_zone and end_zone:
+                        # Use the predefined zone paths
+                        actual_covered_zones = self._calculate_journey_zones(start_zone, end_zone, zones_count)
+                        logger.info(f"Calculated covered zones: {actual_covered_zones} for journey from zone {start_zone} to {end_zone}")
+
+                # If no specific zones calculated or stations not provided, use default logic
+                if not actual_covered_zones:
+                    # Default sequential zones for monthly/quarterly
+                    actual_covered_zones = list(range(1, zones_count + 1))
 
             # Calculate dates
             start_date = timezone.now().date()
@@ -251,6 +270,7 @@ class SubscriptionService:
             start_station = Station.objects.get(id=start_station_id) if start_station_id else None
             end_station = Station.objects.get(id=end_station_id) if end_station_id else None
 
+            # Create subscription with calculated zones
             subscription = UserSubscription.objects.create(
                 user=user,
                 plan=plan,
@@ -258,7 +278,8 @@ class SubscriptionService:
                 end_date=end_date,
                 status='ACTIVE',
                 start_station=start_station,
-                end_station=end_station
+                end_station=end_station,
+                covered_zones=actual_covered_zones
             )
 
             return subscription
@@ -321,3 +342,32 @@ class SubscriptionService:
             'valid': False,
             'message': 'Station not covered by subscription'
         }
+
+    def _get_zone_path(self, start_zone, end_zone):
+        """Get the predefined path between two zones"""
+        from ..constants.pricing import ZONE_PATHS
+
+        if start_zone == end_zone:
+            return [start_zone]
+
+        if start_zone <= end_zone:
+            key = f"{start_zone}-{end_zone}"
+        else:
+            key = f"{end_zone}-{start_zone}"
+
+        return ZONE_PATHS.get(key, [start_zone, end_zone])
+
+    def _calculate_journey_zones(self, start_zone, end_zone, max_zones):
+        """Calculate optimal zones for a journey between two zones"""
+        zones = self._get_zone_path(start_zone, end_zone)
+
+        if len(zones) > max_zones:
+            priority_zones = [start_zone, end_zone]
+            remaining_zones = [z for z in zones if z not in priority_zones]
+            remaining_zones.sort()  # Zone 1 will be first
+            for zone in remaining_zones:
+                if len(priority_zones) < max_zones:
+                    priority_zones.append(zone)
+            zones = sorted(priority_zones)
+
+        return zones
