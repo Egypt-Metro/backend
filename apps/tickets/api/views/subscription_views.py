@@ -9,6 +9,7 @@ from ..serializers.subscription_serializers import (
     SubscriptionListSerializer,
     SubscriptionDetailSerializer,
     SubscriptionCreateSerializer,
+    SubscriptionRecommendationSerializer,
     SubscriptionValidationSerializer
 )
 from ...models.subscription import UserSubscription
@@ -30,6 +31,8 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
             return SubscriptionCreateSerializer
         elif self.action == 'validate_station':
             return SubscriptionValidationSerializer
+        elif self.action == 'recommend':
+            return SubscriptionRecommendationSerializer
         return SubscriptionDetailSerializer
 
     def get_queryset(self):
@@ -51,6 +54,34 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
                     )
 
         return queryset.select_related('user', 'plan')
+
+    @action(detail=False, methods=['get'])
+    def recommend(self, request):
+        """Get subscription recommendations for a journey"""
+        serializer = SubscriptionRecommendationSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        start_station_id = serializer.validated_data['start_station_id']
+        end_station_id = serializer.validated_data['end_station_id']
+
+        try:
+            recommendations = self.subscription_service.recommend_subscription(
+                start_station_id=start_station_id,
+                end_station_id=end_station_id
+            )
+
+            if 'error' in recommendations:
+                return Response(
+                    recommendations,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            return Response(recommendations)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):

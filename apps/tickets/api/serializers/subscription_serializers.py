@@ -145,3 +145,9 @@ class SubscriptionValidationSerializer(serializers.Serializer):
         if not any(value in stations for stations in ZONE_STATIONS.values()):
             raise serializers.ValidationError('Invalid station name')
         return value
+
+
+class SubscriptionRecommendationSerializer(serializers.Serializer):
+    """Serializer for subscription recommendation requests"""
+    start_station_id = serializers.IntegerField(required=True)
+    end_station_id = serializers.IntegerField(required=True)
