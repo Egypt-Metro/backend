@@ -15,9 +15,10 @@ from ..serializers.subscription_serializers import (
 from ...models.subscription import UserSubscription
 from ...services.subscription_service import SubscriptionService
 from ...services.subscription_qr_service import SubscriptionQRService
+from .wallet_integration import WalletSubscriptionMixin
 
 
-class SubscriptionViewSet(viewsets.ModelViewSet):
+class SubscriptionViewSet(WalletSubscriptionMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     subscription_service = SubscriptionService()
     qr_service = SubscriptionQRService()

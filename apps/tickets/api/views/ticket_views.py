@@ -13,9 +13,10 @@ from ..serializers.ticket_serializers import (
 from ...models.ticket import Ticket
 from ...services.ticket_service import TicketService
 from ...services.validation_service import ValidationService
+from .wallet_integration import WalletTicketMixin
 
 
-class TicketViewSet(viewsets.ModelViewSet):
+class TicketViewSet(WalletTicketMixin, viewsets.ModelViewSet):
     serializer_class = TicketSerializer
     permission_classes = [AllowAny]
     ticket_service = TicketService()
