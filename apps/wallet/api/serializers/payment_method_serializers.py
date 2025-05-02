@@ -32,10 +32,11 @@ class PaymentMethodCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentMethod
         fields = [
-            'payment_type', 'card_last4', 'card_brand',
+            'id', 'payment_type', 'card_last4', 'card_brand',
             'card_expiry_month', 'card_expiry_year',
             'is_default', 'name'
         ]
+        read_only_fields = ['id']
 
     def create(self, validated_data):
         # Set user from context

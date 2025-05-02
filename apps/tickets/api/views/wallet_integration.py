@@ -46,8 +46,8 @@ class WalletTicketMixin:
             return Response({
                 'success': True,
                 'message': result['message'],
-                'tickets': ticket_data,
-                'wallet_balance': result['new_balance']
+                'wallet_balance': result['new_balance'],
+                'tickets': ticket_data
             })
         else:
             return Response({
@@ -76,11 +76,15 @@ class WalletTicketMixin:
         )
 
         if result['success']:
+            # Use your existing ticket serializer to format the response
+            from apps.tickets.models.ticket import Ticket
+            updated_ticket = Ticket.objects.get(pk=ticket.pk)
+
             return Response({
                 'success': True,
                 'message': result['message'],
-                'ticket': self.get_serializer(result['ticket']).data,
-                'wallet_balance': result['new_balance']
+                'wallet_balance': result['new_balance'],
+                'ticket': self.get_serializer(updated_ticket).data
             })
         else:
             return Response({
@@ -124,8 +128,8 @@ class WalletSubscriptionMixin:
             return Response({
                 'success': True,
                 'message': result['message'],
-                'subscription': subscription_data,
-                'wallet_balance': result['new_balance']
+                'wallet_balance': result['new_balance'],
+                'subscription': subscription_data
             })
         else:
             return Response({
