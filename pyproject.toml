@@ -28,7 +28,7 @@ asyncpg = "^0.30.0"  # asyncpg version for PostgreSQL connection
 gunicorn = "^23.0.0"  # Gunicorn version
 pywin32 = { version = "^308", platform = "win32" }  # Optional dependency for Windows
 docker = "^7.1.0"  # Docker SDK for Python version
-jinja2 = "^3.1.4"  # Jinja2 version
+jinja2 = "^3.1.6"  # Jinja2 version
 python-dotenv = "^1.0.1"  # Python dotenv version
 django-cors-headers = "^4.6.0" # Django CORS Headers version
 asttokens = "2.4.1"  # AST Tokens for AST manipulation
