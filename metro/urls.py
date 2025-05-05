@@ -59,6 +59,8 @@ schema_view = get_schema_view(
 urlpatterns = [
     # Admin
     path("admin/", admin.site.urls),  # Admin panel
+    path('admin/dashboard/', include('apps.dashboard.urls', namespace='dashboard')),    # Admin dashboard
+    path('admin/dashboard', RedirectView.as_view(url='/admin/dashboard/'), name='dashboard_redirect'),
     path('admin/login/', admin.site.login, name='admin_login'),  # Admin login
     path('admin/logout/', admin.site.logout, name='admin_logout'),  # Admin logout
     # path('admin/login/', auth_views.LoginView.as_view(
@@ -82,7 +84,7 @@ urlpatterns = [
     path('api/trains/', include(('apps.trains.api.urls', 'trains'), namespace='train-api')),  # Trains
     path('api/tickets/', include('apps.tickets.api.urls', namespace='tickets')),  # Tickets
     path('api/wallet/', include('apps.wallet.api.urls')),  # Wallet
-    path("api/dashboard/", include("apps.dashboard.urls")),  # Admin Dashboard
+    # path("api/dashboard/", include("apps.dashboard.urls")),  # Admin Dashboard
     path("api/auth/", include("apps.authentication.urls")),  # Authentication
     # Miscellaneous
     path("health/", health_check, name="health_check"),  # Health check

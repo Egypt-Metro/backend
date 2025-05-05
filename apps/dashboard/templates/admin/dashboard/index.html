@@ -1,0 +1,271 @@
+{% extends "admin/dashboard/base.html" %}
+
+{% block title %}Dashboard Overview | Egypt Metro Admin{% endblock %}
+
+{% block dashboard_content %}
+  <!-- Revenue Metrics -->
+  <div class="dashboard-card metric-card">
+    <div class="metric-title">TODAY'S REVENUE</div>
+    <div class="metric-value">{{ revenue.total_revenue|floatformat:2 }} EGP</div>
+  </div>
+  
+  <div class="dashboard-card metric-card">
+    <div class="metric-title">TICKET SALES TODAY</div>
+    <div class="metric-value">{{ revenue.ticket_revenue|floatformat:2 }} EGP</div>
+  </div>
+  
+  <div class="dashboard-card metric-card">
+    <div class="metric-title">SUBSCRIPTION SALES</div>
+    <div class="metric-value">{{ revenue.subscription_revenue|floatformat:2 }} EGP</div>
+  </div>
+  
+  <!-- Revenue Chart -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Revenue Trend</h3>
+      <button type="button" data-type="revenue" data-format="csv" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="revenueChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Revenue By Line -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Revenue by Line</h3>
+      <button type="button" data-type="lines" data-format="excel" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="lineRevenueChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Top Stations -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Top Stations by Traffic</h3>
+      <button type="button" data-type="stations" data-format="excel" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="stationsChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Ticket Types -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Ticket Sales by Type</h3>
+      <button type="button" data-type="tickets" data-format="csv" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="ticketTypesChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Subscription Types -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Subscription Sales by Type</h3>
+      <button type="button" data-type="subscriptions" data-format="csv" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="subscriptionChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Traffic by Hour -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Traffic by Hour</h3>
+      <button type="button" data-type="hourly" data-format="excel" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="trafficHourlyChart"></canvas>
+    </div>
+  </div>
+{% endblock %}
+
+{% block dashboard_extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize charts
+    const revenueData = {{ revenue_trend|safe }};
+    const topStations = {{ top_stations|safe }};
+    const revenueByLine = {{ revenue_by_line|safe }};
+    const ticketSales = {{ ticket_sales|safe }};
+    const subscriptionSales = {{ subscription_sales|safe }};
+    const hourlyUsage = {{ hourly_usage|safe }};
+    
+    // Revenue trend chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    createLineChart(revenueCtx, {
+      labels: revenueData.map(d => new Date(d.date).toLocaleDateString()),
+      datasets: [{
+        label: 'Total Revenue',
+        data: revenueData.map(d => d.total_revenue),
+        backgroundColor: COLORS.primaryLight,
+        borderColor: COLORS.primary,
+        borderWidth: 2
+      }, {
+        label: 'Ticket Revenue',
+        data: revenueData.map(d => d.ticket_revenue),
+        backgroundColor: COLORS.secondaryLight,
+        borderColor: COLORS.secondary,
+        borderWidth: 1
+      }, {
+        label: 'Subscription Revenue',
+        data: revenueData.map(d => d.subscription_revenue),
+        backgroundColor: COLORS.infoLight,
+        borderColor: COLORS.info,
+        borderWidth: 1
+      }]
+    }, {
+      scales: {
+        y: {
+          title: {
+            display: true,
+            text: 'Revenue (EGP)'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Date'
+          }
+        }
+      }
+    });
+    
+    // Line revenue chart
+    const lineCtx = document.getElementById('lineRevenueChart').getContext('2d');
+    createPieChart(lineCtx, {
+      labels: revenueByLine.map(d => d.name),
+      datasets: [{
+        data: revenueByLine.map(d => d.total_revenue),
+        backgroundColor: [
+          COLORS.primary,
+          COLORS.secondary,
+          COLORS.warning,
+          COLORS.danger,
+          COLORS.info,
+          COLORS.dark
+        ]
+      }]
+    });
+    
+    // Top stations chart
+    const stationsCtx = document.getElementById('stationsChart').getContext('2d');
+    createHorizontalBarChart(stationsCtx, {
+      labels: topStations.map(d => d.name),
+      datasets: [{
+        label: 'Total Traffic',
+        data: topStations.map(d => d.total_activity),
+        backgroundColor: COLORS.secondary,
+        borderWidth: 0
+      }]
+    }, {
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Passengers'
+          }
+        }
+      }
+    });
+    
+    // Ticket types chart
+    const ticketCtx = document.getElementById('ticketTypesChart').getContext('2d');
+    createDoughnutChart(ticketCtx, {
+      labels: ticketSales.map(d => d.ticket_type),
+      datasets: [{
+        data: ticketSales.map(d => d.quantity),
+        backgroundColor: [
+          COLORS.danger,
+          COLORS.primary,
+          COLORS.warning,
+          COLORS.info
+        ]
+      }]
+    });
+    
+    // Subscription types chart
+    const subscriptionCtx = document.getElementById('subscriptionChart').getContext('2d');
+    createDoughnutChart(subscriptionCtx, {
+      labels: subscriptionSales.map(d => d.plan__type),
+      datasets: [{
+        data: subscriptionSales.map(d => d.quantity),
+        backgroundColor: [
+          COLORS.primary,
+          COLORS.warning,
+          COLORS.secondary,
+          COLORS.info
+        ]
+      }]
+    });
+    
+    // Hourly traffic chart
+    const hourlyCtx = document.getElementById('trafficHourlyChart').getContext('2d');
+    createBarChart(hourlyCtx, {
+      labels: hourlyUsage.map(d => d.hour + ':00'),
+      datasets: [{
+        label: 'Entries',
+        data: hourlyUsage.map(d => d.entries),
+        backgroundColor: COLORS.primary,
+        borderWidth: 0
+      }, {
+        label: 'Exits',
+        data: hourlyUsage.map(d => d.exits),
+        backgroundColor: COLORS.danger,
+        borderWidth: 0
+      }]
+    }, {
+      scales: {
+        y: {
+          title: {
+            display: true,
+            text: 'Passenger Count'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Hour of Day'
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

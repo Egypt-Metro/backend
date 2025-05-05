@@ -103,6 +103,8 @@ WSGI_APPLICATION = "metro.wsgi.application"  # WSGI application
 # Single API key for all scanners
 SCANNER_API_KEY = "egypt_metro_scanner_123456"  # API key for scanner devices
 
+APPEND_SLASH = True
+
 # AI Service Configuration
 AI_SERVICE_CONFIG = {
     'URL': 'https://ai-metro.onrender.com',  # AI service URL

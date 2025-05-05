@@ -1,53 +1,14 @@
-# apps/dashboard/urls.py
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .api.views import (
-    AdminDashboardViewSet,
-    SystemAlertViewSet,
-    ReportGenerationViewSet,
-    RevenueViewSet  # Add this import
-)
+from django.urls import path
+from .views.dashboard_views import DashboardView
+from .views.revenue_views import RevenueDashboardView
+from .views.ticket_views import TicketDashboardView
+from .views.station_views import StationDashboardView
 
-router = DefaultRouter()
-router.register(
-    r'dashboard',
-    AdminDashboardViewSet,
-    basename='admin-dashboard'
-)
-router.register(
-    r'alerts',
-    SystemAlertViewSet,
-    basename='system-alerts'
-)
-router.register(
-    r'reports',
-    ReportGenerationViewSet,
-    basename='report-generation'
-)
-router.register(
-    r'revenue',
-    RevenueViewSet,
-    basename='revenue'  # Add this line
-)
+app_name = 'dashboard'
 
 urlpatterns = [
-    # API endpoints
-    path('api/', include(router.urls)),
-
-    # Additional custom dashboard routes can be added here
-    path(
-        'api/dashboard/metrics/',
-        AdminDashboardViewSet.as_view({'get': 'list'}),
-        name='dashboard-metrics'
-    ),
-    path(
-        'api/revenue/breakdown/',
-        RevenueViewSet.as_view({'get': 'revenue_breakdown'}),
-        name='revenue-breakdown'
-    ),
-    path(
-        'api/revenue/predictions/',
-        RevenueViewSet.as_view({'get': 'revenue_predictions'}),
-        name='revenue-predictions'
-    )
+    path('', DashboardView.as_view(), name='index'),
+    path('revenue/', RevenueDashboardView.as_view(), name='revenue'),
+    path('tickets/', TicketDashboardView.as_view(), name='tickets'),
+    path('stations/', StationDashboardView.as_view(), name='stations'),
 ]

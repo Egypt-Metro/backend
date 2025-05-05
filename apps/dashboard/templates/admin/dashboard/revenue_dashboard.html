@@ -1,0 +1,218 @@
+{% extends "admin/dashboard/base.html" %}
+
+{% block title %}Revenue Dashboard | Egypt Metro Admin{% endblock %}
+
+{% block dashboard_content %}
+  <!-- Period Summary -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Revenue Summary - {{ period_comparison.current_period }}</h3>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+      <div style="flex: 1; min-width: 200px;">
+        <div class="metric-title">TOTAL REVENUE</div>
+        <div class="metric-value">{{ revenue.total_revenue|floatformat:2 }} EGP</div>
+        <div class="metric-trend {% if period_comparison.change_pct >= 0 %}positive{% else %}negative{% endif %}">
+          {{ period_comparison.change_pct }}% vs previous period
+        </div>
+      </div>
+      <div style="flex: 1; min-width: 200px;">
+        <div class="metric-title">TICKET REVENUE</div>
+        <div class="metric-value">{{ revenue.ticket_revenue|floatformat:2 }} EGP</div>
+        <div class="metric-trend">{{ revenue.ticket_revenue|floatformat:1 }}% of total</div>
+      </div>
+      <div style="flex: 1; min-width: 200px;">
+        <div class="metric-title">SUBSCRIPTION REVENUE</div>
+        <div class="metric-value">{{ revenue.subscription_revenue|floatformat:2 }} EGP</div>
+        <div class="metric-trend">{{ revenue.subscription_revenue|floatformat:1 }}% of total</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Revenue Trend -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Daily Revenue Trend</h3>
+      <button type="button" data-type="daily_revenue" data-format="csv" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="revenueChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Revenue by Line -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Revenue by Metro Line</h3>
+      <button type="button" data-type="line_revenue" data-format="excel" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="lineRevenueChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Top Stations by Revenue -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Top Stations by Revenue</h3>
+      <button type="button" data-type="station_revenue" data-format="excel" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="topStationsChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Revenue Distribution -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Revenue Distribution</h3>
+    </div>
+    <div style="display: flex; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 300px;">
+        <div class="chart-container">
+          <canvas id="revenueDistributionChart"></canvas>
+        </div>
+      </div>
+      <div style="flex: 1; min-width: 300px;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Revenue Source</th>
+              <th>Amount (EGP)</th>
+              <th>Percentage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Ticket Sales</td>
+              <td>{{ revenue.ticket_revenue|floatformat:2 }}</td>
+              <td>{{ ticket_percentage|floatformat:1 }}%</td>
+            </tr>
+            <tr>
+              <td>Subscriptions</td>
+              <td>{{ revenue.subscription_revenue|floatformat:2 }}</td>
+              <td>{{ subscription_percentage|floatformat:1 }}%</td>
+            </tr>
+            <tr>
+              <td>Wallet Deposits</td>
+              <td>{{ revenue.wallet_deposits|floatformat:2 }}</td>
+              <td>N/A</td>
+            </tr>
+            <tr>
+              <td>Refunds (Deduction)</td>
+              <td>{{ revenue.refunds|floatformat:2 }}</td>
+              <td>{{ refund_percentage|floatformat:1 }}%</td>
+            </tr>
+            <tr style="font-weight: bold;">
+              <td>Net Revenue</td>
+              <td>{{ revenue.net_revenue|floatformat:2 }}</td>
+              <td>100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block dashboard_extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const revenueData = {{ revenue_trend|safe }};
+    const revenueByLine = {{ revenue_by_line|safe }};
+    const topStations = {{ top_stations|safe }};
+    
+    // Calculate ticket & subscription percentages for pie chart
+    const totalRevenue = {{ revenue.total_revenue }};
+    const ticketRevenue = {{ revenue.ticket_revenue }};
+    const subscriptionRevenue = {{ revenue.subscription_revenue }};
+    
+    // Revenue trend chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    createLineChart(revenueCtx, {
+      labels: revenueData.map(d => new Date(d.date).toLocaleDateString()),
+      datasets: [{
+        label: 'Total Revenue',
+        data: revenueData.map(d => d.total_revenue),
+        backgroundColor: COLORS.primaryLight,
+        borderColor: COLORS.primary,
+        borderWidth: 2
+      }, {
+        label: 'Net Revenue',
+        data: revenueData.map(d => d.net_revenue),
+        backgroundColor: 'rgba(255, 193, 7, 0.2)',
+        borderColor: 'rgb(255, 193, 7)',
+        borderWidth: 2,
+        borderDash: [5, 5]
+      }]
+    });
+    
+    // Line revenue chart
+    const lineCtx = document.getElementById('lineRevenueChart').getContext('2d');
+    createPieChart(lineCtx, {
+      labels: revenueByLine.map(d => d.name),
+      datasets: [{
+        data: revenueByLine.map(d => d.total_revenue),
+        backgroundColor: [
+          COLORS.primary,
+          COLORS.secondary,
+          COLORS.warning,
+          COLORS.danger,
+          COLORS.info,
+          COLORS.dark
+        ]
+      }]
+    });
+    
+    // Top stations by revenue
+    const topStationsCtx = document.getElementById('topStationsChart').getContext('2d');
+    createHorizontalBarChart(topStationsCtx, {
+      labels: topStations.map(d => d.name),
+      datasets: [{
+        label: 'Revenue (EGP)',
+        data: topStations.map(d => d.revenue),
+        backgroundColor: COLORS.primary,
+        borderWidth: 0
+      }]
+    });
+    
+    // Revenue distribution pie chart
+    const distributionCtx = document.getElementById('revenueDistributionChart').getContext('2d');
+    createPieChart(distributionCtx, {
+      labels: ['Ticket Sales', 'Subscriptions'],
+      datasets: [{
+        data: [ticketRevenue, subscriptionRevenue],
+        backgroundColor: [COLORS.secondary, COLORS.info]
+      }]
+    }, {
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              const value = context.raw;
+              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+              const percentage = Math.round((value / total) * 100);
+              return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "admin/dashboard/base.html" %}
+
+{% block title %}Station Analytics | Egypt Metro Admin{% endblock %}
+
+{% block dashboard_content %}
+  <!-- Station Traffic Map -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Station Traffic Overview</h3>
+      <button type="button" data-type="stations_traffic" data-format="excel" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+    <div id="station-map" style="height: 400px; background-color: #f5f5f5; display: flex; justify-content: center; align-items: center;">
+      <!-- This is where an interactive map would be rendered -->
+      <p>Interactive metro map will be displayed here</p>
+    </div>
+  </div>
+  
+  <!-- Top Stations by Traffic -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Busiest Stations</h3>
+    </div>
+    <div class="chart-container">
+      <canvas id="busiestStationsChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Entry/Exit Balance -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Station Entry/Exit Balance</h3>
+    </div>
+    <div class="chart-container">
+      <canvas id="stationBalanceChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Popular Routes -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Most Popular Routes</h3>
+      <button type="button" data-type="popular_routes" data-format="csv" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="popularRoutesChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Traffic by Day of Week -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Traffic by Day of Week</h3>
+      <button type="button" data-type="day_of_week_usage" data-format="csv" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="dayOfWeekChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Station Table -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Station Performance</h3>
+    </div>
+    <div style="overflow-x: auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Station Name</th>
+            <th>Entries</th>
+            <th>Exits</th>
+            <th>Total Traffic</th>
+            <th>Revenue (EGP)</th>
+          </tr>
+        </thead>
+        <tbody id="stationsTableBody">
+          <!-- Will be populated with JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% endblock %}
+
+{% block dashboard_extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const stationsTraffic = {{ stations_traffic|safe }};
+    const popularRoutes = {{ popular_routes|safe }};
+    const dayOfWeekUsage = {{ day_of_week_usage|safe }};
+    
+    // Sort stations by total traffic descending
+    const sortedStations = [...stationsTraffic].sort((a, b) => b.total_traffic - a.total_traffic);
+    const top10Stations = sortedStations.slice(0, 10);
+    
+    // Populate stations table
+    const stationsTableBody = document.getElementById('stationsTableBody');
+    sortedStations.forEach(station => {
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${station.name}</td>
+        <td>${station.entries}</td>
+        <td>${station.exits}</td>
+        <td>${station.total_traffic}</td>
+        <td>${station.revenue.toFixed(2)} EGP</td>
+      `;
+      stationsTableBody.appendChild(row);
+    });
+    
+    // Busiest stations chart
+    const busiestStationsCtx = document.getElementById('busiestStationsChart').getContext('2d');
+    createHorizontalBarChart(busiestStationsCtx, {
+      labels: top10Stations.map(s => s.name),
+      datasets: [{
+        label: 'Total Traffic',
+        data: top10Stations.map(s => s.total_traffic),
+        backgroundColor: COLORS.primary,
+        borderWidth: 0
+      }]
+    });
+    
+    // Station balance chart (entries vs exits)
+    const balanceCtx = document.getElementById('stationBalanceChart').getContext('2d');
+    createBarChart(balanceCtx, {
+      labels: top10Stations.map(s => s.name),
+      datasets: [{
+        label: 'Entries',
+        data: top10Stations.map(s => s.entries),
+        backgroundColor: COLORS.secondary,
+        borderWidth: 0
+      }, {
+        label: 'Exits',
+        data: top10Stations.map(s => s.exits),
+        backgroundColor: COLORS.danger,
+        borderWidth: 0
+      }]
+    }, {
+      scales: {
+        x: {
+          ticks: {
+            callback: function(value) {
+              // Truncate long station names
+              const label = this.getLabelForValue(value);
+              if (label.length > 10) {
+                return label.substr(0, 10) + '...';
+              }
+              return label;
+            }
+          }
+        }
+      }
+    });
+    
+    // Popular routes chart
+    const routesCtx = document.getElementById('popularRoutesChart').getContext('2d');
+    createHorizontalBarChart(routesCtx, {
+      labels: popularRoutes.slice(0, 10).map(r => `${r.entry_station__name} → ${r.exit_station__name}`),
+      datasets: [{
+        label: 'Trip Count',
+        data: popularRoutes.slice(0, 10).map(r => r.count),
+        backgroundColor: COLORS.info,
+        borderWidth: 0
+      }]
+    });
+    
+    // Day of week chart
+    const dayOfWeekCtx = document.getElementById('dayOfWeekChart').getContext('2d');
+    createBarChart(dayOfWeekCtx, {
+      labels: dayOfWeekUsage.map(d => d.day),
+      datasets: [{
+        label: 'Passenger Count',
+        data: dayOfWeekUsage.map(d => d.count),
+        backgroundColor: COLORS.warning,
+        borderWidth: 0
+      }]
+    });
+  });
+</script>
+{% endblock %}

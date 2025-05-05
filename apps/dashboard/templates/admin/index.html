@@ -1,0 +1,11 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+<div style="margin-bottom: 20px; padding: 15px; background-color: #f7f7f7; border-radius: 5px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+  <h2 style="margin-top: 0;">Metro Analytics Dashboard</h2>
+  <p>Access comprehensive analytics and reports for the Egypt Metro system.</p>
+  <a href="{% url 'dashboard:index' %}" class="button" style="display: inline-block; padding: 10px 15px; background-color: #417690; color: white; text-decoration: none; border-radius: 4px;">Open Dashboard</a>
+</div>
+
+{{ block.super }}
+{% endblock %}

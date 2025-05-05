@@ -1,0 +1,70 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'dashboard/css/dashboard.css' %}">
+{% endblock %}
+
+{% block title %}{{ title }} | Metro Dashboard{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  {% if title %} &rsaquo; {{ title }}{% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-navbar full-width">
+  <nav style="margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
+    <a href="{% url 'dashboard:index' %}" style="margin-right: 20px; {% if request.path == '/admin/dashboard/' %}font-weight: bold;{% endif %}">Overview</a>
+    <a href="{% url 'dashboard:revenue' %}" style="margin-right: 20px; {% if 'revenue' in request.path %}font-weight: bold;{% endif %}">Revenue</a>
+    <a href="{% url 'dashboard:tickets' %}" style="margin-right: 20px; {% if 'tickets' in request.path %}font-weight: bold;{% endif %}">Tickets</a>
+    <a href="{% url 'dashboard:stations' %}" style="margin-right: 20px; {% if 'stations' in request.path %}font-weight: bold;{% endif %}">Stations</a>
+  </nav>
+</div>
+
+<div class="dashboard-container">
+  <!-- Filters -->
+  <div class="full-width">
+    <form id="dashboard-filters" class="filters">
+      <label for="date-range">Date range:</label>
+      <select id="date-range" name="date_range">
+        <option value="today">Today</option>
+        <option value="yesterday">Yesterday</option>
+        <option value="this_week">This Week</option>
+        <option value="this_month" selected>This Month</option>
+        <option value="last_month">Last Month</option>
+        <option value="last_30_days">Last 30 Days</option>
+        <option value="last_90_days">Last 90 Days</option>
+        <option value="custom">Custom Range</option>
+      </select>
+      
+      <div id="custom-date-inputs" style="display: none;">
+        <label for="start-date">From:</label>
+        <input type="date" id="start-date" name="start_date" value="{{ start_date }}">
+        
+        <label for="end-date">To:</label>
+        <input type="date" id="end-date" name="end_date" value="{{ end_date }}">
+      </div>
+      
+      <button type="button" id="apply-filters" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+        </svg>
+        Apply
+      </button>
+    </form>
+  </div>
+  
+  {% block dashboard_content %}{% endblock %}
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="{% static 'dashboard/js/charts.js' %}"></script>
+<script src="{% static 'dashboard/js/dashboard.js' %}"></script>
+{% block dashboard_extra_js %}{% endblock %}
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends "admin/dashboard/base.html" %}
+
+{% block title %}Ticket Analytics | Egypt Metro Admin{% endblock %}
+
+{% block dashboard_content %}
+  <!-- Ticket Sales Overview -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Ticket Sales by Type</h3>
+      <button type="button" data-type="ticket_sales" data-format="csv" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="ticketTypesChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Subscription Sales Overview -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Subscription Sales by Type</h3>
+      <button type="button" data-type="subscription_sales" data-format="csv" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="subscriptionTypesChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Daily Sales Trend -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Daily Ticket Sales Trend</h3>
+      <button type="button" data-type="daily_trend" data-format="excel" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="dailySalesChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Hourly Traffic -->
+  <div class="dashboard-card full-width">
+    <div class="card-header">
+      <h3 class="card-title">Hourly Traffic Distribution</h3>
+      <button type="button" data-type="hourly_usage" data-format="excel" class="export-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+        </svg>
+        Export Excel
+      </button>
+    </div>
+    <div class="chart-container">
+      <canvas id="hourlyTrafficChart"></canvas>
+    </div>
+  </div>
+  
+  <!-- Ticket Data Tables -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Ticket Sales Details</h3>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Ticket Type</th>
+          <th>Quantity</th>
+          <th>Total Revenue</th>
+          <th>Avg. Price</th>
+        </tr>
+      </thead>
+      <tbody id="ticketTableBody">
+        <!-- Will be populated with JavaScript -->
+      </tbody>
+    </table>
+  </div>
+  
+  <!-- Subscription Data Tables -->
+  <div class="dashboard-card">
+    <div class="card-header">
+      <h3 class="card-title">Subscription Sales Details</h3>
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Subscription Type</th>
+          <th>Quantity</th>
+          <th>Total Revenue</th>
+          <th>Avg. Price</th>
+        </tr>
+      </thead>
+      <tbody id="subscriptionTableBody">
+        <!-- Will be populated with JavaScript -->
+      </tbody>
+    </table>
+  </div>
+{% endblock %}
+
+{% block dashboard_extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const ticketSales = {{ ticket_sales|safe }};
+    const subscriptionSales = {{ subscription_sales|safe }};
+    const dailyTrend = {{ daily_trend|safe }};
+    const hourlyUsage = {{ hourly_usage|safe }};
+    
+    // Populate ticket data table
+    const ticketTableBody = document.getElementById('ticketTableBody');
+    ticketSales.forEach(item => {
+      const avgPrice = item.quantity > 0 ? item.total_amount / item.quantity : 0;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${item.ticket_type}</td>
+        <td>${item.quantity}</td>
+        <td>${item.total_amount.toFixed(2)} EGP</td>
+        <td>${avgPrice.toFixed(2)} EGP</td>
+      `;
+      ticketTableBody.appendChild(row);
+    });
+    
+    // Populate subscription data table
+    const subscriptionTableBody = document.getElementById('subscriptionTableBody');
+    subscriptionSales.forEach(item => {
+      const avgPrice = item.quantity > 0 ? item.total_amount / item.quantity : 0;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${item.plan__type}</td>
+        <td>${item.quantity}</td>
+        <td>${item.total_amount.toFixed(2)} EGP</td>
+        <td>${avgPrice.toFixed(2)} EGP</td>
+      `;
+      subscriptionTableBody.appendChild(row);
+    });
+    
+    // Ticket types chart
+    const ticketCtx = document.getElementById('ticketTypesChart').getContext('2d');
+    createDoughnutChart(ticketCtx, {
+      labels: ticketSales.map(d => d.ticket_type),
+      datasets: [{
+        data: ticketSales.map(d => d.quantity),
+        backgroundColor: [
+          COLORS.primary,
+          COLORS.secondary,
+          COLORS.warning, 
+          COLORS.danger
+        ]
+      }]
+    });
+    
+    // Subscription types chart
+    const subscriptionCtx = document.getElementById('subscriptionTypesChart').getContext('2d');
+    createDoughnutChart(subscriptionCtx, {
+      labels: subscriptionSales.map(d => d.plan__type),
+      datasets: [{
+        data: subscriptionSales.map(d => d.quantity),
+        backgroundColor: [
+          COLORS.info,
+          COLORS.warning,
+          COLORS.secondary
+        ]
+      }]
+    });
+    
+    // Daily sales trend chart
+    const dailyCtx = document.getElementById('dailySalesChart').getContext('2d');
+    createLineChart(dailyCtx, {
+      labels: dailyTrend.map(d => new Date(d.date).toLocaleDateString()),
+      datasets: [{
+        label: 'Quantity',
+        data: dailyTrend.map(d => d.quantity),
+        backgroundColor: COLORS.primaryLight,
+        borderColor: COLORS.primary,
+        borderWidth: 2,
+        yAxisID: 'y'
+      }, {
+        label: 'Revenue (EGP)',
+        data: dailyTrend.map(d => d.revenue),
+        backgroundColor: COLORS.secondaryLight,
+        borderColor: COLORS.secondary,
+        borderWidth: 2,
+        yAxisID: 'y1'
+      }]
+    }, {
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          title: {
+            display: true,
+            text: 'Tickets Count'
+          }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          title: {
+            display: true,
+            text: 'Revenue (EGP)'
+          },
+          grid: {
+            drawOnChartArea: false
+          }
+        }
+      }
+    });
+    
+    // Hourly traffic chart
+    const hourlyCtx = document.getElementById('hourlyTrafficChart').getContext('2d');
+    createBarChart(hourlyCtx, {
+      labels: hourlyUsage.map(d => d.hour + ':00'),
+      datasets: [{
+        label: 'Entries',
+        data: hourlyUsage.map(d => d.entries),
+        backgroundColor: COLORS.primary,
+        borderWidth: 0
+      }, {
+        label: 'Exits',
+        data: hourlyUsage.map(d => d.exits),
+        backgroundColor: COLORS.danger,
+        borderWidth: 0
+      }, {
+        label: 'Total Activity',
+        data: hourlyUsage.map(d => d.total),
+        backgroundColor: COLORS.warning,
+        borderWidth: 0,
+        hidden: true
+      }]
+    }, {
+      scales: {
+        y: {
+          title: {
+            display: true,
+            text: 'Passenger Count'
+          }
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Hour of Day'
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}
