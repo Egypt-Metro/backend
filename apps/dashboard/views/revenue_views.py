@@ -3,8 +3,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 import datetime
-import json
 
+from ..utils import json_serialize
 from ..services.analytics_service import AnalyticsService
 from ..services.export_service import ExportService
 
@@ -66,9 +66,9 @@ class RevenueDashboardView(TemplateView):
 
         context.update({
             'revenue': revenue_data['summary'],
-            'revenue_trend': json.dumps(revenue_data['daily_breakdown']),
-            'revenue_by_line': json.dumps(revenue_by_line),
-            'top_stations': json.dumps(top_stations),
+            'revenue_trend': json_serialize(revenue_data['daily_breakdown']),
+            'revenue_by_line': json_serialize(revenue_by_line),
+            'top_stations': json_serialize(top_stations),
             'period_comparison': {
                 'current_period': f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}",
                 'prev_period': f"{prev_start_date.strftime('%Y-%m-%d')} to {prev_end_date.strftime('%Y-%m-%d')}",

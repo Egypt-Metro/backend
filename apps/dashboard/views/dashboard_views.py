@@ -1,12 +1,22 @@
+from decimal import Decimal
 from django.views.generic import TemplateView
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 from django.utils import timezone
+from django.core.serializers.json import DjangoJSONEncoder
 import datetime
 import json
 
 from ..services.analytics_service import AnalyticsService
 from ..services.export_service import ExportService
+
+
+class DecimalEncoder(DjangoJSONEncoder):
+    """Custom JSON encoder that can handle Decimal types"""
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
 
 
 @method_decorator(staff_member_required, name='dispatch')
@@ -47,15 +57,15 @@ class DashboardView(TemplateView):
             end_date=today
         )
 
-        # Combine all data
+        # Combine all data - use the custom JSON encoder for all data
         context.update({
             'revenue': revenue_data['summary'],
-            'revenue_trend': json.dumps(revenue_data['daily_breakdown']),
-            'top_stations': json.dumps(top_stations),
-            'revenue_by_line': json.dumps(revenue_by_line),
-            'ticket_sales': json.dumps(ticket_data['ticket_sales']),
-            'subscription_sales': json.dumps(ticket_data['subscription_sales']),
-            'hourly_usage': json.dumps(ticket_data['hourly_usage'])
+            'revenue_trend': json.dumps(revenue_data['daily_breakdown'], cls=DecimalEncoder),
+            'top_stations': json.dumps(top_stations, cls=DecimalEncoder),
+            'revenue_by_line': json.dumps(revenue_by_line, cls=DecimalEncoder),
+            'ticket_sales': json.dumps(ticket_data['ticket_sales'], cls=DecimalEncoder),
+            'subscription_sales': json.dumps(ticket_data['subscription_sales'], cls=DecimalEncoder),
+            'hourly_usage': json.dumps(ticket_data['hourly_usage'], cls=DecimalEncoder)
         })
 
         return context

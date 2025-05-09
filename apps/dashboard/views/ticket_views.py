@@ -3,8 +3,8 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 import datetime
-import json
 
+from ..utils import json_serialize
 from ..services.analytics_service import AnalyticsService
 from ..services.export_service import ExportService
 
@@ -38,11 +38,12 @@ class TicketDashboardView(TemplateView):
         # Get ticket analytics data
         ticket_data = AnalyticsService.get_ticket_analytics(start_date, end_date)
 
+        # Use json_serialize instead of json.dumps with DecimalEncoder
         context.update({
-            'ticket_sales': json.dumps(ticket_data['ticket_sales']),
-            'subscription_sales': json.dumps(ticket_data['subscription_sales']),
-            'daily_trend': json.dumps(ticket_data['daily_trend']),
-            'hourly_usage': json.dumps(ticket_data['hourly_usage']),
+            'ticket_sales': json_serialize(ticket_data['ticket_sales']),
+            'subscription_sales': json_serialize(ticket_data['subscription_sales']),
+            'daily_trend': json_serialize(ticket_data['daily_trend']),
+            'hourly_usage': json_serialize(ticket_data['hourly_usage']),
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d')
         })

@@ -148,12 +148,13 @@ class AnalyticsService:
         ).values(
             'entry_station__lines__id',
             'entry_station__lines__name',
-            'entry_station__lines__color'
+            'entry_station__lines__color_code'  # CHANGE THIS from 'color' to 'color_code'
         ).annotate(
             revenue=Sum('price'),
             count=Count('id')
         )
 
+        # Also update references below where you store the data
         for entry in ticket_data:
             line_id = entry['entry_station__lines__id']
             if line_id is None:
@@ -163,7 +164,7 @@ class AnalyticsService:
                 line_data[line_id] = {
                     'id': line_id,
                     'name': entry['entry_station__lines__name'],
-                    'color': entry['entry_station__lines__color'],
+                    'color': entry['entry_station__lines__color_code'],  # CHANGE THIS to reference color_code
                     'ticket_revenue': 0,
                     'subscription_revenue': 0,
                     'passenger_count': 0
@@ -215,24 +216,24 @@ class AnalyticsService:
         # Query stations with entry and exit counts
         stations = Station.objects.annotate(
             entry_count=Count(
-                'entry_tickets',
+                'ticket_entries',  # Changed from 'entry_tickets'
                 filter=Q(
-                    entry_tickets__created_at__date__gte=start_date,
-                    entry_tickets__created_at__date__lte=end_date
+                    ticket_entries__created_at__date__gte=start_date,  # Changed from entry_tickets
+                    ticket_entries__created_at__date__lte=end_date
                 )
             ),
             exit_count=Count(
-                'exit_tickets',
+                'ticket_exits',  # Changed from 'exit_tickets'
                 filter=Q(
-                    exit_tickets__exit_time__date__gte=start_date,
-                    exit_tickets__exit_time__date__lte=end_date
+                    ticket_exits__exit_time__date__gte=start_date,  # Changed from exit_tickets
+                    ticket_exits__exit_time__date__lte=end_date
                 )
             ),
             revenue=Sum(
-                'entry_tickets__price',
+                'ticket_entries__price',  # Changed from 'entry_tickets__price'
                 filter=Q(
-                    entry_tickets__created_at__date__gte=start_date,
-                    entry_tickets__created_at__date__lte=end_date
+                    ticket_entries__created_at__date__gte=start_date,  # Changed from entry_tickets
+                    ticket_entries__created_at__date__lte=end_date
                 ),
                 default=0
             )
@@ -346,24 +347,24 @@ class AnalyticsService:
         # Get all stations traffic data
         stations_traffic = Station.objects.annotate(
             entries=Count(
-                'entry_tickets',
+                'ticket_entries',  # Changed from 'entry_tickets'
                 filter=Q(
-                    entry_tickets__entry_time__date__gte=start_date,
-                    entry_tickets__entry_time__date__lte=end_date
+                    ticket_entries__entry_time__date__gte=start_date,  # Changed from entry_tickets
+                    ticket_entries__entry_time__date__lte=end_date
                 )
             ),
             exits=Count(
-                'exit_tickets',
+                'ticket_exits',  # Changed from 'exit_tickets'
                 filter=Q(
-                    exit_tickets__exit_time__date__gte=start_date,
-                    exit_tickets__exit_time__date__lte=end_date
+                    ticket_exits__exit_time__date__gte=start_date,  # Changed from exit_tickets
+                    ticket_exits__exit_time__date__lte=end_date
                 )
             ),
             revenue=Sum(
-                'entry_tickets__price',
+                'ticket_entries__price',  # Changed from 'entry_tickets__price'
                 filter=Q(
-                    entry_tickets__created_at__date__gte=start_date,
-                    entry_tickets__created_at__date__lte=end_date
+                    ticket_entries__created_at__date__gte=start_date,  # Changed from entry_tickets
+                    ticket_entries__created_at__date__lte=end_date
                 ),
                 default=0
             )

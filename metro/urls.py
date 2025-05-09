@@ -58,9 +58,9 @@ schema_view = get_schema_view(
 # Core URL patterns
 urlpatterns = [
     # Admin
-    path("admin/", admin.site.urls),  # Admin panel
     path('admin/dashboard/', include('apps.dashboard.urls', namespace='dashboard')),    # Admin dashboard
     path('admin/dashboard', RedirectView.as_view(url='/admin/dashboard/'), name='dashboard_redirect'),
+    path("admin/", admin.site.urls),  # Admin panel
     path('admin/login/', admin.site.login, name='admin_login'),  # Admin login
     path('admin/logout/', admin.site.logout, name='admin_logout'),  # Admin logout
     # path('admin/login/', auth_views.LoginView.as_view(

@@ -5,6 +5,8 @@ from django.utils import timezone
 import datetime
 import json
 
+from ..utils import DecimalEncoder
+
 from ..services.analytics_service import AnalyticsService
 from ..services.export_service import ExportService
 
@@ -39,9 +41,9 @@ class StationDashboardView(TemplateView):
         station_data = AnalyticsService.get_station_analytics(start_date, end_date)
 
         context.update({
-            'stations_traffic': json.dumps(station_data['stations_traffic']),
-            'popular_routes': json.dumps(station_data['popular_routes']),
-            'day_of_week_usage': json.dumps(station_data['day_of_week_usage']),
+            'stations_traffic': json.dumps(station_data['stations_traffic'], cls=DecimalEncoder),
+            'popular_routes': json.dumps(station_data['popular_routes'], cls=DecimalEncoder),
+            'day_of_week_usage': json.dumps(station_data['day_of_week_usage'], cls=DecimalEncoder),
             'start_date': start_date.strftime('%Y-%m-%d'),
             'end_date': end_date.strftime('%Y-%m-%d')
         })

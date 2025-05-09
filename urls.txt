@@ -29,9 +29,21 @@
 /admin/auth/group/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:auth_group_delete
 /admin/auth/group/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:auth_group_history
 /admin/auth/group/add/	django.contrib.admin.options.add_view	admin:auth_group_add
+/admin/authtoken/tokenproxy/	django.contrib.admin.options.changelist_view	admin:authtoken_tokenproxy_changelist
+/admin/authtoken/tokenproxy/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/authtoken/tokenproxy/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:authtoken_tokenproxy_change
+/admin/authtoken/tokenproxy/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:authtoken_tokenproxy_delete
+/admin/authtoken/tokenproxy/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:authtoken_tokenproxy_history
+/admin/authtoken/tokenproxy/add/	django.contrib.admin.options.add_view	admin:authtoken_tokenproxy_add
 /admin/autocomplete/	django.contrib.admin.sites.autocomplete_view	admin:autocomplete
 /admin/constance/config/	constance.admin.changelist_view	admin:constance_config_add
 /admin/constance/config/	constance.admin.changelist_view	admin:constance_config_changelist
+/admin/dashboard	django.views.generic.base.RedirectView	dashboard_redirect
+/admin/dashboard/	apps.dashboard.views.dashboard_views.DashboardView	admin:admin_dashboard
+/admin/dashboard/	apps.dashboard.views.dashboard_views.DashboardView	dashboard:index
+/admin/dashboard/revenue/	apps.dashboard.views.revenue_views.RevenueDashboardView	dashboard:revenue
+/admin/dashboard/stations/	apps.dashboard.views.station_views.StationDashboardView	dashboard:stations
+/admin/dashboard/tickets/	apps.dashboard.views.ticket_views.TicketDashboardView	dashboard:tickets
 /admin/django_rest_passwordreset/resetpasswordtoken/	django.contrib.admin.options.changelist_view	admin:django_rest_passwordreset_resetpasswordtoken_changelist
 /admin/django_rest_passwordreset/resetpasswordtoken/<path:object_id>/	django.views.generic.base.RedirectView
 /admin/django_rest_passwordreset/resetpasswordtoken/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:django_rest_passwordreset_resetpasswordtoken_change
@@ -72,6 +84,24 @@
 /admin/stations/station/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:stations_station_delete
 /admin/stations/station/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:stations_station_history
 /admin/stations/station/add/	django.contrib.admin.options.add_view	admin:stations_station_add
+/admin/tickets/subscriptionplan/	django.contrib.admin.options.changelist_view	admin:tickets_subscriptionplan_changelist
+/admin/tickets/subscriptionplan/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/tickets/subscriptionplan/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:tickets_subscriptionplan_change
+/admin/tickets/subscriptionplan/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:tickets_subscriptionplan_delete
+/admin/tickets/subscriptionplan/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:tickets_subscriptionplan_history
+/admin/tickets/subscriptionplan/add/	django.contrib.admin.options.add_view	admin:tickets_subscriptionplan_add
+/admin/tickets/ticket/	django.contrib.admin.options.changelist_view	admin:tickets_ticket_changelist
+/admin/tickets/ticket/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/tickets/ticket/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:tickets_ticket_change
+/admin/tickets/ticket/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:tickets_ticket_delete
+/admin/tickets/ticket/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:tickets_ticket_history
+/admin/tickets/ticket/add/	django.contrib.admin.options.add_view	admin:tickets_ticket_add
+/admin/tickets/usersubscription/	django.contrib.admin.options.changelist_view	admin:tickets_usersubscription_changelist
+/admin/tickets/usersubscription/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/tickets/usersubscription/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:tickets_usersubscription_change
+/admin/tickets/usersubscription/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:tickets_usersubscription_delete
+/admin/tickets/usersubscription/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:tickets_usersubscription_history
+/admin/tickets/usersubscription/add/	django.contrib.admin.options.add_view	admin:tickets_usersubscription_add
 /admin/trains/schedule/	django.contrib.admin.options.changelist_view	admin:trains_schedule_changelist
 /admin/trains/schedule/<path:object_id>/	django.views.generic.base.RedirectView
 /admin/trains/schedule/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:trains_schedule_change
@@ -97,6 +127,24 @@
 /admin/users/user/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:users_user_delete
 /admin/users/user/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:users_user_history
 /admin/users/user/add/	django.contrib.auth.admin.add_view	admin:users_user_add
+/admin/wallet/paymentmethod/	django.contrib.admin.options.changelist_view	admin:wallet_paymentmethod_changelist
+/admin/wallet/paymentmethod/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/wallet/paymentmethod/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:wallet_paymentmethod_change
+/admin/wallet/paymentmethod/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:wallet_paymentmethod_delete
+/admin/wallet/paymentmethod/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:wallet_paymentmethod_history
+/admin/wallet/paymentmethod/add/	django.contrib.admin.options.add_view	admin:wallet_paymentmethod_add
+/admin/wallet/transaction/	django.contrib.admin.options.changelist_view	admin:wallet_transaction_changelist
+/admin/wallet/transaction/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/wallet/transaction/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:wallet_transaction_change
+/admin/wallet/transaction/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:wallet_transaction_delete
+/admin/wallet/transaction/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:wallet_transaction_history
+/admin/wallet/transaction/add/	django.contrib.admin.options.add_view	admin:wallet_transaction_add
+/admin/wallet/userwallet/	django.contrib.admin.options.changelist_view	admin:wallet_userwallet_changelist
+/admin/wallet/userwallet/<path:object_id>/	django.views.generic.base.RedirectView
+/admin/wallet/userwallet/<path:object_id>/change/	django.contrib.admin.options.change_view	admin:wallet_userwallet_change
+/admin/wallet/userwallet/<path:object_id>/delete/	django.contrib.admin.options.delete_view	admin:wallet_userwallet_delete
+/admin/wallet/userwallet/<path:object_id>/history/	django.contrib.admin.options.history_view	admin:wallet_userwallet_history
+/admin/wallet/userwallet/add/	django.contrib.admin.options.add_view	admin:wallet_userwallet_add
 /api/auth/password/reset/confirm/	apps.authentication.views.ResetPasswordView	password-reset-confirm
 /api/auth/password/reset/request/	apps.authentication.views.RequestPasswordResetView	password-reset-request
 /api/auth/password/reset/validate/	apps.authentication.views.ValidateTokenView	password-reset-validate
@@ -106,8 +154,54 @@
 /api/stations/list/	apps.stations.views.StationListView	stations-list
 /api/stations/nearest/	apps.stations.views.NearestStationView	nearest-station
 /api/stations/trip/<int:start_station_id>/<int:end_station_id>/	apps.stations.views.TripDetailsView	trip-details
+/api/tickets/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-list
+/api/tickets/	rest_framework.routers.APIRootView	tickets:api-root
+/api/tickets/<drf_format_suffix:format>	rest_framework.routers.APIRootView	tickets:api-root
+/api/tickets/<pk>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-detail
+/api/tickets/<pk>/upgrade-with-wallet/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-upgrade-with-wallet
+/api/tickets/<pk>/upgrade-with-wallet\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-upgrade-with-wallet
+/api/tickets/<pk>/upgrade/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-upgrade
+/api/tickets/<pk>/upgrade\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-upgrade
+/api/tickets/<pk>/validate_entry/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-validate-entry
+/api/tickets/<pk>/validate_entry\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-validate-entry
+/api/tickets/<pk>/validate_exit/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-validate-exit
+/api/tickets/<pk>/validate_exit\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-validate-exit
+/api/tickets/<pk>\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-detail
+/api/tickets/\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-list
+/api/tickets/dashboard/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-dashboard
+/api/tickets/dashboard\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-dashboard
+/api/tickets/gate-status/	apps.tickets.api.views.gate_views.GateValidationView	tickets:gate-status
+/api/tickets/hardware-status/	apps.tickets.api.views.gate_views.GateStatusView	tickets:hardware-status
+/api/tickets/pending-upgrades/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-check-pending-upgrades
+/api/tickets/pending-upgrades\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-check-pending-upgrades
+/api/tickets/purchase-with-wallet/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-purchase-with-wallet
+/api/tickets/purchase-with-wallet\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-purchase-with-wallet
+/api/tickets/scanner/process/	apps.tickets.api.views.scanner_views.ScannerProcessView	tickets:scanner-process
+/api/tickets/subscriptions/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-list
+/api/tickets/subscriptions/<pk>/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-detail
+/api/tickets/subscriptions/<pk>/cancel/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-cancel
+/api/tickets/subscriptions/<pk>/cancel\.<format>/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-cancel
+/api/tickets/subscriptions/<pk>/qr_code/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-qr-code
+/api/tickets/subscriptions/<pk>/qr_code\.<format>/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-qr-code
+/api/tickets/subscriptions/<pk>/validate_station/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-validate-station
+/api/tickets/subscriptions/<pk>/validate_station\.<format>/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-validate-station
+/api/tickets/subscriptions/<pk>\.<format>/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-detail
+/api/tickets/subscriptions/active/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-active
+/api/tickets/subscriptions/active\.<format>/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-active
+/api/tickets/subscriptions/purchase-with-wallet/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-purchase-with-wallet
+/api/tickets/subscriptions/purchase-with-wallet\.<format>/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-purchase-with-wallet
+/api/tickets/subscriptions/recommend/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-recommend
+/api/tickets/subscriptions/recommend\.<format>/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-recommend
+/api/tickets/subscriptions\.<format>/	apps.tickets.api.views.subscription_views.SubscriptionViewSet	tickets:subscription-list
+/api/tickets/sync/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-sync-tickets
+/api/tickets/sync\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-sync-tickets
+/api/tickets/types/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-types
+/api/tickets/types\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-types
+/api/tickets/validate-scan/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-validate-scan
+/api/tickets/validate-scan\.<format>/	apps.tickets.api.views.ticket_views.TicketViewSet	tickets:ticket-validate-scan
 /api/trains/	apps.trains.api.views.train_views.TrainViewSet	train-api:train-list
 /api/trains/<int:pk>/	apps.trains.api.views.train_views.TrainViewSet	train-api:train-detail
+/api/trains/<int:pk>/crowd-status/	apps.trains.api.views.train_views.TrainViewSet	train-api:crowd-status
 /api/trains/<int:pk>/station-schedule/	apps.trains.api.views.train_views.TrainViewSet	train-api:station-schedule
 /api/trains/<int:pk>/update-crowd-level/	apps.trains.api.views.train_views.TrainViewSet	train-api:update-crowd
 /api/trains/<int:pk>/update-location/	apps.trains.api.views.train_views.TrainViewSet	train-api:update-location
@@ -120,6 +214,29 @@
 /api/users/superusers/	apps.users.api.views.base.get_superusers	users:get_superusers
 /api/users/test-auth/	apps.users.api.views.auth_test.test_auth	users:test-auth
 /api/users/token/refresh/	rest_framework_simplejwt.views.TokenRefreshView	users:token-refresh
+/api/wallet/	rest_framework.routers.APIRootView	api-root
+/api/wallet/<drf_format_suffix:format>	rest_framework.routers.APIRootView	api-root
+/api/wallet/payment-methods/	apps.wallet.api.views.payment_method_views.PaymentMethodViewSet	payment-method-list
+/api/wallet/payment-methods/<pk>/	apps.wallet.api.views.payment_method_views.PaymentMethodViewSet	payment-method-detail
+/api/wallet/payment-methods/<pk>/set_default/	apps.wallet.api.views.payment_method_views.PaymentMethodViewSet	payment-method-set-default
+/api/wallet/payment-methods/<pk>/set_default\.<format>/	apps.wallet.api.views.payment_method_views.PaymentMethodViewSet	payment-method-set-default
+/api/wallet/payment-methods/<pk>\.<format>/	apps.wallet.api.views.payment_method_views.PaymentMethodViewSet	payment-method-detail
+/api/wallet/payment-methods\.<format>/	apps.wallet.api.views.payment_method_views.PaymentMethodViewSet	payment-method-list
+/api/wallet/transactions/	apps.wallet.api.views.transaction_views.TransactionViewSet	transaction-list
+/api/wallet/transactions/<pk>/	apps.wallet.api.views.transaction_views.TransactionViewSet	transaction-detail
+/api/wallet/transactions/<pk>\.<format>/	apps.wallet.api.views.transaction_views.TransactionViewSet	transaction-detail
+/api/wallet/transactions/filter/	apps.wallet.api.views.transaction_views.TransactionViewSet	transaction-filter
+/api/wallet/transactions/filter\.<format>/	apps.wallet.api.views.transaction_views.TransactionViewSet	transaction-filter
+/api/wallet/transactions/recent/	apps.wallet.api.views.transaction_views.TransactionViewSet	transaction-recent
+/api/wallet/transactions/recent\.<format>/	apps.wallet.api.views.transaction_views.TransactionViewSet	transaction-recent
+/api/wallet/transactions\.<format>/	apps.wallet.api.views.transaction_views.TransactionViewSet	transaction-list
+/api/wallet/wallet/add_funds/	apps.wallet.api.views.wallet_views.WalletViewSet	wallet-add-funds
+/api/wallet/wallet/add_funds\.<format>/	apps.wallet.api.views.wallet_views.WalletViewSet	wallet-add-funds
+/api/wallet/wallet/my_wallet/	apps.wallet.api.views.wallet_views.WalletViewSet	wallet-my-wallet
+/api/wallet/wallet/my_wallet\.<format>/	apps.wallet.api.views.wallet_views.WalletViewSet	wallet-my-wallet
+/api/wallet/wallet/withdraw_funds/	apps.wallet.api.views.wallet_views.WalletViewSet	wallet-withdraw-funds
+/api/wallet/wallet/withdraw_funds\.<format>/	apps.wallet.api.views.wallet_views.WalletViewSet	wallet-withdraw-funds
+/dependencies/	metro.views.check_dependencies	check_dependencies
 /favicon.ico	django.views.generic.base.RedirectView
 /health/	metro.views.health_check	health_check
 /redoc/	drf_yasg.views.SchemaView	schema-redoc
