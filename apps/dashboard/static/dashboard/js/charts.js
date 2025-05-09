@@ -47,126 +47,294 @@ const CHART_DEFAULTS = {
 };
 
 /**
+ * Validate chart data before rendering
+ */
+function validateChartData(data, chartType) {
+    console.log(`Validating ${chartType} chart data:`, data);
+    
+    // Check if data exists
+    if (!data) {
+        console.error(`No data provided for ${chartType} chart`);
+        return false;
+    }
+    
+    // Check if datasets exist and have data
+    if (!data.datasets || !Array.isArray(data.datasets) || data.datasets.length === 0) {
+        console.error(`No datasets provided for ${chartType} chart`);
+        return false;
+    }
+    
+    // Check if labels exist
+    if (!data.labels || !Array.isArray(data.labels) || data.labels.length === 0) {
+        console.error(`No labels provided for ${chartType} chart`);
+        return false;
+    }
+    
+    // For each dataset, verify data exists
+    for (let i = 0; i < data.datasets.length; i++) {
+        const dataset = data.datasets[i];
+        if (!dataset.data || !Array.isArray(dataset.data) || dataset.data.length === 0) {
+            console.error(`Dataset ${i} has no data for ${chartType} chart`);
+            return false;
+        }
+        
+        // Check for NaN or undefined values in data
+        for (let j = 0; j < dataset.data.length; j++) {
+            if (dataset.data[j] === undefined || isNaN(dataset.data[j])) {
+                console.error(`Dataset ${i} contains invalid data at index ${j} for ${chartType} chart`);
+                dataset.data[j] = 0; // Replace with 0 to avoid errors
+            }
+        }
+    }
+    
+    return true;
+}
+
+/**
+ * Create a placeholder chart for when data is not available
+ */
+function createPlaceholderChart(ctx, chartType) {
+    console.warn(`Creating placeholder for ${chartType} chart`);
+    
+    return new Chart(ctx, {
+        type: chartType === 'horizontalBar' ? 'bar' : chartType,
+        data: {
+            labels: ['No Data Available'],
+            datasets: [{
+                label: 'No Data',
+                data: [0],
+                backgroundColor: COLORS.light,
+                borderColor: COLORS.light,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...CHART_DEFAULTS,
+            plugins: {
+                ...CHART_DEFAULTS.plugins,
+                tooltip: {
+                    callbacks: {
+                        label: function() {
+                            return 'No data available';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
  * Create a line chart for time-series data
  */
 function createLineChart(ctx, data, options = {}) {
-    return new Chart(ctx, {
-        type: 'line',
-        data: data,
-        options: {
-            ...CHART_DEFAULTS,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+    try {
+        console.log('Creating line chart');
+        
+        // Validate the context
+        if (!ctx) {
+            console.error('Invalid canvas context for line chart');
+            return null;
+        }
+        
+        // Validate data
+        if (!validateChartData(data, 'line')) {
+            return createPlaceholderChart(ctx, 'line');
+        }
+        
+        return new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                ...CHART_DEFAULTS,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
                     }
                 },
-                x: {
-                    grid: {
-                        display: false
+                elements: {
+                    line: {
+                        tension: 0.3
                     }
-                }
-            },
-            elements: {
-                line: {
-                    tension: 0.3
-                }
-            },
-            ...options
-        }
-    });
+                },
+                ...options
+            }
+        });
+    } catch (err) {
+        console.error('Error creating line chart:', err);
+        return createPlaceholderChart(ctx, 'line');
+    }
 }
 
 /**
  * Create a bar chart 
  */
 function createBarChart(ctx, data, options = {}) {
-    return new Chart(ctx, {
-        type: 'bar',
-        data: data,
-        options: {
-            ...CHART_DEFAULTS,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+    try {
+        console.log('Creating bar chart');
+        
+        // Validate the context
+        if (!ctx) {
+            console.error('Invalid canvas context for bar chart');
+            return null;
+        }
+        
+        // Validate data
+        if (!validateChartData(data, 'bar')) {
+            return createPlaceholderChart(ctx, 'bar');
+        }
+        
+        return new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                ...CHART_DEFAULTS,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
                     }
                 },
-                x: {
-                    grid: {
-                        display: false
-                    }
-                }
-            },
-            ...options
-        }
-    });
+                ...options
+            }
+        });
+    } catch (err) {
+        console.error('Error creating bar chart:', err);
+        return createPlaceholderChart(ctx, 'bar');
+    }
 }
 
 /**
  * Create a horizontal bar chart
  */
 function createHorizontalBarChart(ctx, data, options = {}) {
-    return new Chart(ctx, {
-        type: 'bar',
-        data: data,
-        options: {
-            ...CHART_DEFAULTS,
-            indexAxis: 'y',
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+    try {
+        console.log('Creating horizontal bar chart');
+        
+        // Validate the context
+        if (!ctx) {
+            console.error('Invalid canvas context for horizontal bar chart');
+            return null;
+        }
+        
+        // Validate data
+        if (!validateChartData(data, 'horizontalBar')) {
+            return createPlaceholderChart(ctx, 'horizontalBar');
+        }
+        
+        return new Chart(ctx, {
+            type: 'bar',
+            data: data,
+            options: {
+                ...CHART_DEFAULTS,
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        }
                     }
                 },
-                y: {
-                    grid: {
-                        display: false
-                    }
-                }
-            },
-            ...options
-        }
-    });
+                ...options
+            }
+        });
+    } catch (err) {
+        console.error('Error creating horizontal bar chart:', err);
+        return createPlaceholderChart(ctx, 'horizontalBar');
+    }
 }
 
 /**
  * Create a pie chart
  */
 function createPieChart(ctx, data, options = {}) {
-    return new Chart(ctx, {
-        type: 'pie',
-        data: data,
-        options: {
-            ...CHART_DEFAULTS,
-            plugins: {
-                ...CHART_DEFAULTS.plugins,
-                legend: {
-                    ...CHART_DEFAULTS.plugins.legend,
-                    position: 'right'
-                }
-            },
-            ...options
+    try {
+        console.log('Creating pie chart');
+        
+        // Validate the context
+        if (!ctx) {
+            console.error('Invalid canvas context for pie chart');
+            return null;
         }
-    });
+        
+        // Validate data
+        if (!validateChartData(data, 'pie')) {
+            return createPlaceholderChart(ctx, 'pie');
+        }
+        
+        return new Chart(ctx, {
+            type: 'pie',
+            data: data,
+            options: {
+                ...CHART_DEFAULTS,
+                plugins: {
+                    ...CHART_DEFAULTS.plugins,
+                    legend: {
+                        ...CHART_DEFAULTS.plugins.legend,
+                        position: 'right'
+                    }
+                },
+                ...options
+            }
+        });
+    } catch (err) {
+        console.error('Error creating pie chart:', err);
+        return createPlaceholderChart(ctx, 'pie');
+    }
 }
 
 /**
  * Create a doughnut chart
  */
 function createDoughnutChart(ctx, data, options = {}) {
-    return new Chart(ctx, {
-        type: 'doughnut',
-        data: data,
-        options: {
-            ...CHART_DEFAULTS,
-            cutout: '60%',
-            ...options
+    try {
+        console.log('Creating doughnut chart');
+        
+        // Validate the context
+        if (!ctx) {
+            console.error('Invalid canvas context for doughnut chart');
+            return null;
         }
-    });
+        
+        // Validate data
+        if (!validateChartData(data, 'doughnut')) {
+            return createPlaceholderChart(ctx, 'doughnut');
+        }
+        
+        return new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                ...CHART_DEFAULTS,
+                cutout: '60%',
+                ...options
+            }
+        });
+    } catch (err) {
+        console.error('Error creating doughnut chart:', err);
+        return createPlaceholderChart(ctx, 'doughnut');
+    }
 }
 
 /**

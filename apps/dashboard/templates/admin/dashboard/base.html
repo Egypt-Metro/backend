@@ -4,6 +4,44 @@
 {% block extrastyle %}
 {{ block.super }}
 <link rel="stylesheet" type="text/css" href="{% static 'dashboard/css/dashboard.css' %}">
+<style>
+    /* Debug styles */
+    .js-loaded {
+        /* Class added by JS to confirm JS is working */
+    }
+    
+    .chart-error {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 1rem;
+        border-radius: 4px;
+        text-align: center;
+    }
+    
+    /* Add debug mode class if debug is enabled */
+    {% if debug %}body { 
+        position: relative;
+    }
+    body:before {
+        content: "DEBUG MODE";
+        position: fixed;
+        top: 0;
+        left: 0;
+        background: #dc3545;
+        color: white;
+        padding: 2px 6px;
+        font-size: 10px;
+        z-index: 9999;
+    }
+    body {
+        class: debug-mode;
+    }
+    {% endif %}
+</style>
 {% endblock %}
 
 {% block title %}{{ title }} | Metro Dashboard{% endblock %}
@@ -43,10 +81,10 @@
       
       <div id="custom-date-inputs" style="display: none;">
         <label for="start-date">From:</label>
-        <input type="date" id="start-date" name="start_date" value="{{ start_date }}">
+        <input type="date" id="start-date" name="start_date" value="{{ start_date|default:'' }}">
         
         <label for="end-date">To:</label>
-        <input type="date" id="end-date" name="end_date" value="{{ end_date }}">
+        <input type="date" id="end-date" name="end_date" value="{{ end_date|default:'' }}">
       </div>
       
       <button type="button" id="apply-filters" class="export-btn">
@@ -59,12 +97,106 @@
   </div>
   
   {% block dashboard_content %}{% endblock %}
+  
+  {% if debug %}
+  <!-- Debug status bar -->
+  <div class="full-width" style="margin-top: 30px; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;">
+    <div><strong>Path:</strong> {{ request.path }}</div>
+    <div><strong>Dashboard Version:</strong> 1.0</div>
+    <div><strong>JavaScript Status:</strong> <span id="js-status">Checking...</span></div>
+    <div><strong>Chart.js Status:</strong> <span id="chart-status">Checking...</span></div>
+    <div><strong>Static Files URL:</strong> {% static 'dashboard/js/dashboard.js' %}</div>
+    <!-- Add context data debugging -->
+    <div style="margin-top: 10px;">
+      <button id="toggle-debug" style="background: #6c757d; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer;">
+        Show Context Data
+      </button>
+      <pre id="debug-data" style="display: none; margin-top: 10px; background: #f0f0f0; padding: 10px; border-radius: 4px; max-height: 200px; overflow: auto; font-size: 10px;">
+Context Variables:
+- revenue: {{ revenue|default:"Not available"|pprint }}
+- start_date: {{ start_date|default:"Not set" }}
+- end_date: {{ end_date|default:"Not set" }}
+      </pre>
+    </div>
+  </div>
+  {% endif %}
 </div>
+
+<!-- Add CSRF token meta tag for easier access in JavaScript -->
+<meta name="csrf-token" content="{{ csrf_token }}">
 {% endblock %}
 
 {% block extrajs %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js" onload="if(document.getElementById('chart-status')) document.getElementById('chart-status').textContent = 'Loaded';" onerror="if(document.getElementById('chart-status')) document.getElementById('chart-status').textContent = 'Failed to load'"></script>
+<script>
+  // Create a global error handler for scripts
+  window.addEventListener('error', function(event) {
+    console.error('Script error caught:', event.error);
+    if (document.getElementById('js-status')) {
+      document.getElementById('js-status').textContent = 'Error: ' + (event.error?.message || 'Unknown');
+      document.getElementById('js-status').style.color = '#dc3545';
+    }
+    return false;
+  });
+
+  // Define a simple placeholder function if Chart.js fails to load
+  if (typeof Chart === 'undefined') {
+    window.Chart = function() {
+      console.error('Chart.js is not available, using placeholder');
+      return {
+        update: function() {},
+        destroy: function() {}
+      };
+    };
+  }
+</script>
 <script src="{% static 'dashboard/js/charts.js' %}"></script>
 <script src="{% static 'dashboard/js/dashboard.js' %}"></script>
 {% block dashboard_extra_js %}{% endblock %}
+
+<script>
+  // Add status check
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Base template loaded');
+    
+    // Update JavaScript status
+    if (document.getElementById('js-status')) {
+      document.getElementById('js-status').textContent = 'Loaded';
+      document.getElementById('js-status').style.color = '#28a745';
+    }
+    
+    // Check if Chart.js is available
+    setTimeout(function() {
+      if (window.Chart) {
+        console.log('Chart.js is available');
+        if (document.getElementById('chart-status')) {
+          document.getElementById('chart-status').textContent = 'Loaded';
+          document.getElementById('chart-status').style.color = '#28a745';
+        }
+      } else {
+        console.error('Chart.js is not available');
+        if (document.getElementById('chart-status')) {
+          document.getElementById('chart-status').textContent = 'Not Available';
+          document.getElementById('chart-status').style.color = '#dc3545';
+        }
+      }
+    }, 500);
+    
+    // Toggle debug data
+    const toggleDebug = document.getElementById('toggle-debug');
+    const debugData = document.getElementById('debug-data');
+    
+    if (toggleDebug && debugData) {
+      toggleDebug.addEventListener('click', function() {
+        if (debugData.style.display === 'none') {
+          debugData.style.display = 'block';
+          toggleDebug.textContent = 'Hide Context Data';
+        } else {
+          debugData.style.display = 'none';
+          toggleDebug.textContent = 'Show Context Data';
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}

@@ -72,19 +72,21 @@
     <div class="card-header">
       <h3 class="card-title">Ticket Sales Details</h3>
     </div>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Ticket Type</th>
-          <th>Quantity</th>
-          <th>Total Revenue</th>
-          <th>Avg. Price</th>
-        </tr>
-      </thead>
-      <tbody id="ticketTableBody">
-        <!-- Will be populated with JavaScript -->
-      </tbody>
-    </table>
+    <div style="overflow-x: auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Ticket Type</th>
+            <th>Quantity</th>
+            <th>Total Revenue</th>
+            <th>Avg. Price</th>
+          </tr>
+        </thead>
+        <tbody id="ticketTableBody">
+          <!-- Will be populated with JavaScript -->
+        </tbody>
+      </table>
+    </div>
   </div>
   
   <!-- Subscription Data Tables -->
@@ -92,169 +94,256 @@
     <div class="card-header">
       <h3 class="card-title">Subscription Sales Details</h3>
     </div>
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Subscription Type</th>
-          <th>Quantity</th>
-          <th>Total Revenue</th>
-          <th>Avg. Price</th>
-        </tr>
-      </thead>
-      <tbody id="subscriptionTableBody">
-        <!-- Will be populated with JavaScript -->
-      </tbody>
-    </table>
+    <div style="overflow-x: auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Subscription Type</th>
+            <th>Quantity</th>
+            <th>Total Revenue</th>
+            <th>Avg. Price</th>
+          </tr>
+        </thead>
+        <tbody id="subscriptionTableBody">
+          <!-- Will be populated with JavaScript -->
+        </tbody>
+      </table>
+    </div>
   </div>
 {% endblock %}
 
 {% block dashboard_extra_js %}
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const ticketSales = {{ ticket_sales|safe }};
-    const subscriptionSales = {{ subscription_sales|safe }};
-    const dailyTrend = {{ daily_trend|safe }};
-    const hourlyUsage = {{ hourly_usage|safe }};
+    console.log('Ticket dashboard loaded');
     
-    // Populate ticket data table
-    const ticketTableBody = document.getElementById('ticketTableBody');
-    ticketSales.forEach(item => {
-      const avgPrice = item.quantity > 0 ? item.total_amount / item.quantity : 0;
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${item.ticket_type}</td>
-        <td>${item.quantity}</td>
-        <td>${item.total_amount.toFixed(2)} EGP</td>
-        <td>${avgPrice.toFixed(2)} EGP</td>
-      `;
-      ticketTableBody.appendChild(row);
-    });
-    
-    // Populate subscription data table
-    const subscriptionTableBody = document.getElementById('subscriptionTableBody');
-    subscriptionSales.forEach(item => {
-      const avgPrice = item.quantity > 0 ? item.total_amount / item.quantity : 0;
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${item.plan__type}</td>
-        <td>${item.quantity}</td>
-        <td>${item.total_amount.toFixed(2)} EGP</td>
-        <td>${avgPrice.toFixed(2)} EGP</td>
-      `;
-      subscriptionTableBody.appendChild(row);
-    });
-    
-    // Ticket types chart
-    const ticketCtx = document.getElementById('ticketTypesChart').getContext('2d');
-    createDoughnutChart(ticketCtx, {
-      labels: ticketSales.map(d => d.ticket_type),
-      datasets: [{
-        data: ticketSales.map(d => d.quantity),
-        backgroundColor: [
-          COLORS.primary,
-          COLORS.secondary,
-          COLORS.warning, 
-          COLORS.danger
-        ]
-      }]
-    });
-    
-    // Subscription types chart
-    const subscriptionCtx = document.getElementById('subscriptionTypesChart').getContext('2d');
-    createDoughnutChart(subscriptionCtx, {
-      labels: subscriptionSales.map(d => d.plan__type),
-      datasets: [{
-        data: subscriptionSales.map(d => d.quantity),
-        backgroundColor: [
-          COLORS.info,
-          COLORS.warning,
-          COLORS.secondary
-        ]
-      }]
-    });
-    
-    // Daily sales trend chart
-    const dailyCtx = document.getElementById('dailySalesChart').getContext('2d');
-    createLineChart(dailyCtx, {
-      labels: dailyTrend.map(d => new Date(d.date).toLocaleDateString()),
-      datasets: [{
-        label: 'Quantity',
-        data: dailyTrend.map(d => d.quantity),
-        backgroundColor: COLORS.primaryLight,
-        borderColor: COLORS.primary,
-        borderWidth: 2,
-        yAxisID: 'y'
-      }, {
-        label: 'Revenue (EGP)',
-        data: dailyTrend.map(d => d.revenue),
-        backgroundColor: COLORS.secondaryLight,
-        borderColor: COLORS.secondary,
-        borderWidth: 2,
-        yAxisID: 'y1'
-      }]
-    }, {
-      scales: {
-        y: {
-          type: 'linear',
-          display: true,
-          position: 'left',
-          title: {
-            display: true,
-            text: 'Tickets Count'
+    try {
+      // Process and safely parse JSON data
+      function safeParseData(jsonData, defaultValue = []) {
+        try {
+          if (typeof jsonData === 'string') {
+            const data = JSON.parse(jsonData);
+            return Array.isArray(data) ? data : defaultValue;
           }
-        },
-        y1: {
-          type: 'linear',
-          display: true,
-          position: 'right',
-          title: {
-            display: true,
-            text: 'Revenue (EGP)'
-          },
-          grid: {
-            drawOnChartArea: false
-          }
+          return jsonData || defaultValue;
+        } catch (e) {
+          console.error('Error parsing JSON data:', e);
+          return defaultValue;
         }
       }
-    });
-    
-    // Hourly traffic chart
-    const hourlyCtx = document.getElementById('hourlyTrafficChart').getContext('2d');
-    createBarChart(hourlyCtx, {
-      labels: hourlyUsage.map(d => d.hour + ':00'),
-      datasets: [{
-        label: 'Entries',
-        data: hourlyUsage.map(d => d.entries),
-        backgroundColor: COLORS.primary,
-        borderWidth: 0
-      }, {
-        label: 'Exits',
-        data: hourlyUsage.map(d => d.exits),
-        backgroundColor: COLORS.danger,
-        borderWidth: 0
-      }, {
-        label: 'Total Activity',
-        data: hourlyUsage.map(d => d.total),
-        backgroundColor: COLORS.warning,
-        borderWidth: 0,
-        hidden: true
-      }]
-    }, {
-      scales: {
-        y: {
-          title: {
-            display: true,
-            text: 'Passenger Count'
-          }
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Hour of Day'
-          }
+      
+      // Get data from templates and ensure it's valid
+      const ticketSales = safeParseData({{ ticket_sales|default:"[]"|safe }});
+      const subscriptionSales = safeParseData({{ subscription_sales|default:"[]"|safe }});
+      const dailyTrend = safeParseData({{ daily_trend|default:"[]"|safe }});
+      const hourlyUsage = safeParseData({{ hourly_usage|default:"[]"|safe }});
+
+      console.log('Data loaded:', {
+        ticketSalesCount: ticketSales.length,
+        subscriptionSalesCount: subscriptionSales.length,
+        dailyTrendCount: dailyTrend.length,
+        hourlyUsageCount: hourlyUsage.length
+      });
+      
+      // Populate ticket data table
+      const ticketTableBody = document.getElementById('ticketTableBody');
+      if (ticketTableBody) {
+        if (ticketSales.length > 0) {
+          ticketTableBody.innerHTML = ''; // Clear any existing rows
+          ticketSales.forEach(item => {
+            const avgPrice = item.quantity > 0 ? item.total_amount / item.quantity : 0;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${item.ticket_type || 'Unknown'}</td>
+              <td>${item.quantity}</td>
+              <td>${(item.total_amount || 0).toFixed(2)} EGP</td>
+              <td>${avgPrice.toFixed(2)} EGP</td>
+            `;
+            ticketTableBody.appendChild(row);
+          });
+        } else {
+          ticketTableBody.innerHTML = `
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 20px;">No ticket sales data available</td>
+            </tr>
+          `;
         }
       }
-    });
+      
+      // Populate subscription data table
+      const subscriptionTableBody = document.getElementById('subscriptionTableBody');
+      if (subscriptionTableBody) {
+        if (subscriptionSales.length > 0) {
+          subscriptionTableBody.innerHTML = ''; // Clear any existing rows
+          subscriptionSales.forEach(item => {
+            const avgPrice = item.quantity > 0 ? item.total_amount / item.quantity : 0;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${item.plan__type || 'Unknown'}</td>
+              <td>${item.quantity}</td>
+              <td>${(item.total_amount || 0).toFixed(2)} EGP</td>
+              <td>${avgPrice.toFixed(2)} EGP</td>
+            `;
+            subscriptionTableBody.appendChild(row);
+          });
+        } else {
+          subscriptionTableBody.innerHTML = `
+            <tr>
+              <td colspan="4" style="text-align: center; padding: 20px;">No subscription sales data available</td>
+            </tr>
+          `;
+        }
+      }
+      
+      // Ticket types chart
+      if (ticketSales.length > 0) {
+        const ticketCtx = document.getElementById('ticketTypesChart');
+        if (ticketCtx) {
+          createDoughnutChart(ticketCtx.getContext('2d'), {
+            labels: ticketSales.map(d => d.ticket_type || 'Unknown'),
+            datasets: [{
+              data: ticketSales.map(d => d.quantity),
+              backgroundColor: [
+                COLORS.primary,
+                COLORS.secondary,
+                COLORS.warning, 
+                COLORS.danger
+              ]
+            }]
+          });
+        }
+      }
+      
+      // Subscription types chart
+      if (subscriptionSales.length > 0) {
+        const subscriptionCtx = document.getElementById('subscriptionTypesChart');
+        if (subscriptionCtx) {
+          createDoughnutChart(subscriptionCtx.getContext('2d'), {
+            labels: subscriptionSales.map(d => d.plan__type || 'Unknown'),
+            datasets: [{
+              data: subscriptionSales.map(d => d.quantity),
+              backgroundColor: [
+                COLORS.info,
+                COLORS.warning,
+                COLORS.secondary
+              ]
+            }]
+          });
+        }
+      }
+      
+      // Daily sales trend chart
+      if (dailyTrend.length > 0) {
+        const dailyCtx = document.getElementById('dailySalesChart');
+        if (dailyCtx) {
+          createLineChart(dailyCtx.getContext('2d'), {
+            labels: dailyTrend.map(d => new Date(d.date).toLocaleDateString()),
+            datasets: [{
+              label: 'Quantity',
+              data: dailyTrend.map(d => d.quantity),
+              backgroundColor: COLORS.primaryLight,
+              borderColor: COLORS.primary,
+              borderWidth: 2,
+              yAxisID: 'y'
+            }, {
+              label: 'Revenue (EGP)',
+              data: dailyTrend.map(d => d.revenue),
+              backgroundColor: COLORS.secondaryLight,
+              borderColor: COLORS.secondary,
+              borderWidth: 2,
+              yAxisID: 'y1'
+            }]
+          }, {
+            scales: {
+              y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                  display: true,
+                  text: 'Tickets Count'
+                }
+              },
+              y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                  display: true,
+                  text: 'Revenue (EGP)'
+                },
+                grid: {
+                  drawOnChartArea: false
+                }
+              }
+            }
+          });
+        }
+      }
+      
+      // Hourly traffic chart
+      if (hourlyUsage.length > 0) {
+        const hourlyCtx = document.getElementById('hourlyTrafficChart');
+        if (hourlyCtx) {
+          createBarChart(hourlyCtx.getContext('2d'), {
+            labels: hourlyUsage.map(d => (d.hour || '0') + ':00'),
+            datasets: [{
+              label: 'Entries',
+              data: hourlyUsage.map(d => d.entries),
+              backgroundColor: COLORS.primary,
+              borderWidth: 0
+            }, {
+              label: 'Exits',
+              data: hourlyUsage.map(d => d.exits),
+              backgroundColor: COLORS.danger,
+              borderWidth: 0
+            }, {
+              label: 'Total Activity',
+              data: hourlyUsage.map(d => d.total),
+              backgroundColor: COLORS.warning,
+              borderWidth: 0,
+              hidden: true
+            }]
+          }, {
+            scales: {
+              y: {
+                title: {
+                  display: true,
+                  text: 'Passenger Count'
+                }
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: 'Hour of Day'
+                }
+              }
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing ticket dashboard:', error);
+      // Show error message on the page
+      const charts = document.querySelectorAll('.chart-container');
+      charts.forEach(container => {
+        const canvas = container.querySelector('canvas');
+        if (canvas) {
+          canvas.style.display = 'none';
+          
+          const errorMessage = document.createElement('div');
+          errorMessage.className = 'chart-error';
+          errorMessage.innerHTML = `
+            <div>
+              <p>Error loading chart</p>
+              <small>Check browser console for details</small>
+            </div>
+          `;
+          
+          container.appendChild(errorMessage);
+        }
+      });
+    }
   });
 </script>
 {% endblock %}
