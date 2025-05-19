@@ -169,7 +169,7 @@ requests-toolbelt==1.0.0
 rfc3986==1.5.0
 rpds-py==0.22.3
 rsa==4.9
-setuptools==75.8.0
+setuptools==78.1.1
 shellingham==1.5.4
 simplejwt==2.0.1
 six==1.16.0
