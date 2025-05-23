@@ -22,7 +22,7 @@ API_CONFIG = {
     "NAME": "Egypt Metro",
     "DESCRIPTION": "Egypt Metro Backend",
     "ENVIRONMENT": os.getenv("ENVIRONMENT", "development"),
-    "CONTACT_EMAIL": "admin@metro.com",
+    "CONTACT_EMAIL": "support@egypt-metro.com",
 }
 
 # API start time (when server starts)
@@ -104,6 +104,7 @@ class APIRoutes:
                     "password_reset_confirm": "/api/auth/password/reset/confirm/",
                     "password_reset_validate": "/api/auth/password/reset/validate/",
                 },
+                "description": "User authentication, registration, and profile management endpoints"
             },
             "stations": {
                 "title": "Stations",
@@ -112,6 +113,7 @@ class APIRoutes:
                     "nearest": "/api/stations/nearest/",
                     "trip_details": "/api/stations/trip/{start_station_id}/{end_station_id}/",
                 },
+                "description": "Information about metro stations, locations, and trip planning"
             },
             "trains": {
                 "title": "Trains",
@@ -125,12 +127,14 @@ class APIRoutes:
                     "station_schedule": "/api/trains/{train_id}/station-schedule/",
                     "debug_info": "/api/trains/debug/",
                 },
+                "description": "Train information, schedules, and real-time status updates"
             },
             "routes": {
                 "title": "Routes",
                 "routes": {
                     "find": "/api/routes/find/",
                 },
+                "description": "Route planning and optimization between stations"
             },
             "tickets": {
                 "title": "Tickets",
@@ -151,6 +155,7 @@ class APIRoutes:
                     "hardware_status": "/api/tickets/hardware-status/",
                     "scanner_process": "/api/tickets/scanner/process/",
                 },
+                "description": "Single-use ticket management including purchase, validation, and upgrades"
             },
             "subscriptions": {
                 "title": "Subscriptions",
@@ -164,6 +169,7 @@ class APIRoutes:
                     "qr_code": "/api/tickets/subscriptions/{subscription_id}/qr_code/",
                     "validate_station": "/api/tickets/subscriptions/{subscription_id}/validate_station/",
                 },
+                "description": "Recurring subscription plans for frequent travelers"
             },
             "wallet": {
                 "title": "Wallet",
@@ -179,6 +185,7 @@ class APIRoutes:
                     "payment_method_detail": "/api/wallet/payment-methods/{payment_method_id}/",
                     "set_default_payment_method": "/api/wallet/payment-methods/{payment_method_id}/set_default/",
                 },
+                "description": "Digital wallet for managing funds and transactions"
             },
             "docs": {
                 "title": "API Documentation",
@@ -190,13 +197,14 @@ class APIRoutes:
                     "swagger_json": "/swagger.json",
                 },
             },
-            "health": {
-                "title": "System Status",
+            "system": {
+                "title": "System",
                 "routes": {
                     "health_check": "/health/",
                     "dependencies": "/dependencies/",
                 },
-            },
+                "description": "System health and dependency information"
+            }
         }
 
 
@@ -338,20 +346,24 @@ def home(request) -> HttpResponse:
             "Swagger UI": "/swagger/",
             "ReDoc": "/redoc/",
             "API Docs": "/api/docs/",
-            "OpenAPI Schema": "/api/schema/",
+            "Schema": "/api/schema/",
             "OpenAPI JSON": "/swagger.json",
         },
         "routes": APIRoutes.get_routes(),
         "language": "en",
         "main_features": [
             "User authentication and profile management",
-            "Station information and nearest station finder",
-            "Train schedules and real-time crowd levels",
-            "Route planning and optimization",
-            "Ticket purchasing and validation",
-            "Subscription management",
-            "Digital wallet for payments",
+            "Station information and trip planning",
+            "Real-time train schedules and crowd levels",
+            "Optimized route planning",
+            "Digital ticket purchase and validation",
+            "Subscription management for regular commuters",
+            "Digital wallet for seamless payments",
         ],
+        "api_stats": {
+            "total_endpoints": sum(len(group["routes"]) for group in APIRoutes.get_routes().values()),
+            "categories": len(APIRoutes.get_routes()),
+        }
     }
 
     # Return HTML for browsers

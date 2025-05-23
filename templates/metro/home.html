@@ -184,18 +184,123 @@
             transform: translateY(0);
         }
 
+        .api-description {
+            color: white;
+            margin-top: 1rem;
+            font-size: 1.2rem;
+            max-width: 800px;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.2rem;
+            box-shadow: var(--box-shadow);
+            flex: 1;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature-item {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.2rem;
+            box-shadow: var(--box-shadow);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .feature-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .feature-content {
+            flex: 1;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            color: var(--primary-color);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .category-description {
+            color: #666;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .footer {
+            margin-top: 3rem;
+            text-align: center;
+            padding: 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+        }
+
         /* Responsive improvements */
         @media (max-width: 768px) {
             .container {
                 padding: 1rem;
             }
 
-            .status-container {
+            .stats-container {
                 flex-direction: column;
             }
 
-            .route-item {
-                margin-bottom: 1rem;
+            .features-list {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -207,52 +312,6 @@
             height: 100%;
             z-index: -1;
             background-color: #f4f4f4;
-        }
-    
-        .documentation-section {
-            position: relative;
-            z-index: 1;
-        }
-
-        .doc-link-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-top: 10px;
-            background: rgba(0,0,0,0.05);
-            padding: 8px;
-            border-radius: 6px;
-        }
-        
-        .doc-link-text {
-            font-size: 0.9rem;
-            color: #666;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            max-width: 80%;
-        }
-        
-        .copy-link-btn {
-            background: none;
-            border: none;
-            color: var(--accent-color);
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-        
-        .copy-link-btn:hover {
-            color: var(--primary-color);
-        }
-        
-        .external-link {
-            margin-left: 10px;
-            color: var(--accent-color);
-            text-decoration: none;
-        }
-        
-        .external-link:hover {
-            color: var(--primary-color);
         }
 
         /* Fallback for Font Awesome icons */
@@ -317,6 +376,41 @@
         </header>
 
         <section class="section" data-aos="fade-up">
+            <h2><i class="fas fa-chart-line"></i> API Overview</h2>
+            
+            <div class="stats-container">
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-value">{{ data.api_stats.total_endpoints }}</div>
+                    <div class="stat-label">Total Endpoints</div>
+                </div>
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-value">{{ data.api_stats.categories }}</div>
+                    <div class="stat-label">Categories</div>
+                </div>
+                <div class="stat-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-value">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <div class="stat-label">{{ data.status }}</div>
+                </div>
+            </div>
+            
+            <h2 style="margin-top: 2rem;"><i class="fas fa-star"></i> Main Features</h2>
+            <div class="features-list">
+                {% for feature in data.main_features %}
+                <div class="feature-item" data-aos="fade-up">
+                    <div class="feature-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="feature-content">
+                        <div class="feature-title">{{ feature }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="section" data-aos="fade-up">
             <h2><i class="fas fa-info-circle"></i> System Status</h2>
             <div class="status-container">
                 <div class="status-item">
@@ -334,7 +428,7 @@
             </div>
         </section>
 
-        <section class="section documentation-section" data-aos="fade-up">
+        {% comment %} <section class="section documentation-section" data-aos="fade-up">
             <h2><i class="fas fa-book"></i> Documentation</h2>
             <div class="route-list">
                 {% for name, url in data.documentation.items %}
@@ -361,7 +455,7 @@
                 </div>
                 {% endfor %}
             </div>
-        </section>
+        </section> {% endcomment %}
 
         <section class="section" data-aos="fade-up">
             <h2><i class="fas fa-route"></i> API Routes</h2>
@@ -388,6 +482,11 @@
             </div>
             {% endfor %}
         </section>
+
+        <footer class="footer" data-aos="fade-up">
+            <p>© {% now "Y" %} Egypt Metro Platform. All rights reserved.</p>
+            <p>{{ data.name }} v{{ data.version }}</p>
+        </footer>
     </div>
 
     <!-- Add Particles.js background -->
