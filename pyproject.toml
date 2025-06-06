@@ -19,7 +19,7 @@ package-mode = false  # Disable packaging mode
 # Specifies project dependencies including Python version, Django, FastAPI, etc.
 [tool.poetry.dependencies]
 python = ">=3.10,<4.0"  # Python version constraint
-django = "^4.2.18"  # Django version
+django = "^4.2.22"  # Django version
 fastapi = "^0.68.1"  # FastAPI version
 uvicorn = "^0.15.0"  # Uvicorn version
 pydantic = "^1.8.2"  # Pydantic version
