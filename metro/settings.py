@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     "apps.tickets.apps.TicketsConfig",  # Tickets app
     "apps.wallet.apps.WalletConfig",    # Wallet app
     "apps.dashboard.apps.DashboardConfig",  # Dashboard app
+    "apps.analytics.apps.AnalyticsConfig",  # Analytics app
     "apps.authentication.apps.AuthenticationConfig",    # Authentication app
 ]
 
