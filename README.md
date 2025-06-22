@@ -56,7 +56,7 @@
 
 ## Overview
 
-The **Egypt Metro Backend API** provides a robust infrastructure for managing and operating the Egypt Metro platform. It serves as the central system for user authentication, station management, trip details, ticketing, subscriptions, payments, and real-time train information. The API is designed to support millions of daily passengers with high reliability and scalability.
+The **Egypt Metro Backend Django** provides a robust infrastructure and backbone for managing and operating the Egypt Metro platform to enhance commuters, passengers, and administrators experiences, and digitalize the metro transportation in Egypt. It serves as the central system for user authentication, station management, trip details, ticketing, subscriptions, payments, and real-time train information. The API is designed to support millions of daily passengers with high reliability and scalability.
 
 ## Related Projects
 
@@ -83,7 +83,7 @@ The **Egypt Metro Backend API** provides a robust infrastructure for managing an
 
 The admin panel provides comprehensive management capabilities:
 
-#### Analytics
+#### 📊 Analytics Dashboard
 
 - **Daily Analytics**: Monitor daily system performance metrics
 - **Line Analytics**: Track usage and revenue data for each metro line
@@ -91,35 +91,35 @@ The admin panel provides comprehensive management capabilities:
 - **Subscription Usage Records**: Monitor how subscriptions are being utilized
 - **Ticket Usage Records**: Track individual ticket usage patterns
 
-#### Stations Management
+#### 🚉 Stations Management
 
 - **Lines**: Add, modify, and manage metro lines
 - **Stations**: Configure individual station details and settings
 - **Line Stations**: Manage stations associated with specific lines
 
-#### Tickets Management
+#### 🎫 Tickets Management
 
 - **Subscription Plans**: Create and modify subscription packages
 - **Tickets**: Manage individual ticket types and pricing
 - **User Subscriptions**: Track and manage user subscription details
 
-#### Trains Management
+#### 🚊 Trains Management
 
 - **Trains**: Add and configure train information
 - **Train Cars**: Manage individual train car configurations
 - **Schedules**: Create and adjust train timetables
 
-#### User Management
+#### 👥 User Management
 
 - **Users**: Add, modify, and manage user accounts and permissions
 
-#### Wallet Management
+#### 💰 Wallet Management
 
 - **Payment Methods**: Configure available payment options
 - **Transactions**: Monitor and manage financial transactions
 - **User Wallets**: Track user wallet balances and activity
 
-#### Routes Management
+#### 🗺️ Routes Management
 
 - **Routes**: Define and modify system routes
 
