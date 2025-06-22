@@ -76,14 +76,52 @@ The **Egypt Metro Backend API** provides a robust infrastructure for managing an
 - `Online Subscription`: Subscribe to or renew metro plans online.
 - `Payment Options`: Users can pay via credit/debit cards, e-wallets, or other payment gateways.
 - `Chatbot Support`: 24/7 AI-powered chatbot to answer questions, guide users, and connect with customer service.
-- `Real-Time Updates`: Supports extensions for real-time data (e.g., train locations, crowd levels).
 
 ### Admin Features
 
-- `Admin Dashboard`: Track sales and revenue for each line and station in real-time.
-- `Fault Reporting`: Allow admins to view, respond to, and track the status of user-reported issues.
-<!-- - `Revenue and Sales Tracking`: Monitor ticket sales and subscription renewals for each metro line and station.
-- `Train Monitoring`: Track train locations and details in real-time. -->
+- `Admin Panel Access`: Access the administrative panel at [https://backend-54v5.onrender.com/admin/](https://backend-54v5.onrender.com/admin/)
+
+The admin panel provides comprehensive management capabilities:
+
+#### Analytics
+
+- **Daily Analytics**: Monitor daily system performance metrics
+- **Line Analytics**: Track usage and revenue data for each metro line
+- **Station Analytics**: View detailed statistics for individual stations
+- **Subscription Usage Records**: Monitor how subscriptions are being utilized
+- **Ticket Usage Records**: Track individual ticket usage patterns
+
+#### Stations Management
+
+- **Lines**: Add, modify, and manage metro lines
+- **Stations**: Configure individual station details and settings
+- **Line Stations**: Manage stations associated with specific lines
+
+#### Tickets Management
+
+- **Subscription Plans**: Create and modify subscription packages
+- **Tickets**: Manage individual ticket types and pricing
+- **User Subscriptions**: Track and manage user subscription details
+
+#### Trains Management
+
+- **Trains**: Add and configure train information
+- **Train Cars**: Manage individual train car configurations
+- **Schedules**: Create and adjust train timetables
+
+#### User Management
+
+- **Users**: Add, modify, and manage user accounts and permissions
+
+#### Wallet Management
+
+- **Payment Methods**: Configure available payment options
+- **Transactions**: Monitor and manage financial transactions
+- **User Wallets**: Track user wallet balances and activity
+
+#### Routes Management
+
+- **Routes**: Define and modify system routes
 
 ## API Documentation
 
