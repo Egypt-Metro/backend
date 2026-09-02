@@ -1,6 +1,6 @@
 # apps/stations/admin.py
 
-from venv import logger
+import logging
 
 import markupsafe
 from django.contrib import admin
@@ -9,8 +9,9 @@ from django.utils.html import format_html
 
 from apps.stations.management.commands.populate_metro_data import Command as MetroDataCommand
 from metro import settings
-
 from .models import Line, LineStation, Station
+
+logger = logging.getLogger(__name__)
 
 # Get constants from MetroDataCommand
 LINE_OPERATIONS = MetroDataCommand.LINE_OPERATIONS

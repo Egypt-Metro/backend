@@ -34,7 +34,11 @@ load_dotenv(dotenv_path)
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")  # Secret key for Django
 ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")   # Environment (dev, test, prod)
-DEBUG = True
+# SECURITY WARNING: don't run with debug turned on in production!
+# Reads the DEBUG env var (render.yaml sets DEBUG=False in prod); defaults to
+# True outside of "prod" to keep the previous local-dev experience, and False
+# in prod if the env var is somehow unset, so production never leaks debug info.
+DEBUG = os.getenv("DEBUG", "False" if ENVIRONMENT == "prod" else "True").lower() == "true"
 BASE_URL = os.getenv("BASE_URL")  # Base URL for the project
 JWT_SECRET = os.getenv("JWT_SECRET")  # Secret key for JWT tokens
 
@@ -102,7 +106,10 @@ ROOT_URLCONF = "metro.urls"  # Root URL configuration
 WSGI_APPLICATION = "metro.wsgi.application"  # WSGI application
 
 # Single API key for all scanners
-SCANNER_API_KEY = "egypt_metro_scanner_123456"  # API key for scanner devices
+# SECURITY: previously hardcoded in source; now read from the environment,
+# falling back to the old literal so existing scanner devices keep working
+# until SCANNER_API_KEY is set and rotated in the deployment environment.
+SCANNER_API_KEY = os.getenv("SCANNER_API_KEY", "egypt_metro_scanner_123456")
 
 APPEND_SLASH = True
 
@@ -192,7 +199,10 @@ else:
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
     SECURE_PROXY_SSL_HEADER = None
-    CORS_ORIGIN_ALLOW_ALL = True
+    # NOTE: django-cors-headers renamed this setting to CORS_ALLOW_ALL_ORIGINS
+    # in 3.0 (this project is on 4.x); the old name is silently ignored, so
+    # this had no effect. Dev/test still gets CORS_ALLOWED_ORIGINS below.
+    CORS_ALLOW_ALL_ORIGINS = True
 
 # Update ALLOWED_HOSTS and CORS settings
 ALLOWED_HOSTS = [
@@ -286,7 +296,7 @@ TEMPLATES = [
 AUTH_USER_MODEL = "users.User"
 
 # Add ASGI application
-ASGI_APPLICATION = "config.asgi.application"
+ASGI_APPLICATION = "metro.asgi.application"
 
 # Add Channel Layers configuration
 CHANNEL_LAYERS = {
@@ -486,7 +496,7 @@ LOGGING = {
         "file": {
             "level": "INFO",
             "class": "logging.FileHandler",
-            "filename": "logs/debug.log",
+            "filename": LOGS_DIR / "debug.log",
             "formatter": "verbose",
         },
         "console": {
@@ -573,8 +583,8 @@ SESSION_COOKIE_AGE = 86400   # Session cookie age in seconds (24 hours)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True  # True for development, False for production
 SESSION_SAVE_EVERY_REQUEST = True  # Save session data on every request
 
-HANDLER404 = "metro.views.custom_404"  # Custom 404 handler
-HANDLER500 = "metro.views.custom_500"  # Custom 500 handler
+# Custom error handlers are wired up via `handler404`/`handler500` in
+# metro/urls.py (Django's root URLconf), not here.
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/

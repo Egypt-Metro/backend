@@ -48,6 +48,15 @@ bower_components/
 # Environment variables
 .env
 
+# Local TLS cert/key for `manage.py runsslserver` (dev-only; regenerate
+# locally, never commit private keys)
+cert.crt
+cert.key
+
+# Stray local artifacts that shouldn't be committed
+backup.json
+urls.txt
+
 # IDE files
 .vscode/
 .idea/

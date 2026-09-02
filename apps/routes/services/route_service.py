@@ -1,11 +1,13 @@
 # apps/routes/services/route_service.py
 
+import logging
 from typing import Dict, Optional
-from venv import logger
 from geopy.distance import geodesic
 from collections import defaultdict
 from apps.stations.models import Line, Station, LineStation
 from .cache_service import CacheService
+
+logger = logging.getLogger(__name__)
 
 
 class MetroRouteService:
@@ -13,7 +15,17 @@ class MetroRouteService:
         self.graph = defaultdict(dict)
         self.station_lines = defaultdict(set)
         self.cache_service = CacheService()
-        self.build_graph()
+        self._graph_built = False
+
+    def _ensure_graph_built(self):
+        # Building the graph queries the database, so it's deferred until
+        # the service is actually used instead of running in __init__.
+        # That way constructing a MetroRouteService (including as a class
+        # attribute, which runs at import time) never requires a database
+        # connection to be available yet.
+        if not self._graph_built:
+            self.build_graph()
+            self._graph_built = True
 
     def _calculate_distance(self, station1: Station, station2: Station) -> float:
         """Calculate the distance between two stations in meters"""
@@ -92,13 +104,14 @@ class MetroRouteService:
 
     def find_route(self, start_id: int, end_id: int) -> Optional[Dict]:
         """Find the optimal route between two stations"""
+        self._ensure_graph_built()
         try:
             Station.objects.get(id=start_id)
             Station.objects.get(id=end_id)
         except Station.DoesNotExist as e:
             logger.error(f"Station not found: {str(e)}")
             return None
-        
+
         cached_route = self.cache_service.get_cached_route(start_id, end_id)
         if cached_route:
             return cached_route

@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
                 ],
             ),
         ),
-        
+
         # Convert data using Python
         migrations.RunPython(
             code=lambda apps, schema_editor: apps.get_model('users', 'User').objects.update(
@@ -31,20 +31,20 @@ class Migration(migrations.Migration):
             ),
             reverse_code=migrations.RunPython.noop
         ),
-        
+
         # Remove old column
         migrations.RemoveField(
             model_name='user',
             name='subscription_type',
         ),
-        
+
         # Rename new column
         migrations.RenameField(
             model_name='user',
             old_name='subscription_type_new',
             new_name='subscription_type',
         ),
-        
+
         # Make it non-nullable with default
         migrations.AlterField(
             model_name='user',

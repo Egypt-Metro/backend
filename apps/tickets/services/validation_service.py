@@ -11,9 +11,19 @@ from apps.routes.services.route_service import MetroRouteService
 
 
 class ValidationService:
-    route_service = MetroRouteService()
     qr_service = QRService()
     hardware_service = HardwareService()
+    # Lazily built on first use (not at class/import time): building the
+    # route graph runs a database query, so evaluating it eagerly here meant
+    # importing this module required a working database connection. It's
+    # still built only once and reused across calls, same as before.
+    _route_service = None
+
+    @classmethod
+    def get_route_service(cls) -> MetroRouteService:
+        if cls._route_service is None:
+            cls._route_service = MetroRouteService()
+        return cls._route_service
 
     @classmethod
     @transaction.atomic
@@ -93,7 +103,7 @@ class ValidationService:
                 }
 
             # Validate route
-            route_data = cls.route_service.find_route(
+            route_data = cls.get_route_service().find_route(
                 ticket.entry_station_id,
                 station_id
             )
@@ -232,7 +242,7 @@ class ValidationService:
         """
         Validate route and calculate upgrade requirements if needed
         """
-        route_data = cls.route_service.find_route(
+        route_data = cls.get_route_service().find_route(
             ticket.entry_station_id,
             station_id
         )

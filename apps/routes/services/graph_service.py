@@ -1,6 +1,8 @@
+import logging
 from collections import defaultdict
-from venv import logger
 from apps.stations.models import LineStation, Interchange
+
+logger = logging.getLogger(__name__)
 
 
 class GraphService:

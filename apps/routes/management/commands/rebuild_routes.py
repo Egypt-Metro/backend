@@ -1,6 +1,5 @@
 # apps/routes/management/commands/rebuild_routes.py
 
-from cmath import e
 import time
 import datetime
 from tqdm import tqdm
@@ -76,7 +75,7 @@ Chunk size: {options['chunk_size']}
                 start_time
             )
 
-        except Exception:
+        except Exception as e:
             logger.error(f"Error rebuilding routes: {str(e)}")
             self.stdout.write(self.style.ERROR(f"Error: {str(e)}"))
 
@@ -115,7 +114,7 @@ Chunk size: {options['chunk_size']}
                             total_pairs,
                             start_time
                         )
-                    except Exception:
+                    except Exception as e:
                         logger.error(f"Chunk processing failed: {str(e)}")
 
         return created_routes, failed_routes
@@ -209,8 +208,8 @@ Chunk size: {options['chunk_size']}
     def calculate_total_time(self, route_data):
         """Calculate total travel time"""
         return (
-            route_data['num_stations'] * 2 +
-            len(route_data['interchanges']) * 3
+            route_data['num_stations'] * 2
+            + len(route_data['interchanges']) * 3
         )
 
     def determine_primary_line(self, route_data):
@@ -231,7 +230,7 @@ Chunk size: {options['chunk_size']}
             routes_per_second = created / elapsed_time
             remaining = total - created
             estimated_remaining = remaining / routes_per_second if routes_per_second > 0 else 0
-            
+
             self.stdout.write(f"""
 Progress Update:
 --------------
@@ -244,7 +243,7 @@ Est. remaining: {datetime.timedelta(seconds=int(estimated_remaining))}
     def print_final_summary(self, created, failed, total, start_time):
         """Print final summary"""
         elapsed_time = time.time() - start_time
-        
+
         self.stdout.write(f"""
 Final Summary:
 ------------

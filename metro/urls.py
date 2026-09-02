@@ -105,6 +105,13 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
+# Custom error handlers. Django only picks these up as module-level
+# `handler404`/`handler500` names in the root URLconf (uppercase settings
+# of the same name, as previously set in settings.py, are not read by
+# Django and had no effect).
+handler404 = "metro.views.custom_404"
+handler500 = "metro.views.custom_500"
+
 # Debug the URL loading process
 # logger.debug('URL patterns: %s', [path.pattern for path in urlpatterns])
 

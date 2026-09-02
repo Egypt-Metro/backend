@@ -26,7 +26,7 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS("=== Starting user data verification ===")
         )
-        
+
         if options['backup']:
             self._create_backup()
 
@@ -37,7 +37,7 @@ class Command(BaseCommand):
 
         for user in users:
             issues = self._verify_user(user)
-            
+
             if issues:
                 issues_found = True
                 self.stdout.write(
@@ -47,7 +47,7 @@ class Command(BaseCommand):
                 )
                 for issue in issues:
                     self.stdout.write(f"  - {issue}")
-                
+
                 if options['fix']:
                     fixed = self._fix_user(user)
                     if fixed:
@@ -79,13 +79,13 @@ class Command(BaseCommand):
     def _verify_user(self, user):
         """Verify all required user data"""
         issues = []
-        
+
         # Check required fields
         if not user.email:
             issues.append("Missing email")
         if not user.username:
             issues.append("Missing username")
-        
+
         # Check custom fields
         if not user.national_id:
             issues.append("Missing national_id")
@@ -97,11 +97,11 @@ class Command(BaseCommand):
             issues.append("Missing created_at timestamp")
         if user.updated_at is None:
             issues.append("Missing updated_at timestamp")
-            
+
         # Validate phone number format
         if user.phone_number and not user.phone_number.startswith('01'):
             issues.append("Invalid phone number format")
-            
+
         return issues
 
     def _fix_user(self, user):
@@ -118,7 +118,7 @@ class Command(BaseCommand):
                 user.created_at = user.date_joined or timezone.now()
             if user.updated_at is None:
                 user.updated_at = timezone.now()
-                
+
             user.save()
             self.stdout.write(
                 self.style.SUCCESS(f"  ✓ Fixed issues for user {user.username}")
@@ -135,20 +135,20 @@ class Command(BaseCommand):
         from django.core import serializers
         import json
         from datetime import datetime
-        
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'user_backup_{timestamp}.json'
-        
+
         self.stdout.write(
             self.style.SUCCESS("\n=== Creating backup ===")
         )
-        
+
         users = User.objects.all()
         data = serializers.serialize('json', users)
-        
+
         with open(filename, 'w') as f:
             json.dump(json.loads(data), f, indent=2)
-            
+
         self.stdout.write(
             self.style.SUCCESS(f"✓ Backup created: {filename}")
         )

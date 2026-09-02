@@ -1,12 +1,14 @@
 # apps/stations/management/commands/populate_metro_data.py
 
+import logging
 import time
-from venv import logger
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from apps.stations.models import Line, Station, LineStation, ConnectingStation
 from django.db import connection
 from django.db.models import Q
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):

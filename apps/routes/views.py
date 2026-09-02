@@ -22,7 +22,18 @@ class RouteView(views.APIView):
         num_stations (int): Number of stations in the route
         interchanges (list): List of interchange points
     """
-    route_service = MetroRouteService()
+    # Lazily built on first use (not at class/import time): building the
+    # graph runs a database query, so evaluating it eagerly here meant the
+    # whole app failed to even load its URLconf whenever the database
+    # wasn't reachable yet at process startup. It's still built only once
+    # and reused across requests, same as before.
+    _route_service = None
+
+    @property
+    def route_service(self):
+        if RouteView._route_service is None:
+            RouteView._route_service = MetroRouteService()
+        return RouteView._route_service
 
     def get(self, request):
         try:

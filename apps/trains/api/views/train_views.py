@@ -24,7 +24,7 @@ from ...models.train import Train
 from ..serializers.train_serializer import TrainSerializer, TrainDetailSerializer
 from ..serializers.schedule_serializer import ScheduleSerializer
 from ..pagination import StandardResultsSetPagination
-from ..permissions import IsStaffOrReadOnly, CanUpdateCrowdLevel
+from ..permissions import IsStaffOrReadOnly
 from ..filters import TrainFilter
 import logging
 
@@ -435,7 +435,7 @@ class TrainViewSet(viewsets.ModelViewSet):
                 },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-            
+
     @action(
         detail=True,
         methods=['get'],

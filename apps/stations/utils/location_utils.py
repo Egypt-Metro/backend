@@ -1,11 +1,13 @@
 # apps/stations/utils/location_utils.py
 
+import logging
+import math
 from typing import List, Tuple, Optional
-from venv import logger
 from django.db.models import F, ExpressionWrapper, FloatField
 from django.db.models.functions import ACos, Cos, Radians, Sin
 from apps.stations.models import Station
-import math
+
+logger = logging.getLogger(__name__)
 
 
 def find_nearest_station(latitude: float, longitude: float) -> Tuple[Optional[Station], float]:

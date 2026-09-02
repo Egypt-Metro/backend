@@ -1,7 +1,8 @@
 # apps/stations/services/ticket_service.py
 
+import logging
 
-from venv import logger
+logger = logging.getLogger(__name__)
 
 
 def calculate_total_stations(start_station, end_station, route_path=None):
