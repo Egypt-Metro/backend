@@ -25,6 +25,33 @@ uvicorn = { version = "^0.34.0", extras = ["standard"] }  # ASGI server for HTTP
 channels = "^4.0.0"  # Django Channels for WebSockets
 channels-redis = "^4.1.0"  # Redis channel layer
 daphne = "^4.1.2"  # ASGI server used by channels test helpers / runserver
+
+# NOTE: requirements.txt is the authoritative dependency list for deploy/CI
+# (see render.yaml and .github/workflows/django.yml). The entries below are kept
+# roughly in sync so `poetry install` still yields a runnable app locally.
+celery = "5.4.0"  # Async task queue
+django-filter = "25.1"  # DRF filtering (INSTALLED_APPS: django_filters)
+django-rest-passwordreset = "1.5.0"  # Password reset endpoints
+django-extensions = "3.2.3"  # Management command helpers
+django-import-export = "4.3.5"  # Admin import/export (INSTALLED_APPS: import_export)
+django-admin-rangefilter = "0.13.2"  # Admin date-range filters (INSTALLED_APPS: rangefilter)
+django-anymail = "12.0"  # Transactional email backend
+django-sslserver = "0.22"  # Local HTTPS dev server (INSTALLED_APPS: sslserver)
+django-mailgun-provider = "0.2.3"  # Mailgun email provider
+django-constance = "4.1.3"  # Runtime settings (used by base settings, not dev-only)
+drf-spectacular = "0.28.0"  # OpenAPI schema generation
+matplotlib = "3.10.1"  # Charts for analytics/reports
+numpy = "2.2.3"  # Numerics
+pandas = "2.2.3"  # Dataframes for analytics/reports
+pillow = "12.3.0"  # Image handling
+psycopg2-binary = "2.9.10"  # PostgreSQL driver (binary wheel)
+qrcode = "8.1"  # Ticket QR codes
+reportlab = "4.3.1"  # PDF report generation
+tablib = "3.8.0"  # Tabular dataset export
+XlsxWriter = "3.2.2"  # XLSX export
+python-magic = { version = "0.4.27", markers = "sys_platform == 'linux'" }  # libmagic file typing
+python-magic-bin = { version = "0.4.14", markers = "sys_platform == 'win32'" }  # libmagic on Windows
+
 pywin32 = { version = "^308", platform = "win32" }  # Optional dependency for Windows
 docker = "^7.1.0"  # Docker SDK for Python version
 jinja2 = "^3.1.4"  # Jinja2 version

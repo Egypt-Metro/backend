@@ -128,7 +128,6 @@ pre_commit==4.1.0
 prompt_toolkit==3.0.47
 propcache==0.2.1
 psutil==6.0.0
-psycopg2==2.9.10
 psycopg2-binary==2.9.10
 pure_eval==0.2.3
 py==1.11.0

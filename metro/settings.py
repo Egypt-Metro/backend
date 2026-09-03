@@ -206,10 +206,32 @@ else:
     CORS_ALLOW_ALL_ORIGINS = True
 
 # Update ALLOWED_HOSTS and CORS settings
+# Extra hosts/origins are supplied per-deploy via env vars (comma-separated),
+# so a new platform/domain needs no code change:
+#   ALLOWED_HOSTS="api.example.com,example.com"
+#   CORS_ALLOWED_ORIGINS="https://app.example.com"
+#   CSRF_TRUSTED_ORIGINS="https://app.example.com"
+
+
+def _csv_env(name):
+    return [item.strip() for item in os.getenv(name, "").split(",") if item.strip()]
+
+
 ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     "backend-54v5.onrender.com",
+] + _csv_env("ALLOWED_HOSTS")
+
+# Platform-provided external hostnames (Koyeb / Render / Fly all expose one).
+for _host_env in ("KOYEB_PUBLIC_DOMAIN", "RENDER_EXTERNAL_HOSTNAME", "FLY_APP_NAME"):
+    _host = os.getenv(_host_env)
+    if _host:
+        ALLOWED_HOSTS.append(f"{_host}.fly.dev" if _host_env == "FLY_APP_NAME" else _host)
+
+# Every non-local host is also a trusted HTTPS origin for CSRF.
+_derived_https_origins = [
+    f"https://{h}" for h in ALLOWED_HOSTS if h not in ("127.0.0.1", "localhost")
 ]
 
 CORS_ALLOWED_ORIGINS = [
@@ -218,7 +240,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",    # Flutter frontend
     "https://backend-54v5.onrender.com",    # Render backend
     "https://ai-metro.onrender.com",    # AI Service
-]
+] + _derived_https_origins + _csv_env("CORS_ALLOWED_ORIGINS")
 
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -234,7 +256,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:8000",    # Localhost
     "http://localhost:8000",    # Localhost
     "https://backend-54v5.onrender.com",    # Render backend
-]
+] + _derived_https_origins + _csv_env("CSRF_TRUSTED_ORIGINS")
 
 # CORS settings
 CORS_ALLOW_HEADERS = [
@@ -300,9 +322,10 @@ AUTH_USER_MODEL = "users.User"
 ASGI_APPLICATION = "metro.asgi.application"
 
 # Add Channel Layers configuration
-# Uses Redis when REDIS_URL / REDIS_HOST is provided (required in prod, where
-# gunicorn/uvicorn runs multiple workers that must share broadcast groups).
-# Falls back to an in-process layer for local dev when no Redis is configured.
+# - REDIS_URL / REDIS_HOST set  -> Redis layer (required to run >1 web worker).
+# - not set                     -> in-process layer. Fine for a single-worker
+#                                  deployment; broadcasts do NOT cross workers,
+#                                  so keep uvicorn at --workers 1 without Redis.
 REDIS_URL = os.getenv("REDIS_URL")
 REDIS_HOST = os.getenv("REDIS_HOST")
 
@@ -315,12 +338,13 @@ if REDIS_URL or REDIS_HOST:
             },
         },
     }
-elif ENVIRONMENT == "prod":
-    raise ImproperlyConfigured(
-        "REDIS_URL (or REDIS_HOST) must be set in production for Django Channels."
-    )
 else:
     CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+    if ENVIRONMENT == "prod" and int(os.getenv("WEB_CONCURRENCY", "1")) > 1:
+        raise ImproperlyConfigured(
+            "WEB_CONCURRENCY > 1 requires REDIS_URL so WebSocket groups are "
+            "shared across workers. Set REDIS_URL or keep WEB_CONCURRENCY=1."
+        )
 
 # API Documentation
 SPECTACULAR_SETTINGS = {
@@ -385,6 +409,8 @@ if ENVIRONMENT == "prod":
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True   # Include subdomains for HSTS
     SECURE_HSTS_PRELOAD = True  # Enable HSTS preload list
     SECURE_SSL_REDIRECT = True  # Redirect HTTP to HTTPS
+    # Let health checks / uptime pings through on plain HTTP (no 301).
+    SECURE_REDIRECT_EXEMPT = [r"^health/$", r"^healthz/$"]
 
     # Proxy Settings
     USE_X_FORWARDED_HOST = True

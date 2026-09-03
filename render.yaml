@@ -1,50 +1,42 @@
-# render.yaml
-# Render configuration file for deploying a Django application to Render
+# render.yaml — FALLBACK host config (primary target is Koyeb; see DEPLOYMENT.md).
+# Tuned for Render's FREE plan: no paid instance, no Redis service.
+# Caveat: a free web service sleeps after ~15 min idle. Use Neon for the DB
+# (Render's own free Postgres is deleted after 30-90 days).
 # schema: https://render.com/schema/render.yaml.json
 
 services:
   - type: web
-    name: django
+    name: metro-backend
     runtime: python
-    # requirements.txt is the source of truth for deploy deps (pyproject.toml /
-    # poetry.lock are not kept fully in sync).
+    plan: free
     buildCommand: |
-      apt-get update && apt-get install -y gcc libpq-dev python3-dev && \
       pip install --upgrade pip && \
       pip install -r requirements.txt && \
-      python manage.py collectstatic --noinput && \
-      python manage.py migrate --noinput
-    # ASGI server (uvicorn) so both HTTP and WebSockets (Django Channels) are served.
-    startCommand: uvicorn metro.asgi:application --host 0.0.0.0 --port $PORT --workers 3 --proxy-headers --forwarded-allow-ips="*"
-    envVars:
-      - key: REDIS_URL              # Channel layer backend for WebSocket broadcast
-        fromService:
-          type: redis
-          name: metro-redis
-          property: connectionString
-      - key: ENVIRONMENT             # Environment for loading specific config
-        value: prod
-      - key: SECRET_KEY
-        value: ${SECRET_KEY}
-      - key: DATABASE_URL
-        value: ${DATABASE_URL}
-      - key: ALLOWED_HOSTS
-        value: backend-54v5.onrender.com
-      - key: DEBUG
-        value: "False"
-      - key: DEPLOYED_AT
-        value: ${RENDER_DEPLOY_TIMESTAMP}
-      - key: PYTHON_VERSION          # Specify the Python version
-        value: "3.11.10"
-    disk:
-      name: uploads
-      mountPath: /uploads
-      sizeGB: 1
+      python manage.py collectstatic --noinput
+    # Single worker -> in-memory channel layer, no Redis needed.
+    startCommand: |
+      python manage.py migrate --noinput && \
+      uvicorn metro.asgi:application --host 0.0.0.0 --port $PORT --workers 1 --proxy-headers --forwarded-allow-ips="*"
     healthCheckPath: "/health/"
     autoDeploy: true
-
-  - type: redis
-    name: metro-redis
-    plan: free
-    maxmemoryPolicy: noeviction
-    ipAllowList: []          # only reachable from services in this Render account
+    envVars:
+      - key: ENVIRONMENT
+        value: prod
+      - key: DEBUG
+        value: "False"
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: PYTHON_VERSION
+        value: "3.11.10"
+      - key: SECRET_KEY
+        sync: false          # set in the Render dashboard
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false          # Neon connection string (include ?sslmode=require)
+      - key: BASE_URL
+        sync: false          # https://<service>.onrender.com
+      - key: ALLOWED_HOSTS
+        sync: false          # <service>.onrender.com[,custom-domain]
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false

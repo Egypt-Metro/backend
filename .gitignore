@@ -76,11 +76,10 @@ nosetests.xml
 coverage.xml
 *.coveragerc
 
-# Docker files (if applicable)
-docker/
-docker-compose.yml
-Dockerfile
-*.dockerignore
+# Docker: the deployment files ARE tracked (Koyeb/Render build from them).
+# Only ignore local override files.
+docker-compose.override.yml
+docker-compose.*.local.yml
 
 # Temporary files from editors
 *.sublime-workspace

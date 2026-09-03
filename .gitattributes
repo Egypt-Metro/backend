@@ -20,3 +20,10 @@
 .gitattributes text eol=lf
 .gitignore text eol=lf
 .pre-commit-config.yaml text eol=lf
+
+# Shell scripts and Docker (must stay LF to run inside Linux containers)
+*.sh text eol=lf
+entrypoint.sh text eol=lf
+Dockerfile text eol=lf
+.dockerignore text eol=lf
+*.env.example text eol=lf

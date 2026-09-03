@@ -125,13 +125,13 @@ The admin panel provides comprehensive management capabilities:
 
 ## API Documentation
 
-Interactive API documentation is available at:
+Interactive API documentation is public (no auth) and served by the app at these
+paths — replace the host with your deployment (or `http://localhost:8000` when
+running locally):
 
-- **Swagger UI**: [https://backend-54v5.onrender.com/swagger/](https://backend-54v5.onrender.com/swagger/)
-- **ReDoc**: [https://backend-54v5.onrender.com/redoc/](https://backend-54v5.onrender.com/redoc/)
-- **Swagger JSON**: [https://backend-54v5.onrender.com/swagger.json](https://backend-54v5.onrender.com/swagger.json)
-- **API Schema**: [https://backend-54v5.onrender.com/api/schema/](https://backend-54v5.onrender.com/api/schema/)
-- **API Docs**: [https://backend-54v5.onrender.com/api/docs/](https://backend-54v5.onrender.com/api/docs/)
+- **Swagger UI**: `/api/docs/` and `/swagger/`
+- **ReDoc**: `/redoc/`
+- **OpenAPI schema (JSON)**: `/api/schema/` and `/swagger.json`
 
 ## Technologies Used
 
@@ -353,17 +353,28 @@ The API provides 60 endpoints across 9 categories. Below is a summary of the mai
 
 ## Deployment
 
-The API is deployed on Render at [https://backend-54v5.onrender.com/](https://backend-54v5.onrender.com/)
+Full instructions — free, always-on hosting with public API docs — are in
+**[DEPLOYMENT.md](DEPLOYMENT.md)**.
 
-For deployment to your own Render instance:
+**TL;DR (recommended free stack — $0/month, no card):**
 
-1. Create a new Web Service on Render
-2. Connect to your GitHub repository
-3. Set the following:
-   - Build Command: `pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate`
-   - Start Command: `gunicorn config.wsgi:application`
-4. Add the required environment variables
-5. Deploy the service
+| Piece | Service |
+|-------|---------|
+| Web (ASGI, WebSockets) | [Koyeb](https://www.koyeb.com) free instance — no cold starts, auto HTTPS, deploys from the repo `Dockerfile` |
+| PostgreSQL | [Neon](https://neon.tech) free tier — permanent, serverless |
+| Channel layer | in-memory (single worker; no Redis needed) |
+
+Alternatives (Render free tier, Fly.io, Oracle Cloud VM) are covered in
+[DEPLOYMENT.md](DEPLOYMENT.md). `render.yaml` and `Dockerfile` are in the repo.
+
+### Run locally with Docker
+
+```bash
+cp .env.example .env      # set SECRET_KEY and JWT_SECRET
+docker compose up --build
+```
+
+App on `http://localhost:8000/`, Swagger on `/api/docs/`.
 
 ## Contributing
 

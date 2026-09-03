@@ -1,0 +1,43 @@
+# Local development / testing stack: Django (ASGI) + PostgreSQL.
+# Usage:
+#   cp .env.example .env      # then edit secrets
+#   docker compose up --build
+# App:      http://localhost:8000
+# Docs:     http://localhost:8000/api/docs/   (Swagger)  ·  /redoc/
+# Admin:    http://localhost:8000/admin/
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: metro
+      POSTGRES_PASSWORD: metro
+      POSTGRES_DB: metro
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metro"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    env_file: .env
+    environment:
+      ENVIRONMENT: dev
+      DEBUG: "True"
+      DATABASE_URL: postgres://metro:metro@db:5432/metro
+      ALLOWED_HOSTS: localhost,127.0.0.1,web
+      PORT: "8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata:
