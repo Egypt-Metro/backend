@@ -39,9 +39,15 @@ class TrainConsumer(AsyncWebsocketConsumer):
             self.location_group = f"{self.base_group}_location"
             self.crowd_group = f"{self.base_group}_crowd"
             self.schedule_group = f"{self.base_group}_schedule"
+            self.joined_groups = [
+                self.base_group,
+                self.location_group,
+                self.crowd_group,
+                self.schedule_group,
+            ]
 
             # Join all relevant groups
-            for group in [self.base_group, self.location_group, self.crowd_group, self.schedule_group]:
+            for group in self.joined_groups:
                 await self.channel_layer.group_add(group, self.channel_name)
 
             await self.accept()
@@ -59,11 +65,12 @@ class TrainConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         """Handle WebSocket disconnection"""
         try:
-            # Leave all groups
-            for group in [self.base_group, self.location_group, self.crowd_group, self.schedule_group]:
+            # ``joined_groups`` is only set once the connection was accepted; a
+            # rejected connect() would leave it unset.
+            for group in getattr(self, "joined_groups", []):
                 await self.channel_layer.group_discard(group, self.channel_name)
 
-            logger.info(f"WebSocket connection closed for train: {self.train_id}")
+            logger.info(f"WebSocket connection closed for train: {getattr(self, 'train_id', '?')}")
         except Exception as e:
             logger.error(f"Error during WebSocket disconnection: {e}")
 

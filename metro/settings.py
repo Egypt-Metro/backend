@@ -20,6 +20,7 @@ from datetime import timedelta  # Time delta for JWT tokens
 from pathlib import Path  # File path helper
 
 import dj_database_url  # type: ignore # Parse database URLs
+from django.core.exceptions import ImproperlyConfigured  # Config validation
 from dotenv import load_dotenv  # Load environment variables from .env file
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -299,14 +300,27 @@ AUTH_USER_MODEL = "users.User"
 ASGI_APPLICATION = "metro.asgi.application"
 
 # Add Channel Layers configuration
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [(os.getenv("REDIS_HOST", "127.0.0.1"), 6379)],
+# Uses Redis when REDIS_URL / REDIS_HOST is provided (required in prod, where
+# gunicorn/uvicorn runs multiple workers that must share broadcast groups).
+# Falls back to an in-process layer for local dev when no Redis is configured.
+REDIS_URL = os.getenv("REDIS_URL")
+REDIS_HOST = os.getenv("REDIS_HOST")
+
+if REDIS_URL or REDIS_HOST:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL] if REDIS_URL else [(REDIS_HOST, int(os.getenv("REDIS_PORT", 6379)))],
+            },
         },
-    },
-}
+    }
+elif ENVIRONMENT == "prod":
+    raise ImproperlyConfigured(
+        "REDIS_URL (or REDIS_HOST) must be set in production for Django Channels."
+    )
+else:
+    CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 # API Documentation
 SPECTACULAR_SETTINGS = {

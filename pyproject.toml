@@ -21,6 +21,7 @@ package-mode = false  # Disable packaging mode
 python = ">=3.10,<4.0"  # Python version constraint
 django = "^4.2.20"  # Django version
 gunicorn = "^23.0.0"  # Gunicorn version
+uvicorn = { version = "^0.34.0", extras = ["standard"] }  # ASGI server for HTTP + WebSockets
 pywin32 = { version = "^308", platform = "win32" }  # Optional dependency for Windows
 docker = "^7.1.0"  # Docker SDK for Python version
 jinja2 = "^3.1.4"  # Jinja2 version

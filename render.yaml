@@ -13,8 +13,14 @@ services:
       poetry install --only main && \
       python manage.py collectstatic --noinput && \
       python manage.py migrate --noinput
-    startCommand: gunicorn --preload metro.wsgi:application --bind 0.0.0.0:$PORT --workers=3 --threads=2 --timeout=120
+    # ASGI server (uvicorn) so both HTTP and WebSockets (Django Channels) are served.
+    startCommand: uvicorn metro.asgi:application --host 0.0.0.0 --port $PORT --workers 3 --proxy-headers --forwarded-allow-ips="*"
     envVars:
+      - key: REDIS_URL              # Channel layer backend for WebSocket broadcast
+        fromService:
+          type: redis
+          name: metro-redis
+          property: connectionString
       - key: ENVIRONMENT             # Environment for loading specific config
         value: prod
       - key: SECRET_KEY
@@ -35,3 +41,9 @@ services:
       sizeGB: 1
     healthCheckPath: "/health/"
     autoDeploy: true
+
+  - type: redis
+    name: metro-redis
+    plan: free
+    maxmemoryPolicy: noeviction
+    ipAllowList: []          # only reachable from services in this Render account
