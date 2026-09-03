@@ -22,6 +22,17 @@ class TrainConsumer(AsyncWebsocketConsumer):
     - Service alerts
     """
 
+    # Message types that mutate/broadcast train state — restricted to staff so a
+    # random connected client cannot spoof locations, delays or service alerts.
+    # Session-authenticated staff only (AuthMiddlewareStack reads the session
+    # cookie); everyone else may still use the read-only "request_status".
+    PRIVILEGED_MESSAGE_TYPES = {
+        "location_update",
+        "crowd_update",
+        "schedule_update",
+        "service_alert",
+    }
+
     async def connect(self):
         """Handle WebSocket connection and authentication"""
         try:
@@ -91,16 +102,30 @@ class TrainConsumer(AsyncWebsocketConsumer):
             }
 
             handler = handlers.get(message_type)
-            if handler:
-                await handler(message_data)
-            else:
+            if not handler:
                 logger.warning(f"Unknown message type received: {message_type}")
+                return
+
+            if message_type in self.PRIVILEGED_MESSAGE_TYPES and not self._is_staff():
+                logger.warning(
+                    f"Unauthorized '{message_type}' on train {self.train_id} "
+                    f"from user {self.scope.get('user')}"
+                )
+                await self.send_error("Not authorized to send this message type")
+                return
+
+            await handler(message_data)
 
         except json.JSONDecodeError:
             logger.error("Invalid JSON received")
         except Exception as e:
             logger.error(f"Error processing message: {e}")
             await self.send_error("Error processing message")
+
+    def _is_staff(self):
+        """True when the connection is an authenticated staff/superuser."""
+        user = self.scope.get("user")
+        return bool(user and getattr(user, "is_authenticated", False) and user.is_staff)
 
     @database_sync_to_async
     def verify_train(self):

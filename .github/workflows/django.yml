@@ -1,59 +1,65 @@
-# This is a GitHub Actions workflow file that deploys a Django app to Render.
-#  .github/workflows/django.yaml
+# .github/workflows/django.yml
+# CI: run the Django test suite against Postgres.
 
 name: Django CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        python-version: [3.9]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: metro_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      ENVIRONMENT: dev
+      DEBUG: "True"
+      SECRET_KEY: ci-secret-key-not-for-production
+      JWT_SECRET: ci-jwt-secret-not-for-production
+      BASE_URL: http://localhost:8000
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/metro_test
+      DJANGO_SETTINGS_MODULE: metro.settings
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
 
-    - name: Install Poetry
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry
+      - name: Install system packages
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev
 
-    - name: Install Dependencies
-      run: |
-        poetry install
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-    - name: Export requirements.txt for Deployment
-      run: |
-        poetry run pip freeze > requirements.txt
+      - name: Django system checks
+        run: python manage.py check
 
-    - name: Install Render CLI
-      run: |
-        npm install -g render-cli
-        echo 'export PATH="$PATH:$(npm bin -g)"' >> $GITHUB_ENV
-        echo "Render CLI installation complete."
+      - name: Verify migrations are complete
+        run: python manage.py makemigrations --check --dry-run
 
-    - name: Verify Render CLI Installation
-      run: |
-        echo "Verifying Render CLI"
-        render --version  # Check if render command works
-
-    # - name: Deploy to Render
-    #   env:
-    #     SECRET_KEY: ${{ secrets.SECRET_KEY }}
-    #     DATABASE_URL: ${{ secrets.DATABASE_URL }}
-    #   run: |
-    #     echo "Starting deployment to Render..."
-    #     render deploy --config render.yaml --service-name egypt-metro
-    #     echo "Deployment complete!"
+      - name: Run tests
+        run: python manage.py test --verbosity 2

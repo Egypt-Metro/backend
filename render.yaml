@@ -6,11 +6,12 @@ services:
   - type: web
     name: django
     runtime: python
+    # requirements.txt is the source of truth for deploy deps (pyproject.toml /
+    # poetry.lock are not kept fully in sync).
     buildCommand: |
       apt-get update && apt-get install -y gcc libpq-dev python3-dev && \
       pip install --upgrade pip && \
-      pip install poetry && \
-      poetry install --only main && \
+      pip install -r requirements.txt && \
       python manage.py collectstatic --noinput && \
       python manage.py migrate --noinput
     # ASGI server (uvicorn) so both HTTP and WebSockets (Django Channels) are served.

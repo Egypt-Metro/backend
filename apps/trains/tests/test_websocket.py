@@ -2,7 +2,7 @@
 
 from channels.routing import URLRouter
 from channels.testing import WebsocketCommunicator
-from django.test import TransactionTestCase
+from django.test import TransactionTestCase, override_settings
 
 from apps.stations.models import Line
 from apps.trains.constants.choices import Direction, TrainStatus
@@ -14,6 +14,9 @@ from apps.trains.routing import websocket_urlpatterns
 application = URLRouter(websocket_urlpatterns)
 
 
+@override_settings(
+    CHANNEL_LAYERS={"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
+)
 class TrainWebsocketTests(TransactionTestCase):
     def setUp(self):
         self.line = Line.objects.create(name="Line 1", color_code="#FF0000")
@@ -50,5 +53,21 @@ class TrainWebsocketTests(TransactionTestCase):
         response = await communicator.receive_json_from()
         self.assertEqual(response["type"], "status_update")
         self.assertEqual(response["data"]["train_number"], "TEST123")
+
+        await communicator.disconnect()
+
+    async def test_privileged_message_rejected_for_anonymous_client(self):
+        communicator = WebsocketCommunicator(application, "/ws/train/TEST123/")
+        await communicator.connect()
+        await communicator.receive_json_from()  # drain initial_data
+
+        await communicator.send_json_to(
+            {
+                "type": "service_alert",
+                "data": {"alert_type": "delay", "message": "spoofed"},
+            }
+        )
+        response = await communicator.receive_json_from()
+        self.assertEqual(response["type"], "error")
 
         await communicator.disconnect()
