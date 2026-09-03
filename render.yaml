@@ -1,8 +1,8 @@
-# render.yaml — FALLBACK host config (primary target is Koyeb; see DEPLOYMENT.md).
-# Tuned for Render's FREE plan: no paid instance, no Redis service.
-# Caveat: a free web service sleeps after ~15 min idle. Use Neon for the DB
-# (Render's own free Postgres is deleted after 30-90 days).
-# schema: https://render.com/schema/render.yaml.json
+# render.yaml — Render Blueprint, tuned for the FREE plan (no card, no Redis).
+# Deploy:  Render dashboard -> New -> Blueprint -> pick this repo.
+# Database: external (Neon) via the DATABASE_URL you paste in the dashboard.
+# Caveat:  a free web service sleeps after ~15 min idle (~40 s cold start).
+# schema:  https://render.com/schema/render.yaml.json
 
 services:
   - type: web
@@ -13,9 +13,11 @@ services:
       pip install --upgrade pip && \
       pip install -r requirements.txt && \
       python manage.py collectstatic --noinput
+    # migrate + idempotent first-run seed (admin & data), then serve.
     # Single worker -> in-memory channel layer, no Redis needed.
     startCommand: |
       python manage.py migrate --noinput && \
+      python manage.py bootstrap && \
       uvicorn metro.asgi:application --host 0.0.0.0 --port $PORT --workers 1 --proxy-headers --forwarded-allow-ips="*"
     healthCheckPath: "/health/"
     autoDeploy: true
@@ -29,14 +31,14 @@ services:
       - key: PYTHON_VERSION
         value: "3.11.10"
       - key: SECRET_KEY
-        sync: false          # set in the Render dashboard
+        sync: false          # paste in the Render dashboard
       - key: JWT_SECRET
         sync: false
       - key: DATABASE_URL
-        sync: false          # Neon connection string (include ?sslmode=require)
+        sync: false          # Neon connection string (keep ?sslmode=require...)
       - key: BASE_URL
-        sync: false          # https://<service>.onrender.com
+        sync: false          # https://<service>.onrender.com  (fill after 1st deploy)
       - key: ALLOWED_HOSTS
         sync: false          # <service>.onrender.com[,custom-domain]
       - key: CORS_ALLOWED_ORIGINS
-        sync: false
+        sync: false          # frontend origin(s); leave blank for now
