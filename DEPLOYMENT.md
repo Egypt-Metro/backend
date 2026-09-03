@@ -34,17 +34,27 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- API:    http://localhost:8000/
-- Swagger: http://localhost:8000/api/docs/  (also `/swagger/`, `/redoc/`)
-- Admin:   http://localhost:8000/admin/
-- Health:  http://localhost:8000/health/
-
-Create an admin user and seed the metro data:
+Then, in a second terminal, create admins and seed the metro data:
 
 ```bash
-docker compose exec web python manage.py createsuperuser
-docker compose exec web python manage.py populate_metro_data   # if present
+docker compose exec web python manage.py reset_admin          # admin@example.com / 123
+docker compose exec web python manage.py populate_metro_data  # 3 lines, 84 stations
+docker compose exec web python manage.py populate_routes      # station-to-station routes
+docker compose exec web python manage.py generate_test_data   # trains + cars + schedules
 ```
+
+### What to open (local `:8000`, or your deployed host)
+
+| URL | What it is |
+|-----|-----------|
+| `/` | Landing page / API overview |
+| `/api/docs/` | **Swagger UI** — every endpoint, try-it-out. *(also `/swagger/`, `/redoc/`)* |
+| `/api/schema/` | Raw OpenAPI 3 spec (import into Postman/Insomnia) |
+| `/admin/` | Django admin — log in with `admin@example.com` / `123` |
+| `/admin/dashboard/` | Custom admin dashboard (analytics, stations, trains, tickets, wallets, users) |
+| `/health/` | Health check (JSON) |
+| `/api/users/` `/api/stations/` `/api/routes/` `/api/trains/` `/api/tickets/` `/api/wallet/` `/api/analytics/` `/api/auth/` | Feature APIs |
+| `wss://<host>/ws/train/<train_number>/` | Live train updates (WebSocket) |
 
 ### Option B — native (no Docker)
 

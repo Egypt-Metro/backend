@@ -51,7 +51,6 @@ class TrainViewSet(viewsets.ModelViewSet):
 
     Protected Endpoints (require authentication):
     - POST /api/trains/{id}/update-crowd-level/ - Update crowd level
-    - POST /api/trains/{id}/update-location/ - Update train location
     - POST /api/trains/ - Create new train
     - PUT/PATCH /api/trains/{id}/ - Update train
     - DELETE /api/trains/{id}/ - Delete train
@@ -81,7 +80,7 @@ class TrainViewSet(viewsets.ModelViewSet):
             "get_crowd_status",
             "update_crowd_level",
         ]
-        staff_actions = ["update_location", "create", "destroy"]
+        staff_actions = ["create", "destroy"]
 
         if self.action in public_actions:
             return [AllowAny()]

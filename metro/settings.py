@@ -66,7 +66,8 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",  # JWT authentication
     'rest_framework.authtoken',  # Token authentication
     "corsheaders",  # CORS headers
-    "drf_yasg",  # Swagger
+    "drf_yasg",  # Swagger (/swagger/, /redoc/)
+    "drf_spectacular",  # OpenAPI 3 schema + Swagger UI (/api/schema/, /api/docs/)
     "constance",  # Dynamic settings
     "constance.backends.database",  # Database backend for Constance
     "channels",  # Channels
@@ -453,6 +454,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
